@@ -243,6 +243,15 @@ export const useGameStore = create<GameState>((set) => ({
 
       const result = applyXp(target.level, target.experience, amount)
 
+      // No change — skip the update entirely to avoid unnecessary re-renders.
+      if (
+        result.level === target.level &&
+        result.experience === target.experience &&
+        result.experienceToNextLevel === target.experienceToNextLevel
+      ) {
+        return state
+      }
+
       // Fire level-up notifications and the optional callback for each
       // level gained.
       if (result.levelsGained > 0) {

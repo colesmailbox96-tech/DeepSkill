@@ -45,19 +45,32 @@ export function applyXp(
   experienceToNextLevel: number
   levelsGained: number
 } {
-  const safeAmount = Math.max(0, Math.floor(amount))
+  // Treat any non-finite input as a safe default to prevent NaN propagation.
+  const safeLevel = Number.isFinite(level) ? Math.max(1, Math.floor(level)) : 1
+  const safeXp = Number.isFinite(xp) ? Math.max(0, Math.floor(xp)) : 0
+  const safeAmount = Number.isFinite(amount) ? Math.max(0, Math.floor(amount)) : 0
 
-  if (safeAmount === 0 || level >= MAX_SKILL_LEVEL) {
+  // Max-level skills have no progress; discard any incoming XP.
+  if (safeLevel >= MAX_SKILL_LEVEL) {
     return {
-      level,
-      experience: xp,
-      experienceToNextLevel: xpToNextLevel(level),
+      level: safeLevel,
+      experience: 0,
+      experienceToNextLevel: 0,
       levelsGained: 0,
     }
   }
 
-  let cur = level
-  let curXp = xp + safeAmount
+  if (safeAmount === 0) {
+    return {
+      level: safeLevel,
+      experience: safeXp,
+      experienceToNextLevel: xpToNextLevel(safeLevel),
+      levelsGained: 0,
+    }
+  }
+
+  let cur = safeLevel
+  let curXp = safeXp + safeAmount
   let levelsGained = 0
 
   while (cur < MAX_SKILL_LEVEL) {
