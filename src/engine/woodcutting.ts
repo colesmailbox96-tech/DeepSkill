@@ -1,13 +1,13 @@
 /**
- * Phase 15 — Woodcutting Node System
+ * Phase 16 — Beginner Tree Variants
  *
- * Implements the first real skilling loop in Veilmarch:
- *   - Ashwood tree interactables placed around Hushwood settlement
- *   - Gather timing: 3 s per chop (cancels on player movement)
- *   - Inventory reward: 1 × ashwood_log
- *   - XP reward: 25 woodcutting XP
- *   - Stump / respawn behaviour: tree becomes a stump for 30 s then regrows
- *   - Fail state: notification if player has no woodcutting hatchet
+ * Extends the Phase 15 woodcutting node system with three distinct tree
+ * variants that differ in level requirement, chop timing, XP reward, log
+ * output, and visual appearance:
+ *
+ *   Ash Sapling       — level 1, 2 s chop, 15 XP, ash_sapling_log
+ *   Ashwood Tree      — level 1, 3 s chop, 25 XP, ashwood_log
+ *   Ironbark Youngling — level 5, 4 s chop, 40 XP, ironbark_log
  */
 
 import * as THREE from 'three'
@@ -17,23 +17,96 @@ import { useGameStore } from '../store/useGameStore'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-/** Seconds the player must continuously chop to yield one log. */
-export const CHOP_DURATION = 3.0
-
-/** Woodcutting XP awarded per log cut. */
-export const LOG_XP = 25
-
-/** Seconds before a felled tree regrows into an interactable ashwood tree. */
+/** Seconds before a felled tree regrows into an interactable tree. */
 export const RESPAWN_TIME = 30.0
 
 /** Item IDs that count as a valid woodcutting hatchet. */
 const HATCHET_IDS = new Set(['rough_ash_hatchet'])
 
+// ── Variant system ────────────────────────────────────────────────────────────
+
+/** The three beginner tree variants introduced in Phase 16. */
+export type TreeVariant = 'sapling' | 'ashwood' | 'ironbark'
+
+/** Per-variant configuration used for gameplay and visual construction. */
+export interface VariantConfig {
+  /** Display label shown in the interaction prompt. */
+  label: string
+  /** Item ID granted on a successful chop. */
+  logId: string
+  /** Display name for the log item (used as inventory name fallback). */
+  logName: string
+  /** Seconds the player must continuously chop to yield one log. */
+  chopDuration: number
+  /** Woodcutting XP awarded per log cut. */
+  xp: number
+  /** Minimum woodcutting level required to chop this tree. */
+  levelReq: number
+  // ── Visual geometry ──────────────────────────────────────────────────────
+  trunkColor: number
+  canopyColor: number
+  /** Trunk CylinderGeometry: [topR, botR, height, segments] */
+  trunkGeo: [number, number, number, number]
+  /** Trunk mesh local y offset */
+  trunkY: number
+  /** Canopy ConeGeometry: [radius, height, segments] */
+  canopyGeo: [number, number, number]
+  /** Canopy mesh local y offset */
+  canopyY: number
+}
+
+/**
+ * Immutable configuration table for all three beginner tree variants.
+ * Consumed by buildOneTree (visual construction) and by App.tsx (reward logic).
+ */
+export const VARIANT_CONFIG: Readonly<Record<TreeVariant, VariantConfig>> = {
+  sapling: {
+    label: 'Ash Sapling',
+    logId: 'ash_sapling_log',
+    logName: 'Ash Sapling Log',
+    chopDuration: 2.0,
+    xp: 15,
+    levelReq: 1,
+    trunkColor: 0xb0a882,
+    canopyColor: 0x5aaa5a,
+    trunkGeo: [0.12, 0.15, 1.2, 8],
+    trunkY: 0.6,
+    canopyGeo: [0.8, 1.6, 8],
+    canopyY: 1.9,
+  },
+  ashwood: {
+    label: 'Ashwood Tree',
+    logId: 'ashwood_log',
+    logName: 'Ashwood Log',
+    chopDuration: 3.0,
+    xp: 25,
+    levelReq: 1,
+    trunkColor: 0x7a4f2a,
+    canopyColor: 0x2d5a2d,
+    trunkGeo: [0.2, 0.3, 1.8, 8],
+    trunkY: 0.9,
+    canopyGeo: [1.2, 2.4, 8],
+    canopyY: 2.9,
+  },
+  ironbark: {
+    label: 'Ironbark Youngling',
+    logId: 'ironbark_log',
+    logName: 'Ironbark Log',
+    chopDuration: 4.0,
+    xp: 40,
+    levelReq: 5,
+    trunkColor: 0x4a2812,
+    canopyColor: 0x254520,
+    trunkGeo: [0.22, 0.32, 2.2, 8],
+    trunkY: 1.1,
+    canopyGeo: [1.4, 2.8, 8],
+    canopyY: 3.4,
+  },
+}
+
 // ── Materials ─────────────────────────────────────────────────────────────────
 
-const matTrunk  = new THREE.MeshStandardMaterial({ color: 0x7a4f2a, roughness: 0.85 })
-const matCanopy = new THREE.MeshStandardMaterial({ color: 0x2d5a2d, roughness: 0.80 })
-const matStump  = new THREE.MeshStandardMaterial({ color: 0x8a6040, roughness: 0.90 })
+const matStump = new THREE.MeshStandardMaterial({ color: 0x8a6040, roughness: 0.90 })
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -41,6 +114,8 @@ const matStump  = new THREE.MeshStandardMaterial({ color: 0x8a6040, roughness: 0
 export interface TreeNode {
   /** Unique identifier (e.g. "tree_0"). */
   id: string
+  /** Which variant this tree is. */
+  variant: TreeVariant
   /** Current lifecycle state. */
   state: 'ready' | 'stump'
   /** Countdown until the tree regrows (only meaningful when state === 'stump'). */
@@ -55,20 +130,23 @@ export interface TreeNode {
   interactable: Interactable
 }
 
-// ── Tree positions ────────────────────────────────────────────────────────────
+// ── Tree placements ───────────────────────────────────────────────────────────
 
 /**
- * [x, z] world positions for the six ashwood trees placed around the
- * Hushwood settlement.  Chosen to sit outside roads and buildings but
- * within the ±19 boundary walls.
+ * World positions and variant assignments for the six beginner trees placed
+ * around Hushwood settlement (Phase 16 layout).
+ *
+ *   2 × Ash Sapling        (level 1)
+ *   2 × Ashwood Tree       (level 1)
+ *   2 × Ironbark Youngling (level 5)
  */
-const TREE_POSITIONS: [number, number][] = [
-  [-15, -13],   // north-west
-  [  2, -16],   // north (offset from village hall)
-  [ 16,  -6],   // north-east
-  [ 15,  12],   // south-east
-  [-14,  12],   // south-west
-  [-15,   0],   // west
+const TREE_PLACEMENTS: Array<{ pos: [number, number]; variant: TreeVariant }> = [
+  { pos: [-15, -13], variant: 'sapling'  },  // north-west sapling
+  { pos: [  2, -16], variant: 'ashwood'  },  // north ashwood
+  { pos: [ 16,  -6], variant: 'ironbark' },  // north-east ironbark
+  { pos: [ 15,  12], variant: 'ironbark' },  // south-east ironbark
+  { pos: [-14,  12], variant: 'ashwood'  },  // south-west ashwood
+  { pos: [-15,   0], variant: 'sapling'  },  // west sapling
 ]
 
 // ── Builder helpers ───────────────────────────────────────────────────────────
@@ -78,8 +156,11 @@ function buildOneTree(
   id: string,
   x: number,
   z: number,
+  variant: TreeVariant,
   onChopStart: (node: TreeNode) => void,
 ): TreeNode {
+  const cfg = VARIANT_CONFIG[variant]
+
   // A stable group anchors the interactable so proximity checks and
   // emissive highlights always target the correct world position
   // regardless of which child mesh is currently visible.
@@ -87,20 +168,20 @@ function buildOneTree(
   group.position.set(x, 0, z)
   scene.add(group)
 
-  // Trunk: slightly tapered cylinder (local y-offset from group origin)
+  // Trunk
   const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.2, 0.3, 1.8, 8),
-    matTrunk.clone(),
+    new THREE.CylinderGeometry(...cfg.trunkGeo),
+    new THREE.MeshStandardMaterial({ color: cfg.trunkColor, roughness: 0.85 }),
   )
-  trunk.position.set(0, 0.9, 0)
+  trunk.position.set(0, cfg.trunkY, 0)
   group.add(trunk)
 
-  // Canopy: simple cone cap
+  // Canopy
   const canopy = new THREE.Mesh(
-    new THREE.ConeGeometry(1.2, 2.4, 8),
-    matCanopy.clone(),
+    new THREE.ConeGeometry(...cfg.canopyGeo),
+    new THREE.MeshStandardMaterial({ color: cfg.canopyColor, roughness: 0.80 }),
   )
-  canopy.position.set(0, 2.9, 0)
+  canopy.position.set(0, cfg.canopyY, 0)
   group.add(canopy)
 
   // Stump: short wide cylinder, initially hidden
@@ -112,13 +193,9 @@ function buildOneTree(
   stumpMesh.visible = false
   group.add(stumpMesh)
 
-  // Build the interactable before the node so there is no deferred assignment
-  // and no need for an unsafe null cast.
   const interactable: Interactable = {
-    // The group is the stable mesh reference; it is always in the scene and
-    // always at the correct world position whether the tree is full or a stump.
     mesh: group,
-    label: 'Ashwood Tree',
+    label: cfg.label,
     interactRadius: 2.5,
     onInteract: () => {
       if (node.state === 'stump') {
@@ -131,6 +208,7 @@ function buildOneTree(
 
   const node: TreeNode = {
     id,
+    variant,
     state: 'ready',
     respawnTimer: 0,
     trunk,
@@ -145,7 +223,7 @@ function buildOneTree(
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
- * Spawn all ashwood trees into `scene` and register their interactables.
+ * Spawn all beginner trees into `scene` and register their interactables.
  *
  * @param scene         Three.js scene to add meshes to.
  * @param interactables Mutable array; each tree's interactable is appended.
@@ -157,8 +235,8 @@ export function buildTreeNodes(
   interactables: Interactable[],
   onChopStart: (node: TreeNode) => void,
 ): TreeNode[] {
-  return TREE_POSITIONS.map(([x, z], idx) => {
-    const node = buildOneTree(scene, `tree_${idx}`, x, z, onChopStart)
+  return TREE_PLACEMENTS.map(({ pos: [x, z], variant }, idx) => {
+    const node = buildOneTree(scene, `tree_${idx}`, x, z, variant, onChopStart)
     interactables.push(node.interactable)
     return node
   })
@@ -177,7 +255,8 @@ export function updateTreeNodes(nodes: TreeNode[], delta: number): void {
       node.trunk.visible = true
       node.canopy.visible = true
       node.stumpMesh.visible = false
-      node.interactable.label = 'Ashwood Tree'
+      // Restore the correct label for this variant
+      node.interactable.label = VARIANT_CONFIG[node.variant].label
     }
   }
 }
@@ -202,4 +281,12 @@ export function fellTree(node: TreeNode): void {
 export function hasHatchet(): boolean {
   const { slots } = useGameStore.getState().inventory
   return slots.some((s) => s != null && HATCHET_IDS.has(s.id))
+}
+
+/**
+ * Returns the player's current Woodcutting skill level from the game store.
+ */
+export function getWoodcuttingLevel(): number {
+  const { skills } = useGameStore.getState()
+  return skills.skills.find((s) => s.id === 'woodcutting')?.level ?? 1
 }

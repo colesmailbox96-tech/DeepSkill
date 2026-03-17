@@ -83,6 +83,18 @@ export const STARTER_ITEMS: ItemDefinition[] = [
   // ── Materials ──────────────────────────────────────────────────────────────
 
   {
+    id: 'ash_sapling_log',
+    name: 'Ash Sapling Log',
+    type: 'material',
+    stackable: true,
+    value: 1,
+    icon: 'items/ash_sapling_log.png',
+    description:
+      'A slender branch harvested from a young ash sapling. ' +
+      'Too thin for heavy construction, but useful as kindling or simple fletching stock.',
+  },
+
+  {
     id: 'ashwood_log',
     name: 'Ashwood Log',
     type: 'material',
@@ -92,6 +104,18 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     description:
       'A short length of pale ashwood cut from a roadside tree. ' +
       'Used in basic construction, fuel preparation, and early crafting recipes.',
+  },
+
+  {
+    id: 'ironbark_log',
+    name: 'Ironbark Log',
+    type: 'material',
+    stackable: true,
+    value: 6,
+    icon: 'items/ironbark_log.png',
+    description:
+      'A dense, dark-grained log from an ironbark youngling. ' +
+      'Heavier than ashwood and resistant to splitting; prized for tool handles and structural beams.',
   },
 
   {
