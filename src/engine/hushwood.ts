@@ -93,6 +93,7 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
   )
   wellBase.position.set(0, 0.25, 3)
   scene.add(wellBase)
+  collidables.push(wellBase)
 
   const wellPost = new THREE.Mesh(
     new THREE.CylinderGeometry(0.07, 0.07, 1.4, 6),

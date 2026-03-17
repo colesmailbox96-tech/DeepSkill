@@ -64,6 +64,12 @@ function App() {
     // Phase 07 — Hushwood settlement blockout
     const { collidables, interactables } = buildHushwood(scene)
 
+    // Precompute world-space bounding boxes for static collidables once so that
+    // updatePlayer() doesn't have to call setFromObject() every frame.
+    const collidableBoxes: THREE.Box3[] = collidables.map((m) =>
+      new THREE.Box3().setFromObject(m),
+    )
+
     // Phase 03 — player controller
     const player = createPlayer(scene)
 
@@ -160,7 +166,7 @@ function App() {
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
       const delta = clock.getDelta()
-      updatePlayer(player, keys, delta, camState.theta, collidables)
+      updatePlayer(player, keys, delta, camState.theta, collidableBoxes)
       updateOrbitCamera(camera, player.mesh, camState, delta, collidables)
 
       // Phase 05 — interaction targeting

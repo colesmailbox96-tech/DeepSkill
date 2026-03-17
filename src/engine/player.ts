@@ -8,15 +8,20 @@ export interface Player {
   speed: number
 }
 
-/** Half-width of the 40×40 Hushwood terrain, inset slightly from the edge. */
-const HALF_BOUNDS = 19.5
+/**
+ * Safety-clamp half-width for the 40×40 Hushwood terrain.
+ * Boundary walls sit at ±19 (centre), half-thickness 0.2, so their inner face
+ * is at ±18.8.  With PLAYER_RADIUS 0.35 the AABB pushback stops the player
+ * centre at ±18.45.  This clamp (18.5) is a consistent last-resort fallback
+ * that agrees with the wall pushback and is never normally reached.
+ */
+const HALF_BOUNDS = 18.5
 
 /** Approximate horizontal radius of the player capsule (metres). */
 const PLAYER_RADIUS = 0.35
 
 // Reused each frame to avoid per-frame heap allocations.
 const _dir = new THREE.Vector3()
-const _bbox = new THREE.Box3()
 
 export function createPlayer(scene: THREE.Scene): Player {
   const group = new THREE.Group()
@@ -38,8 +43,8 @@ export function updatePlayer(
   delta: number,
   /** Camera yaw (radians). When provided, WASD moves relative to the camera. */
   cameraYaw = 0,
-  /** Static collidable meshes – player is pushed out of their world AABBs. */
-  collidables: THREE.Object3D[] = [],
+  /** Static collidable bounding boxes – precomputed once, player is pushed out of each. */
+  collidables: THREE.Box3[] = [],
 ): void {
   _dir.set(0, 0, 0)
 
@@ -84,13 +89,12 @@ export function updatePlayer(
     player.moveState = 'idle'
   }
 
-  // AABB pushback — keep player outside all collidable bounding boxes.
-  for (const obj of collidables) {
-    _bbox.setFromObject(obj)
-    const ex = _bbox.min.x - PLAYER_RADIUS
-    const EX = _bbox.max.x + PLAYER_RADIUS
-    const ez = _bbox.min.z - PLAYER_RADIUS
-    const EZ = _bbox.max.z + PLAYER_RADIUS
+  // AABB pushback — keep player outside all precomputed collidable bounding boxes.
+  for (const bbox of collidables) {
+    const ex = bbox.min.x - PLAYER_RADIUS
+    const EX = bbox.max.x + PLAYER_RADIUS
+    const ez = bbox.min.z - PLAYER_RADIUS
+    const EZ = bbox.max.z + PLAYER_RADIUS
     const px = player.mesh.position.x
     const pz = player.mesh.position.z
     if (px > ex && px < EX && pz > ez && pz < EZ) {
