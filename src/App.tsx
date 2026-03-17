@@ -25,8 +25,20 @@ function App() {
 
     const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.setSize(container.clientWidth, container.clientHeight)
     container.appendChild(renderer.domElement)
+
+    const updateViewport = () => {
+      const rect = renderer.domElement.getBoundingClientRect()
+      const width = rect.width || container.clientWidth
+      const height = rect.height || container.clientHeight
+      if (!width || !height) {
+        return
+      }
+      camera.aspect = width / height
+      camera.updateProjectionMatrix()
+      renderer.setSize(width, height, false)
+    }
+    updateViewport()
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
     const directionalLight = new THREE.DirectionalLight(0xffe2c2, 1.25)
@@ -42,15 +54,7 @@ function App() {
 
     scene.add(new THREE.GridHelper(24, 24, 0x7f8b99, 0x4b535d))
 
-    const resize = () => {
-      if (!container.clientWidth || !container.clientHeight) {
-        return
-      }
-      camera.aspect = container.clientWidth / container.clientHeight
-      camera.updateProjectionMatrix()
-      renderer.setSize(container.clientWidth, container.clientHeight)
-    }
-    window.addEventListener('resize', resize)
+    window.addEventListener('resize', updateViewport)
 
     let animationFrame = 0
     const animate = () => {
@@ -61,14 +65,18 @@ function App() {
 
     return () => {
       cancelAnimationFrame(animationFrame)
-      window.removeEventListener('resize', resize)
+      window.removeEventListener('resize', updateViewport)
       scene.traverse((object) => {
-        if (object instanceof THREE.Mesh) {
-          object.geometry.dispose()
-          if (Array.isArray(object.material)) {
-            object.material.forEach((material) => material.dispose())
+        const renderObject = object as THREE.Object3D & {
+          geometry?: THREE.BufferGeometry
+          material?: THREE.Material | THREE.Material[]
+        }
+        renderObject.geometry?.dispose()
+        if (renderObject.material) {
+          if (Array.isArray(renderObject.material)) {
+            renderObject.material.forEach((material) => material.dispose())
           } else {
-            object.material.dispose()
+            renderObject.material.dispose()
           }
         }
       })
@@ -81,12 +89,16 @@ function App() {
     <main className="app-shell">
       <header>
         <h1>Veilmarch Prototype</h1>
-        <p>Phase 02 rendering skeleton: camera, lights, loop, and test terrain.</p>
+        <p id="scene-description">
+          Phase 02 rendering skeleton: camera, lights, loop, and test terrain.
+        </p>
       </header>
       <div
         className="scene-container"
         ref={sceneRef}
+        role="region"
         aria-label="3D prototype world scene"
+        aria-describedby="scene-description"
       />
     </main>
   )
