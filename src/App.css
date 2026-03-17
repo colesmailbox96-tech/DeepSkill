@@ -54,3 +54,133 @@ p {
 .interaction-prompt.visible {
   opacity: 1;
 }
+
+/* ── Phase 09 — HUD Foundation ───────────────────────────────────────────── */
+
+/** Full-bleed overlay that sits above the canvas without intercepting pointer
+    events. All HUD children are purely visual and non-interactive. */
+.hud-overlay {
+  position: absolute;
+  inset: 0 1.25rem 1.25rem 1.25rem;
+  pointer-events: none;
+}
+
+/* ── Player strip (top-left) ──────────────────────────────────────────────── */
+
+.hud-player-strip {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 160px;
+}
+
+.hud-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.hud-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f0e8c0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.hud-level {
+  font-size: 0.75rem;
+  color: #9ca4b0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* Health and stamina bars */
+.hud-bar {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.hud-bar__fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.25s ease;
+}
+
+.hud-bar--health .hud-bar__fill {
+  background: linear-gradient(90deg, #7d1a1a, #c0392b);
+}
+
+.hud-bar--stamina .hud-bar__fill {
+  background: linear-gradient(90deg, #1a5c3a, #27ae60);
+}
+
+.hud-bar__label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.03em;
+  pointer-events: none;
+}
+
+/* ── Notification feed (top-right) ───────────────────────────────────────── */
+
+.hud-notification-feed {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-width: 240px;
+}
+
+.hud-notification {
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #f0e8c0;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(240, 232, 192, 0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  animation: hud-notification-in 0.15s ease forwards;
+  pointer-events: none;
+}
+
+.hud-notification--info {
+  border-left: 3px solid #6ea8d8;
+}
+
+.hud-notification--success {
+  border-left: 3px solid #27ae60;
+}
+
+.hud-notification--warning {
+  border-left: 3px solid #e67e22;
+}
+
+@keyframes hud-notification-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
