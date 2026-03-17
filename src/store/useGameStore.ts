@@ -53,6 +53,10 @@ export interface InventoryState {
 
 const DEFAULT_INVENTORY: InventoryState = {
   slots: [
+    { id: 'rough_ash_hatchet', name: 'Rough Ash Hatchet', quantity: 1 },
+    { id: 'quarry_pick', name: 'Quarry Pick', quantity: 1 },
+    { id: 'reedline_rod', name: 'Reedline Rod', quantity: 1 },
+    { id: 'camp_rations', name: 'Camp Rations', quantity: 3 },
     { id: 'rough_stone', name: 'Rough Stone', quantity: 5 },
     { id: 'ash_twig', name: 'Ash Twig', quantity: 2 },
   ],

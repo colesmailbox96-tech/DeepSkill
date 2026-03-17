@@ -3,10 +3,6 @@
  *
  * Central lookup for all ItemDefinitions.  Definitions are registered at
  * module load time; the registry is keyed by item id.
- *
- * Phase 12 will populate the full starter item set.  Two seed entries exist
- * here so that the two default inventory items already in the game store
- * resolve correctly right now.
  */
 
 import type { ItemDefinition } from './itemSchema'
@@ -46,8 +42,8 @@ export function getAllItems(): ItemDefinition[] {
 }
 
 // ── Seed definitions — Phase 11 ─────────────────────────────────────────────
-// These two items are already placed in the default inventory (useGameStore).
-// Full starter set is added in Phase 12.
+// rough_stone and ash_twig are already placed in the default inventory.
+// The full Phase 12 starter set is imported below.
 
 registerItems([
   {

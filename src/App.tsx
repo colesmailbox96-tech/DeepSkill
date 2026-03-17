@@ -16,6 +16,8 @@ import { useGameStore } from './store/useGameStore'
 import { PlayerStrip } from './ui/hud/PlayerStrip'
 import { NotificationFeed } from './ui/hud/NotificationFeed'
 import { InventoryPanel } from './ui/hud/InventoryPanel'
+// Phase 12 — register starter item set
+import './data/items/starterItems'
 import './App.css'
 
 function App() {
