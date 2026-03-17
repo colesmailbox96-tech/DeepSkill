@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGameStore, type InventoryItem } from '../../store/useGameStore'
+import { getItem } from '../../data/items/itemRegistry'
 
 interface TooltipState {
   item: InventoryItem
@@ -76,6 +77,9 @@ export function InventoryPanel() {
 
   const usedCount = slots.length
 
+  // Resolve the hovered item's definition once, outside JSX, to avoid an IIFE.
+  const tooltipDef = tooltip ? getItem(tooltip.item.id) : null
+
   return (
     <div
       ref={panelRef}
@@ -146,7 +150,18 @@ export function InventoryPanel() {
           role="tooltip"
         >
           <strong className="inv-tooltip__name">{tooltip.item.name}</strong>
+          {tooltipDef && (
+            <span className="inv-tooltip__type">{tooltipDef.type}</span>
+          )}
           <span className="inv-tooltip__qty">Qty: {tooltip.item.quantity}</span>
+          {tooltipDef && (
+            <span className="inv-tooltip__value">
+              Value: {tooltipDef.value} {tooltipDef.value === 1 ? 'coin' : 'coins'}
+            </span>
+          )}
+          {tooltipDef?.description && (
+            <span className="inv-tooltip__desc">{tooltipDef.description}</span>
+          )}
         </div>
       )}
     </div>
