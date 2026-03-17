@@ -184,3 +184,146 @@ p {
   }
 }
 
+/* ── Phase 10 — Inventory Foundation ────────────────────────────────────── */
+
+/**
+ * The inventory panel renders inside .hud-overlay (pointer-events:none) so it
+ * must re-enable pointer events for itself and all descendants.
+ */
+.inv-panel {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  width: 220px;
+  background: rgba(14, 18, 22, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.6rem;
+  padding: 0.6rem;
+  pointer-events: auto;
+  user-select: none;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.inv-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.55rem;
+}
+
+.inv-panel__title {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f0e8c0;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.inv-panel__count {
+  font-size: 0.72rem;
+  color: #9ca4b0;
+}
+
+.inv-panel__close {
+  background: none;
+  border: none;
+  color: #9ca4b0;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  transition: color 0.15s;
+}
+
+.inv-panel__close:hover {
+  color: #f0e8c0;
+}
+
+/* ── Slot grid — 4 columns × 5 rows ─────────────────────────────────────── */
+
+.inv-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.inv-slot {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 0.3rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: default;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.inv-slot--filled {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(240, 232, 192, 0.25);
+  cursor: default;
+}
+
+.inv-slot--filled:hover {
+  border-color: rgba(240, 232, 192, 0.6);
+  background: rgba(255, 255, 255, 0.13);
+}
+
+/* Short item label centred in the slot */
+.inv-slot__label {
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: #d4cca8;
+  text-align: center;
+  line-height: 1.2;
+  word-break: break-word;
+  padding: 0 2px;
+}
+
+/* Quantity badge — bottom-right corner */
+.inv-slot__qty {
+  position: absolute;
+  bottom: 2px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #f0e8c0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  line-height: 1;
+}
+
+/* ── Hover tooltip — fixed so it follows the cursor across the viewport ─── */
+
+.inv-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background: rgba(14, 18, 22, 0.96);
+  border: 1px solid rgba(240, 232, 192, 0.3);
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.65rem;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+  min-width: 100px;
+}
+
+.inv-tooltip__name {
+  font-size: 0.82rem;
+  color: #f0e8c0;
+  font-weight: 700;
+}
+
+.inv-tooltip__qty {
+  font-size: 0.74rem;
+  color: #9ca4b0;
+}
+
