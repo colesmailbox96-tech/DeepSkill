@@ -149,7 +149,7 @@ export function InventoryPanel() {
           style={{ left: tooltip.x + 14, top: tooltip.y + 14 }}
           role="tooltip"
         >
-          <strong className="inv-tooltip__name">{tooltip.item.name}</strong>
+          <strong className="inv-tooltip__name">{tooltipDef?.name ?? tooltip.item.name}</strong>
           {tooltipDef && (
             <span className="inv-tooltip__type">{tooltipDef.type}</span>
           )}
