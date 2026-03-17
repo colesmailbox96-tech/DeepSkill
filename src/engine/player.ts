@@ -9,13 +9,13 @@ export interface Player {
 }
 
 /**
- * Safety-clamp half-width for the 40×40 Hushwood terrain.
- * Boundary walls sit at ±19 (centre), half-thickness 0.2, so their inner face
- * is at ±18.8.  With PLAYER_RADIUS 0.35 the AABB pushback stops the player
- * centre at ±18.45.  This clamp (18.5) is a consistent last-resort fallback
- * that agrees with the wall pushback and is never normally reached.
+ * Safety-clamp applied as a last-resort fallback in case all boundary-wall
+ * collision pushback is bypassed.  Both Hushwood (±19) and Redwake Quarry
+ * (z down to ≈−96) plus their connecting corridor are within ±100, so this
+ * value is intentionally generous — the invisible boundary walls do the real
+ * work of keeping the player inside each zone.
  */
-const HALF_BOUNDS = 18.5
+const HALF_BOUNDS = 100
 
 /** Approximate horizontal radius of the player capsule (metres). */
 const PLAYER_RADIUS = 0.35

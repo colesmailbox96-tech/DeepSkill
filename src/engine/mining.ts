@@ -239,6 +239,30 @@ export function buildRockNodes(
 }
 
 /**
+ * Spawn rock nodes at arbitrary world positions and register their interactables.
+ * Used by secondary zones (e.g. Redwake Quarry) that define their own placement data.
+ *
+ * @param scene         Three.js scene to add meshes to.
+ * @param interactables Mutable array; each rock's interactable is appended.
+ * @param placements    Custom (x, z) + variant pairs.
+ * @param onMineStart   Callback invoked when the player presses E on a ready rock.
+ * @param idPrefix      Prefix for node IDs so they don't collide with other sets.
+ */
+export function buildRockNodesAt(
+  scene: THREE.Scene,
+  interactables: Interactable[],
+  placements: ReadonlyArray<{ pos: [number, number]; variant: RockVariant }>,
+  onMineStart: (node: RockNode) => void,
+  idPrefix: string,
+): RockNode[] {
+  return placements.map(({ pos: [x, z], variant }, idx) => {
+    const node = buildOneRock(scene, `${idPrefix}_${idx}`, x, z, variant, onMineStart)
+    interactables.push(node.interactable)
+    return node
+  })
+}
+
+/**
  * Per-frame update: tick respawn timers and restore rock visuals when ready.
  * Call once per animation frame after `updatePlayer`.
  */
