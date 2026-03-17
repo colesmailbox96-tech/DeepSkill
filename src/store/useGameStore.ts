@@ -134,6 +134,10 @@ export const useGameStore = create<GameState>((set) => ({
   // ── Inventory mutators ───────────────────────────────────────────────────
   addItem: (item) =>
     set((state) => {
+      // Guard: quantity must be a positive integer.
+      const qty = Math.floor(item.quantity)
+      if (qty <= 0) return state
+
       const existing = state.inventory.slots.find((s) => s.id === item.id)
       if (existing) {
         return {
@@ -141,7 +145,7 @@ export const useGameStore = create<GameState>((set) => ({
             ...state.inventory,
             slots: state.inventory.slots.map((s) =>
               s.id === item.id
-                ? { ...s, quantity: s.quantity + item.quantity }
+                ? { ...s, quantity: s.quantity + qty }
                 : s,
             ),
           },
@@ -153,13 +157,17 @@ export const useGameStore = create<GameState>((set) => ({
       return {
         inventory: {
           ...state.inventory,
-          slots: [...state.inventory.slots, { ...item }],
+          slots: [...state.inventory.slots, { ...item, quantity: qty }],
         },
       }
     }),
 
   removeItem: (id, quantity = 1) =>
     set((state) => {
+      // Guard: quantity must be positive; no-op when slot doesn't exist.
+      if (quantity <= 0) return state
+      if (!state.inventory.slots.some((s) => s.id === id)) return state
+
       const updated = state.inventory.slots
         .map((s) => (s.id === id ? { ...s, quantity: s.quantity - quantity } : s))
         .filter((s) => s.quantity > 0)
@@ -173,18 +181,23 @@ export const useGameStore = create<GameState>((set) => ({
         return state
       }
       return {
-        skills: { skills: [...state.skills.skills, { ...skill }] },
+        skills: { ...state.skills, skills: [...state.skills.skills, { ...skill }] },
       }
     }),
 
   updateSkillExperience: (id, experience) =>
-    set((state) => ({
-      skills: {
-        skills: state.skills.skills.map((s) =>
-          s.id === id ? { ...s, experience } : s,
-        ),
-      },
-    })),
+    set((state) => {
+      const target = state.skills.skills.find((s) => s.id === id)
+      if (!target || target.experience === experience) return state
+      return {
+        skills: {
+          ...state.skills,
+          skills: state.skills.skills.map((s) =>
+            s.id === id ? { ...s, experience } : s,
+          ),
+        },
+      }
+    }),
 
   // ── Settings mutators ────────────────────────────────────────────────────
   updateSettings: (patch) =>
