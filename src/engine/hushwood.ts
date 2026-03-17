@@ -15,6 +15,8 @@
 
 import * as THREE from 'three'
 import type { Interactable } from './interactable'
+import type { Npc } from './npc'
+import { buildNpcs } from './npc'
 
 // ─── Shared materials ────────────────────────────────────────────────────────
 
@@ -45,8 +47,10 @@ const matBound = new THREE.MeshStandardMaterial({ visible: false })
 export interface HushwoodResult {
   /** Meshes added to the scene – passed to camera raycaster and player AABB. */
   collidables: THREE.Mesh[]
-  /** Interaction descriptors for all named settlement objects. */
+  /** Interaction descriptors for all named settlement objects and NPCs. */
   interactables: Interactable[]
+  /** Live NPC objects returned for per-frame animation via updateNpcs(). */
+  npcs: Npc[]
 }
 
 // ─── Main builder ────────────────────────────────────────────────────────────
@@ -198,7 +202,10 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
   ]
   collidables.push(...boundWalls)
 
-  return { collidables, interactables }
+  // ── Phase 08 — NPC placement ─────────────────────────────────────────────
+  const npcs = buildNpcs(scene, interactables)
+
+  return { collidables, interactables, npcs }
 }
 
 // ─── Private helpers ──────────────────────────────────────────────────────────

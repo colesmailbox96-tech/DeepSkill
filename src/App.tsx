@@ -11,6 +11,7 @@ import type { Interactable } from './engine/interactable'
 import { createInteractionState } from './engine/interactable'
 import { updateInteraction } from './engine/interaction'
 import { buildHushwood } from './engine/hushwood'
+import { updateNpcs } from './engine/npc'
 import { useGameStore } from './store/useGameStore'
 import './App.css'
 
@@ -61,8 +62,8 @@ function App() {
     directionalLight.position.set(6, 10, 4)
     scene.add(ambientLight, directionalLight)
 
-    // Phase 07 — Hushwood settlement blockout
-    const { collidables, interactables } = buildHushwood(scene)
+    // Phase 07 — Hushwood settlement blockout; Phase 08 — NPC placement
+    const { collidables, interactables, npcs } = buildHushwood(scene)
 
     // Precompute world-space bounding boxes for static collidables once so that
     // updatePlayer() doesn't have to call setFromObject() every frame.
@@ -85,15 +86,15 @@ function App() {
 
     function applyHighlight(item: Interactable | null, color: THREE.Color) {
       if (!item) return
-      if (!(item.mesh instanceof THREE.Mesh)) return
-      const mats = Array.isArray(item.mesh.material)
-        ? item.mesh.material
-        : [item.mesh.material]
-      for (const mat of mats) {
-        if (mat instanceof THREE.MeshStandardMaterial) {
-          mat.emissive.copy(color)
+      item.mesh.traverse((obj) => {
+        if (!(obj instanceof THREE.Mesh)) return
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
+        for (const mat of mats) {
+          if (mat instanceof THREE.MeshStandardMaterial) {
+            mat.emissive.copy(color)
+          }
         }
-      }
+      })
     }
 
     // Track which keys are currently held.
@@ -169,6 +170,9 @@ function App() {
       updatePlayer(player, keys, delta, camState.theta, collidableBoxes)
       updateOrbitCamera(camera, player.mesh, camState, delta, collidables)
 
+      // Phase 08 — advance NPC ambient idle sway
+      updateNpcs(npcs, delta)
+
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
       const tgt = interactionState.target
@@ -226,7 +230,7 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 07: Hushwood blockout — playing as <strong>{playerName}</strong>.
+          Phase 08: Hushwood NPCs — playing as <strong>{playerName}</strong>.
           WASD to move, right-drag to orbit, scroll to zoom, E to interact.
         </p>
       </header>
