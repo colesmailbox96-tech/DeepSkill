@@ -121,9 +121,10 @@ export function buildQuarry(
   vergeE.position.set(4, 0.005, -35.5)
   scene.add(vergeE)
 
-  // Invisible corridor walls — keep player on the trail.
-  const corrW = _addWall(scene, 0.4, 6, 33, -5.2, 3, -35.5, matBound)
-  const corrE = _addWall(scene, 0.4, 6, 33,  5.2, 3, -35.5, matBound)
+  // Invisible corridor walls — keep player on the 6-unit-wide trail (matching
+  // the Hushwood north gate opening at x = −3 → +3).
+  const corrW = _addWall(scene, 0.4, 6, 33, -3.2, 3, -35.5, matBound)
+  const corrE = _addWall(scene, 0.4, 6, 33,  3.2, 3, -35.5, matBound)
   collidables.push(corrW, corrE)
 
   // ── Quarry basin floor (z = −52 → −96, x = −20 → +20) ───────────────────
@@ -134,8 +135,10 @@ export function buildQuarry(
 
   // ── Quarry cliff walls (visible stone, also collidable) ───────────────────
 
-  // North cliff — wide back wall of the basin
-  const cliffN = _addBox(scene, 40, 10, 4, 0, 5, -94, matCliff)
+  // North cliff — wide back wall of the basin.
+  // Center at z = −98 so the inner (south) face aligns with z = −96,
+  // matching the stated basin extent.
+  const cliffN = _addBox(scene, 40, 10, 4, 0, 5, -98, matCliff)
   collidables.push(cliffN)
 
   // East cliff — right face of the basin
@@ -148,18 +151,15 @@ export function buildQuarry(
 
   // Cliff ledge detail — a slightly darker narrow shelf along the east and west
   // inner faces, purely visual, adds visual depth.
-  const ledgeE = _addBox(scene, 0.8, 1.2, 44, 19.6, 1.5, -74, matCliffDark)
-  scene.add(ledgeE) // not collidable — cosmetic only
-  const ledgeW = _addBox(scene, 0.8, 1.2, 44, -19.6, 1.5, -74, matCliffDark)
-  scene.add(ledgeW)
-  // Remove from collidables since we pushed inside cliffE/W already; but
-  // ledgeE/W were just added to scene, NOT pushed to collidables — correct.
+  // (_addBox already calls scene.add — no extra add needed.)
+  _addBox(scene, 0.8, 1.2, 44, 19.6, 1.5, -74, matCliffDark)
+  _addBox(scene, 0.8, 1.2, 44, -19.6, 1.5, -74, matCliffDark)
 
   // ── Set pieces — entrance area ───────────────────────────────────────────
 
-  // Rough wooden post with a lantern at the quarry entrance (right side)
-  const postR = _addBox(scene, 0.18, 2.4, 0.18, 7, 1.2, -53.5, matWood)
-  scene.add(postR)
+  // Rough wooden post with a lantern at the quarry entrance (right side).
+  // (_addBox already calls scene.add — no extra add needed for any set piece.)
+  _addBox(scene, 0.18, 2.4, 0.18, 7, 1.2, -53.5, matWood)
   const lanternR = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.28, 0.28), matLantern)
   lanternR.position.set(7, 2.65, -53.5)
   scene.add(lanternR)
@@ -168,15 +168,11 @@ export function buildQuarry(
   scene.add(lanternLight)
 
   // Tool rack — a simple T-shape east of the entrance (horizontal bar + post)
-  const rackPost = _addBox(scene, 0.2, 1.6, 0.2, -9, 0.8, -55, matWood)
-  scene.add(rackPost)
-  const rackBar = _addBox(scene, 1.8, 0.15, 0.2, -9, 1.7, -55, matWood)
-  scene.add(rackBar)
+  _addBox(scene, 0.2, 1.6, 0.2, -9, 0.8, -55, matWood)
+  _addBox(scene, 1.8, 0.15, 0.2, -9, 1.7, -55, matWood)
   // Pickaxe hanging from rack (metal head + handle)
-  const pickHead = _addBox(scene, 0.6, 0.25, 0.1, -9, 1.78, -55.08, matMetal)
-  scene.add(pickHead)
-  const pickHandle = _addBox(scene, 0.08, 1.1, 0.08, -9.3, 1.2, -55, matWood)
-  scene.add(pickHandle)
+  _addBox(scene, 0.6, 0.25, 0.1, -9, 1.78, -55.08, matMetal)
+  _addBox(scene, 0.08, 1.1, 0.08, -9.3, 1.2, -55, matWood)
 
   // Ore crates stacked near the east cliff entrance
   const crate1 = _addBox(scene, 0.9, 0.9, 0.9,  14, 0.45, -57, matCrate)
