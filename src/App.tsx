@@ -17,12 +17,13 @@ import {
   updateTreeNodes,
   fellTree,
   hasHatchet,
-  CHOP_DURATION,
-  LOG_XP,
+  getWoodcuttingLevel,
+  VARIANT_CONFIG,
 } from './engine/woodcutting'
 import type { TreeNode } from './engine/woodcutting'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
+import { getItem } from './data/items/itemRegistry'
 import { PlayerStrip } from './ui/hud/PlayerStrip'
 import { NotificationFeed } from './ui/hud/NotificationFeed'
 import { InventoryPanel } from './ui/hud/InventoryPanel'
@@ -79,6 +80,9 @@ function App() {
     // Phase 07 — Hushwood settlement blockout; Phase 08 — NPC placement
     const { collidables, interactables, npcs } = buildHushwood(scene)
 
+    // Helper: choose correct English indefinite article for a noun.
+    const article = (noun: string) => (/^[aeiou]/i.test(noun) ? 'an' : 'a')
+
     // Phase 15 — Woodcutting node system
     // Chopping session: tracks which tree is being cut and elapsed chop time.
     interface ChoppingSession { node: TreeNode; elapsed: number }
@@ -89,10 +93,19 @@ function App() {
         useNotifications.getState().push('You need a hatchet to chop trees.', 'info')
         return
       }
+      // Level requirement check
+      const cfg = VARIANT_CONFIG[node.variant]
+      if (getWoodcuttingLevel() < cfg.levelReq) {
+        useNotifications.getState().push(
+          `You need level ${cfg.levelReq} Woodcutting to chop this.`,
+          'info',
+        )
+        return
+      }
       // Already chopping this exact tree — do nothing.
       if (choppingRef.current?.node === node) return
       choppingRef.current = { node, elapsed: 0 }
-      useNotifications.getState().push('You begin chopping the ashwood tree…', 'info')
+      useNotifications.getState().push(`You begin chopping the ${cfg.label.toLowerCase()}…`, 'info')
     }
 
     const treeNodes = buildTreeNodes(scene, interactables, onChopStart)
@@ -215,12 +228,15 @@ function App() {
           useNotifications.getState().push('You stop chopping.', 'info')
         } else {
           sess.elapsed += delta
-          if (sess.elapsed >= CHOP_DURATION) {
+          if (sess.elapsed >= VARIANT_CONFIG[sess.node.variant].chopDuration) {
             choppingRef.current = null
+            const cfg = VARIANT_CONFIG[sess.node.variant]
             const { addItem, grantSkillXp } = useGameStore.getState()
-            addItem({ id: 'ashwood_log', name: 'Ashwood Log', quantity: 1 })
-            grantSkillXp('woodcutting', LOG_XP)
-            useNotifications.getState().push('You cut an ashwood log.', 'success')
+            // Resolve display name from registry (single source of truth); id is the fallback.
+            const logName = getItem(cfg.logId)?.name ?? cfg.logId
+            addItem({ id: cfg.logId, name: logName, quantity: 1 })
+            grantSkillXp('woodcutting', cfg.xp)
+            useNotifications.getState().push(`You cut ${article(logName)} ${logName.toLowerCase()}.`, 'success')
             fellTree(sess.node)
           }
         }
@@ -283,7 +299,7 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 15: Woodcutting Node System — playing as <strong>{playerName}</strong>.
+          Phase 16: Beginner Tree Variants — playing as <strong>{playerName}</strong>.
           WASD to move, right-drag to orbit, scroll to zoom, E to interact (chop trees!), I for inventory, K for skills.
         </p>
       </header>
