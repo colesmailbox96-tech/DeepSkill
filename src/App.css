@@ -58,7 +58,7 @@ p {
 /* ── Phase 09 — HUD Foundation ───────────────────────────────────────────── */
 
 /** Full-bleed overlay that sits above the canvas without intercepting pointer
-    events. Individual HUD regions re-enable pointer events as needed. */
+    events. All HUD children are purely visual and non-interactive. */
 .hud-overlay {
   position: absolute;
   inset: 0 1.25rem 1.25rem 1.25rem;

@@ -5,9 +5,12 @@ import { useGameStore } from '../../store/useGameStore'
  * Reads live values from the global game store.
  */
 export function PlayerStrip() {
-  const { name, level, health, maxHealth, stamina, maxStamina } = useGameStore(
-    (s) => s.playerStats,
-  )
+  const name = useGameStore((s) => s.playerStats.name)
+  const level = useGameStore((s) => s.playerStats.level)
+  const health = useGameStore((s) => s.playerStats.health)
+  const maxHealth = useGameStore((s) => s.playerStats.maxHealth)
+  const stamina = useGameStore((s) => s.playerStats.stamina)
+  const maxStamina = useGameStore((s) => s.playerStats.maxStamina)
 
   const healthPct = maxHealth > 0 ? (health / maxHealth) * 100 : 0
   const staminaPct = maxStamina > 0 ? (stamina / maxStamina) * 100 : 0
