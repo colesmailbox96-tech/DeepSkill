@@ -38,7 +38,10 @@ export interface InventoryState {
 }
 
 const DEFAULT_INVENTORY: InventoryState = {
-  slots: [],
+  slots: [
+    { id: 'rough_stone', name: 'Rough Stone', quantity: 5 },
+    { id: 'ash_twig', name: 'Ash Twig', quantity: 2 },
+  ],
   maxSlots: 20,
 }
 

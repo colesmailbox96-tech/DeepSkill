@@ -15,6 +15,7 @@ import { updateNpcs } from './engine/npc'
 import { useGameStore } from './store/useGameStore'
 import { PlayerStrip } from './ui/hud/PlayerStrip'
 import { NotificationFeed } from './ui/hud/NotificationFeed'
+import { InventoryPanel } from './ui/hud/InventoryPanel'
 import './App.css'
 
 function App() {
@@ -232,8 +233,8 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 09: HUD Foundation — playing as <strong>{playerName}</strong>.
-          WASD to move, right-drag to orbit, scroll to zoom, E to interact.
+          Phase 10: Inventory Foundation — playing as <strong>{playerName}</strong>.
+          WASD to move, right-drag to orbit, scroll to zoom, E to interact, I to open inventory.
         </p>
       </header>
       <div
@@ -247,6 +248,8 @@ function App() {
         <div className="hud-overlay">
           <PlayerStrip />
           <NotificationFeed />
+          {/* Phase 10 — Inventory panel */}
+          <InventoryPanel />
         </div>
         <div ref={promptRef} className="interaction-prompt" aria-live="polite" />
       </div>
