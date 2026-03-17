@@ -126,14 +126,16 @@ function App() {
 
     window.addEventListener('resize', updateViewport)
 
+    // Stable empty array – populated with collidable geometry in later phases.
+    const collidables: THREE.Object3D[] = []
+
     const clock = new THREE.Clock()
     let animationFrame = 0
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
       const delta = clock.getDelta()
       updatePlayer(player, keys, delta, camState.theta)
-      // No collidables yet (walls will be added in a later phase).
-      updateOrbitCamera(camera, player.mesh, camState, delta, [])
+      updateOrbitCamera(camera, player.mesh, camState, delta, collidables)
       renderer.render(scene, camera)
     }
     animate()
