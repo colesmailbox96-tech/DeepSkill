@@ -118,14 +118,21 @@ function App() {
 
     function applyHighlight(item: Interactable | null, color: THREE.Color) {
       if (!item) return
-      const mesh = item.mesh as THREE.Mesh
-      const mat = mesh.material as THREE.MeshStandardMaterial
-      mat.emissive.copy(color)
+      if (!(item.mesh instanceof THREE.Mesh)) return
+      const mats = Array.isArray(item.mesh.material)
+        ? item.mesh.material
+        : [item.mesh.material]
+      for (const mat of mats) {
+        if (mat instanceof THREE.MeshStandardMaterial) {
+          mat.emissive.copy(color)
+        }
+      }
     }
 
     // Track which keys are currently held.
     const keys = new Set<string>()
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return
       keys.add(e.code)
       if (e.code === 'KeyE' && interactionState.target) {
         interactionState.target.onInteract()

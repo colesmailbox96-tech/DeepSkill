@@ -5,8 +5,11 @@ import type { Player } from './player'
  * Update the interaction targeting state each frame.
  *
  * Scans all registered interactables and finds the one closest to the player
- * whose distance is within that object's `interactRadius`.  The nearest
- * qualifying object becomes `state.target`; all others are cleared.
+ * whose **horizontal** (XZ ground-plane) distance is within that object's
+ * `interactRadius`.  Y-axis separation is intentionally ignored so that
+ * objects on raised platforms or stairs remain reachable when the player
+ * stands at their base.  The nearest qualifying object becomes `state.target`;
+ * all others are cleared.
  */
 export function updateInteraction(
   state: InteractionState,
