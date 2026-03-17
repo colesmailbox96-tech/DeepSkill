@@ -12,7 +12,17 @@ import { createInteractionState } from './engine/interactable'
 import { updateInteraction } from './engine/interaction'
 import { buildHushwood } from './engine/hushwood'
 import { updateNpcs } from './engine/npc'
+import {
+  buildTreeNodes,
+  updateTreeNodes,
+  fellTree,
+  hasHatchet,
+  CHOP_DURATION,
+  LOG_XP,
+} from './engine/woodcutting'
+import type { TreeNode } from './engine/woodcutting'
 import { useGameStore } from './store/useGameStore'
+import { useNotifications } from './store/useNotifications'
 import { PlayerStrip } from './ui/hud/PlayerStrip'
 import { NotificationFeed } from './ui/hud/NotificationFeed'
 import { InventoryPanel } from './ui/hud/InventoryPanel'
@@ -68,6 +78,24 @@ function App() {
 
     // Phase 07 — Hushwood settlement blockout; Phase 08 — NPC placement
     const { collidables, interactables, npcs } = buildHushwood(scene)
+
+    // Phase 15 — Woodcutting node system
+    // Chopping session: tracks which tree is being cut and elapsed chop time.
+    interface ChoppingSession { node: TreeNode; elapsed: number }
+    const choppingRef = { current: null as ChoppingSession | null }
+
+    const onChopStart = (node: TreeNode) => {
+      if (!hasHatchet()) {
+        useNotifications.getState().push('You need a hatchet to chop trees.', 'info')
+        return
+      }
+      // Already chopping this exact tree — do nothing.
+      if (choppingRef.current?.node === node) return
+      choppingRef.current = { node, elapsed: 0 }
+      useNotifications.getState().push('You begin chopping the ashwood tree…', 'info')
+    }
+
+    const treeNodes = buildTreeNodes(scene, interactables, onChopStart)
 
     // Precompute world-space bounding boxes for static collidables once so that
     // updatePlayer() doesn't have to call setFromObject() every frame.
@@ -177,6 +205,27 @@ function App() {
       // Phase 08 — advance NPC ambient idle sway
       updateNpcs(npcs, delta)
 
+      // Phase 15 — tick woodcutting session and respawn timers
+      updateTreeNodes(treeNodes, delta)
+      if (choppingRef.current) {
+        const sess = choppingRef.current
+        if (player.moveState === 'walk') {
+          // Moving cancels the active chop.
+          choppingRef.current = null
+          useNotifications.getState().push('You stop chopping.', 'info')
+        } else {
+          sess.elapsed += delta
+          if (sess.elapsed >= CHOP_DURATION) {
+            choppingRef.current = null
+            const { addItem, grantSkillXp } = useGameStore.getState()
+            addItem({ id: 'ashwood_log', name: 'Ashwood Log', quantity: 1 })
+            grantSkillXp('woodcutting', LOG_XP)
+            useNotifications.getState().push('You cut an ashwood log.', 'success')
+            fellTree(sess.node)
+          }
+        }
+      }
+
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
       const tgt = interactionState.target
@@ -184,14 +233,14 @@ function App() {
         applyHighlight(previousTarget, EMISSIVE_CLEAR)
         applyHighlight(tgt, EMISSIVE_HOVER)
         previousTarget = tgt
-        if (promptRef.current) {
-          if (tgt) {
-            promptRef.current.textContent = `[E]  ${tgt.label}`
-            promptRef.current.classList.add('visible')
-          } else {
-            promptRef.current.textContent = ''
-            promptRef.current.classList.remove('visible')
-          }
+      }
+      if (promptRef.current) {
+        if (tgt) {
+          promptRef.current.textContent = `[E]  ${tgt.label}`
+          promptRef.current.classList.add('visible')
+        } else {
+          promptRef.current.textContent = ''
+          promptRef.current.classList.remove('visible')
         }
       }
 
@@ -234,8 +283,8 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 14: XP Curve Base — playing as <strong>{playerName}</strong>.
-          WASD to move, right-drag to orbit, scroll to zoom, E to interact, I for inventory, K for skills.
+          Phase 15: Woodcutting Node System — playing as <strong>{playerName}</strong>.
+          WASD to move, right-drag to orbit, scroll to zoom, E to interact (chop trees!), I for inventory, K for skills.
         </p>
       </header>
       <div
