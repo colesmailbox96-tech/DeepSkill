@@ -80,44 +80,44 @@ function buildOneTree(
   z: number,
   onChopStart: (node: TreeNode) => void,
 ): TreeNode {
-  // Trunk: slightly tapered cylinder
+  // A stable group anchors the interactable so proximity checks and
+  // emissive highlights always target the correct world position
+  // regardless of which child mesh is currently visible.
+  const group = new THREE.Group()
+  group.position.set(x, 0, z)
+  scene.add(group)
+
+  // Trunk: slightly tapered cylinder (local y-offset from group origin)
   const trunk = new THREE.Mesh(
     new THREE.CylinderGeometry(0.2, 0.3, 1.8, 8),
     matTrunk.clone(),
   )
-  trunk.position.set(x, 0.9, z)
-  scene.add(trunk)
+  trunk.position.set(0, 0.9, 0)
+  group.add(trunk)
 
   // Canopy: simple cone cap
   const canopy = new THREE.Mesh(
     new THREE.ConeGeometry(1.2, 2.4, 8),
     matCanopy.clone(),
   )
-  canopy.position.set(x, 2.9, z)
-  scene.add(canopy)
+  canopy.position.set(0, 2.9, 0)
+  group.add(canopy)
 
   // Stump: short wide cylinder, initially hidden
   const stumpMesh = new THREE.Mesh(
     new THREE.CylinderGeometry(0.3, 0.35, 0.4, 8),
     matStump.clone(),
   )
-  stumpMesh.position.set(x, 0.2, z)
+  stumpMesh.position.set(0, 0.2, 0)
   stumpMesh.visible = false
-  scene.add(stumpMesh)
+  group.add(stumpMesh)
 
-  // Build node first so onInteract closure can reference it.
-  const node: TreeNode = {
-    id,
-    state: 'ready',
-    respawnTimer: 0,
-    trunk,
-    canopy,
-    stumpMesh,
-    interactable: null as unknown as Interactable, // filled immediately below
-  }
-
-  node.interactable = {
-    mesh: trunk,
+  // Build the interactable before the node so there is no deferred assignment
+  // and no need for an unsafe null cast.
+  const interactable: Interactable = {
+    // The group is the stable mesh reference; it is always in the scene and
+    // always at the correct world position whether the tree is full or a stump.
+    mesh: group,
     label: 'Ashwood Tree',
     interactRadius: 2.5,
     onInteract: () => {
@@ -127,6 +127,16 @@ function buildOneTree(
       }
       onChopStart(node)
     },
+  }
+
+  const node: TreeNode = {
+    id,
+    state: 'ready',
+    respawnTimer: 0,
+    trunk,
+    canopy,
+    stumpMesh,
+    interactable,
   }
 
   return node
