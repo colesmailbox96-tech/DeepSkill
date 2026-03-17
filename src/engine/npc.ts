@@ -15,6 +15,7 @@
 
 import * as THREE from 'three'
 import type { Interactable } from './interactable'
+import { useNotifications } from '../store/useNotifications'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -99,7 +100,7 @@ export function buildNpcs(
       mesh: npc.mesh,
       label: def.name,
       interactRadius: 2.2,
-      onInteract: () => console.log(`[Hushwood] Spoke with ${def.name}`),
+      onInteract: () => useNotifications.getState().push(`Spoke with ${def.name}`, 'info'),
     })
   }
 

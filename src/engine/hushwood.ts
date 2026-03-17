@@ -17,6 +17,7 @@ import * as THREE from 'three'
 import type { Interactable } from './interactable'
 import type { Npc } from './npc'
 import { buildNpcs } from './npc'
+import { useNotifications } from '../store/useNotifications'
 
 // ─── Shared materials ────────────────────────────────────────────────────────
 
@@ -116,7 +117,7 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
     mesh: hall,
     label: 'Village Hall',
     interactRadius: 3.5,
-    onInteract: () => console.log('[Hushwood] Entered Village Hall'),
+    onInteract: () => useNotifications.getState().push('Entered Village Hall', 'info'),
   })
 
   // 2. Forge / Smithy — east
@@ -127,7 +128,7 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
     mesh: forge,
     label: 'Smithy Forge',
     interactRadius: 3.5,
-    onInteract: () => console.log('[Hushwood] Approached Smithy Forge'),
+    onInteract: () => useNotifications.getState().push('Approached Smithy Forge', 'info'),
   })
 
   // Forge area: glowing ember box in front of smithy
@@ -148,7 +149,7 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
     mesh: storage,
     label: 'Storage Shed',
     interactRadius: 3.0,
-    onInteract: () => console.log('[Hushwood] Opened Storage Shed'),
+    onInteract: () => useNotifications.getState().push('Opened Storage Shed', 'info'),
   })
 
   // 4. Inn / Tavern — south
@@ -159,7 +160,7 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
     mesh: inn,
     label: 'Mudroot Inn',
     interactRadius: 3.5,
-    onInteract: () => console.log('[Hushwood] Entered Mudroot Inn'),
+    onInteract: () => useNotifications.getState().push('Entered Mudroot Inn', 'info'),
   })
 
   // 5. Guard Hut — north-west
@@ -170,7 +171,7 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
     mesh: hut,
     label: 'Guard Post',
     interactRadius: 2.5,
-    onInteract: () => console.log('[Hushwood] Checked Guard Post'),
+    onInteract: () => useNotifications.getState().push('Checked Guard Post', 'info'),
   })
 
   // ── Shoreline / Pond ─────────────────────────────────────────────────────

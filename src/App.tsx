@@ -13,6 +13,8 @@ import { updateInteraction } from './engine/interaction'
 import { buildHushwood } from './engine/hushwood'
 import { updateNpcs } from './engine/npc'
 import { useGameStore } from './store/useGameStore'
+import { PlayerStrip } from './ui/hud/PlayerStrip'
+import { NotificationFeed } from './ui/hud/NotificationFeed'
 import './App.css'
 
 function App() {
@@ -230,7 +232,7 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 08: Hushwood NPCs — playing as <strong>{playerName}</strong>.
+          Phase 09: HUD Foundation — playing as <strong>{playerName}</strong>.
           WASD to move, right-drag to orbit, scroll to zoom, E to interact.
         </p>
       </header>
@@ -241,6 +243,11 @@ function App() {
         aria-label="3D prototype world scene"
         aria-describedby="scene-description"
       >
+        {/* Phase 09 — HUD overlay */}
+        <div className="hud-overlay">
+          <PlayerStrip />
+          <NotificationFeed />
+        </div>
         <div ref={promptRef} className="interaction-prompt" aria-live="polite" />
       </div>
     </main>
