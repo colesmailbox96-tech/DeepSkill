@@ -10,6 +10,7 @@ import {
 import type { Interactable } from './engine/interactable'
 import { createInteractionState } from './engine/interactable'
 import { updateInteraction } from './engine/interaction'
+import { buildHushwood } from './engine/hushwood'
 import { useGameStore } from './store/useGameStore'
 import './App.css'
 
@@ -55,63 +56,19 @@ function App() {
     }
     updateViewport()
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.45)
     const directionalLight = new THREE.DirectionalLight(0xffe2c2, 1.25)
     directionalLight.position.set(6, 10, 4)
     scene.add(ambientLight, directionalLight)
 
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(24, 24),
-      new THREE.MeshStandardMaterial({ color: 0x6d7884, roughness: 0.85 }),
-    )
-    ground.rotation.x = -Math.PI / 2
-    scene.add(ground)
-
-    scene.add(new THREE.GridHelper(24, 24, 0x7f8b99, 0x4b535d))
+    // Phase 07 — Hushwood settlement blockout
+    const { collidables, interactables } = buildHushwood(scene)
 
     // Phase 03 — player controller
     const player = createPlayer(scene)
 
     // Phase 04 — orbit camera state
     const camState = createCameraState()
-
-    // Phase 05 — interactable demo objects
-    const chest = new THREE.Mesh(
-      new THREE.BoxGeometry(0.7, 0.7, 0.7),
-      new THREE.MeshStandardMaterial({
-        color: 0xe8c44a,
-        roughness: 0.5,
-        emissive: new THREE.Color(0x000000),
-      }),
-    )
-    chest.position.set(5, 0.35, 0)
-    scene.add(chest)
-
-    const lever = new THREE.Mesh(
-      new THREE.BoxGeometry(0.4, 1.0, 0.4),
-      new THREE.MeshStandardMaterial({
-        color: 0xc04040,
-        roughness: 0.5,
-        emissive: new THREE.Color(0x000000),
-      }),
-    )
-    lever.position.set(-5, 0.5, 3)
-    scene.add(lever)
-
-    const interactables: Interactable[] = [
-      {
-        mesh: chest,
-        label: 'Wooden Chest',
-        interactRadius: 2.5,
-        onInteract: () => console.log('[Interact] Opened Wooden Chest'),
-      },
-      {
-        mesh: lever,
-        label: 'Gate Lever',
-        interactRadius: 2.0,
-        onInteract: () => console.log('[Interact] Pulled Gate Lever'),
-      },
-    ]
 
     const interactionState = createInteractionState()
 
@@ -198,15 +155,12 @@ function App() {
 
     window.addEventListener('resize', updateViewport)
 
-    // Stable empty array – populated with collidable geometry in later phases.
-    const collidables: THREE.Object3D[] = []
-
     const clock = new THREE.Clock()
     let animationFrame = 0
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
       const delta = clock.getDelta()
-      updatePlayer(player, keys, delta, camState.theta)
+      updatePlayer(player, keys, delta, camState.theta, collidables)
       updateOrbitCamera(camera, player.mesh, camState, delta, collidables)
 
       // Phase 05 — interaction targeting
@@ -266,7 +220,7 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 06: core state store — playing as <strong>{playerName}</strong>.
+          Phase 07: Hushwood blockout — playing as <strong>{playerName}</strong>.
           WASD to move, right-drag to orbit, scroll to zoom, E to interact.
         </p>
       </header>
