@@ -1,14 +1,16 @@
 /**
  * Phase 12 — Starter Item Set
  *
- * Eight fully defined items that form the player's starting kit.
- * All definitions are complete; no stubs or placeholder fields.
+ * Defines the 8 Phase 12 starter item definitions.
+ * This module only exports the definitions; registration is handled by
+ * itemRegistry.ts, which imports this array at module load time so that the
+ * full catalog is available to every consumer of the registry regardless of
+ * which entrypoint is used.
  */
 
-import { registerItems } from './itemRegistry'
 import type { ItemDefinition } from './itemSchema'
 
-const STARTER_ITEMS: ItemDefinition[] = [
+export const STARTER_ITEMS: ItemDefinition[] = [
   // ── Tools ──────────────────────────────────────────────────────────────────
 
   {
@@ -116,5 +118,3 @@ const STARTER_ITEMS: ItemDefinition[] = [
       'Too small for serious construction, but handy as a throwing weight or grinding surface.',
   },
 ]
-
-registerItems(STARTER_ITEMS)

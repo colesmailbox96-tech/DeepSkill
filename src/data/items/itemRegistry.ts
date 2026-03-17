@@ -2,10 +2,14 @@
  * Phase 11 — Item Registry
  *
  * Central lookup for all ItemDefinitions.  Definitions are registered at
- * module load time; the registry is keyed by item id.
+ * module load time; the registry is keyed by item id.  All item sets
+ * (Phase 11 seeds and the Phase 12 starter set) are registered here so
+ * any consumer of this module sees the full catalog without requiring
+ * additional imports at the entrypoint level.
  */
 
 import type { ItemDefinition } from './itemSchema'
+import { STARTER_ITEMS } from './starterItems'
 
 // ── Internal store ───────────────────────────────────────────────────────────
 
@@ -42,8 +46,6 @@ export function getAllItems(): ItemDefinition[] {
 }
 
 // ── Seed definitions — Phase 11 ─────────────────────────────────────────────
-// rough_stone and ash_twig are already placed in the default inventory.
-// The full Phase 12 starter set is imported below.
 
 registerItems([
   {
@@ -69,3 +71,7 @@ registerItems([
       'Brittle on its own, but bundles of them serve as tinder or fletching stock.',
   },
 ])
+
+// ── Starter item set — Phase 12 ──────────────────────────────────────────────
+
+registerItems(STARTER_ITEMS)
