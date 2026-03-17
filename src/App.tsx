@@ -234,7 +234,7 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 13: Skills Panel — playing as <strong>{playerName}</strong>.
+          Phase 14: XP Curve Base — playing as <strong>{playerName}</strong>.
           WASD to move, right-drag to orbit, scroll to zoom, E to interact, I for inventory, K for skills.
         </p>
       </header>
@@ -251,7 +251,7 @@ function App() {
           <NotificationFeed />
           {/* Phase 10 — Inventory panel */}
           <InventoryPanel />
-          {/* Phase 13 — Skills panel */}
+          {/* Phase 14 — Skills panel */}
           <SkillsPanel />
         </div>
         <div ref={promptRef} className="interaction-prompt" aria-live="polite" />

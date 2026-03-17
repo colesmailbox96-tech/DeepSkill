@@ -3,6 +3,8 @@ import { getItem } from '../data/items/itemRegistry'
 import type { ItemDefinition } from '../data/items/itemSchema'
 import type { Skill } from '../data/skills/skillSchema'
 import { STARTER_SKILLS } from '../data/skills/starterSkills'
+import { applyXp } from '../data/skills/xpCurve'
+import { useNotifications } from './useNotifications'
 
 // Re-export so consumers can get the full definition alongside store types.
 export type { ItemDefinition }
@@ -115,6 +117,19 @@ export interface GameState {
   // Skills mutators
   addSkill: (skill: Skill) => void
   updateSkillExperience: (id: string, experience: number) => void
+  /**
+   * Phase 14 — XP Curve Base
+   *
+   * Grant `amount` XP to the skill identified by `id`.  Applies the
+   * xpCurve formula, handles multi-level advancement, fires a level-up
+   * notification for each level gained, and calls the optional `onLevelUp`
+   * hook with the skill name and new level.
+   */
+  grantSkillXp: (
+    id: string,
+    amount: number,
+    onLevelUp?: (skillName: string, newLevel: number) => void,
+  ) => void
 
   // Settings mutators
   updateSettings: (patch: Partial<Settings>) => void
@@ -216,6 +231,41 @@ export const useGameStore = create<GameState>((set) => ({
           ...state.skills,
           skills: state.skills.skills.map((s) =>
             s.id === id ? { ...s, experience } : s,
+          ),
+        },
+      }
+    }),
+
+  grantSkillXp: (id, amount, onLevelUp) =>
+    set((state) => {
+      const target = state.skills.skills.find((s) => s.id === id)
+      if (!target) return state
+
+      const result = applyXp(target.level, target.experience, amount)
+
+      // Fire level-up notifications and the optional callback for each
+      // level gained.
+      if (result.levelsGained > 0) {
+        const { push } = useNotifications.getState()
+        for (let i = 1; i <= result.levelsGained; i++) {
+          const gainedLevel = target.level + i
+          push(`${target.name} reached level ${gainedLevel}!`, 'success')
+          onLevelUp?.(target.name, gainedLevel)
+        }
+      }
+
+      return {
+        skills: {
+          ...state.skills,
+          skills: state.skills.skills.map((s) =>
+            s.id === id
+              ? {
+                  ...s,
+                  level: result.level,
+                  experience: result.experience,
+                  experienceToNextLevel: result.experienceToNextLevel,
+                }
+              : s,
           ),
         },
       }
