@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { getItem } from '../data/items/itemRegistry'
 import type { ItemDefinition } from '../data/items/itemSchema'
+import { STARTER_SKILLS } from '../data/skills/starterSkills'
 
 // Re-export so consumers can get the full definition alongside store types.
 export type { ItemDefinition }
@@ -71,6 +72,8 @@ export interface Skill {
   level: number
   experience: number
   experienceToNextLevel: number
+  /** Optional flavour text shown in the skills panel tooltip. */
+  description?: string
 }
 
 export interface SkillsState {
@@ -78,7 +81,7 @@ export interface SkillsState {
 }
 
 const DEFAULT_SKILLS: SkillsState = {
-  skills: [],
+  skills: STARTER_SKILLS.map((s) => ({ ...s })),
 }
 
 // ── Settings ────────────────────────────────────────────────────────────────

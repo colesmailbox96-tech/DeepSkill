@@ -16,6 +16,7 @@ import { useGameStore } from './store/useGameStore'
 import { PlayerStrip } from './ui/hud/PlayerStrip'
 import { NotificationFeed } from './ui/hud/NotificationFeed'
 import { InventoryPanel } from './ui/hud/InventoryPanel'
+import { SkillsPanel } from './ui/hud/SkillsPanel'
 import './App.css'
 
 function App() {
@@ -233,8 +234,8 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 11: Item Data Schema — playing as <strong>{playerName}</strong>.
-          WASD to move, right-drag to orbit, scroll to zoom, E to interact, I to open inventory.
+          Phase 13: Skills Panel — playing as <strong>{playerName}</strong>.
+          WASD to move, right-drag to orbit, scroll to zoom, E to interact, I for inventory, K for skills.
         </p>
       </header>
       <div
@@ -250,6 +251,8 @@ function App() {
           <NotificationFeed />
           {/* Phase 10 — Inventory panel */}
           <InventoryPanel />
+          {/* Phase 13 — Skills panel */}
+          <SkillsPanel />
         </div>
         <div ref={promptRef} className="interaction-prompt" aria-live="polite" />
       </div>
