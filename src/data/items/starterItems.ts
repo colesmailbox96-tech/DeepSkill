@@ -119,6 +119,30 @@ export const STARTER_ITEMS: ItemDefinition[] = [
   },
 
   {
+    id: 'copper_ore',
+    name: 'Copper Ore',
+    type: 'material',
+    stackable: true,
+    value: 4,
+    icon: 'items/copper_ore.png',
+    description:
+      'A rough chunk of greenish-orange ore chipped from a surface copper vein. ' +
+      'Relatively soft and easy to smelt; the primary metal for beginner-tier tools and fittings.',
+  },
+
+  {
+    id: 'iron_ore',
+    name: 'Iron Ore',
+    type: 'material',
+    stackable: true,
+    value: 7,
+    icon: 'items/iron_ore.png',
+    description:
+      'A dense, rust-flecked ore broken from a deep iron seam. ' +
+      'Heavier and harder to work than copper, but yields stronger and more durable metal goods.',
+  },
+
+  {
     id: 'reed_fiber',
     name: 'Reed Fiber',
     type: 'material',

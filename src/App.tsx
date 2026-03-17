@@ -21,6 +21,15 @@ import {
   VARIANT_CONFIG,
 } from './engine/woodcutting'
 import type { TreeNode } from './engine/woodcutting'
+import {
+  buildRockNodes,
+  updateRockNodes,
+  depleteRock,
+  hasPickaxe,
+  getMiningLevel,
+  ROCK_VARIANT_CONFIG,
+} from './engine/mining'
+import type { RockNode } from './engine/mining'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
 import { getItem } from './data/items/itemRegistry'
@@ -29,6 +38,14 @@ import { NotificationFeed } from './ui/hud/NotificationFeed'
 import { InventoryPanel } from './ui/hud/InventoryPanel'
 import { SkillsPanel } from './ui/hud/SkillsPanel'
 import './App.css'
+
+// ── Gather-session types (used by both woodcutting and mining loops) ───────────
+
+/** Tracks an active woodcutting chop: which tree and elapsed time. */
+interface ChoppingSession { node: TreeNode; elapsed: number }
+
+/** Tracks an active mining attempt: which rock and elapsed time. */
+interface MiningSession { node: RockNode; elapsed: number }
 
 function App() {
   const sceneRef = useRef<HTMLDivElement>(null)
@@ -85,7 +102,6 @@ function App() {
 
     // Phase 15 — Woodcutting node system
     // Chopping session: tracks which tree is being cut and elapsed chop time.
-    interface ChoppingSession { node: TreeNode; elapsed: number }
     const choppingRef = { current: null as ChoppingSession | null }
 
     const onChopStart = (node: TreeNode) => {
@@ -109,6 +125,32 @@ function App() {
     }
 
     const treeNodes = buildTreeNodes(scene, interactables, onChopStart)
+
+    // Phase 17 — Mining node system
+    // Mining session: tracks which rock is being mined and elapsed mine time.
+    const miningRef = { current: null as MiningSession | null }
+
+    const onMineStart = (node: RockNode) => {
+      if (!hasPickaxe()) {
+        useNotifications.getState().push('You need a pickaxe to mine rocks.', 'info')
+        return
+      }
+      // Level requirement check
+      const cfg = ROCK_VARIANT_CONFIG[node.variant]
+      if (getMiningLevel() < cfg.levelReq) {
+        useNotifications.getState().push(
+          `You need level ${cfg.levelReq} Mining to mine this.`,
+          'info',
+        )
+        return
+      }
+      // Already mining this exact rock — do nothing.
+      if (miningRef.current?.node === node) return
+      miningRef.current = { node, elapsed: 0 }
+      useNotifications.getState().push(`You begin mining the ${cfg.label.toLowerCase()}…`, 'info')
+    }
+
+    const rockNodes = buildRockNodes(scene, interactables, onMineStart)
 
     // Precompute world-space bounding boxes for static collidables once so that
     // updatePlayer() doesn't have to call setFromObject() every frame.
@@ -242,6 +284,30 @@ function App() {
         }
       }
 
+      // Phase 17 — tick mining session and respawn timers
+      updateRockNodes(rockNodes, delta)
+      if (miningRef.current) {
+        const sess = miningRef.current
+        if (player.moveState === 'walk') {
+          // Moving cancels the active mine.
+          miningRef.current = null
+          useNotifications.getState().push('You stop mining.', 'info')
+        } else {
+          sess.elapsed += delta
+          if (sess.elapsed >= ROCK_VARIANT_CONFIG[sess.node.variant].mineDuration) {
+            miningRef.current = null
+            const cfg = ROCK_VARIANT_CONFIG[sess.node.variant]
+            const { addItem, grantSkillXp } = useGameStore.getState()
+            // Resolve display name from registry (single source of truth); id is the fallback.
+            const oreName = getItem(cfg.oreId)?.name ?? cfg.oreId
+            addItem({ id: cfg.oreId, name: oreName, quantity: 1 })
+            grantSkillXp('mining', cfg.xp)
+            useNotifications.getState().push(`You mine ${article(oreName)} ${oreName.toLowerCase()}.`, 'success')
+            depleteRock(sess.node)
+          }
+        }
+      }
+
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
       const tgt = interactionState.target
@@ -299,8 +365,8 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 16: Beginner Tree Variants — playing as <strong>{playerName}</strong>.
-          WASD to move, right-drag to orbit, scroll to zoom, E to interact (chop trees!), I for inventory, K for skills.
+          Phase 17: Mining Node System — playing as <strong>{playerName}</strong>.
+          WASD to move, right-drag to orbit, scroll to zoom, E to interact (chop trees, mine rocks!), I for inventory, K for skills.
         </p>
       </header>
       <div
