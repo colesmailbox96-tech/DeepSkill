@@ -8,8 +8,17 @@ export interface Player {
   speed: number
 }
 
-/** Half-width of the 24×24 ground plane, with a small inset so the player stays visible. */
-const HALF_BOUNDS = 11.5
+/**
+ * Safety-clamp half-width for the 40×40 Hushwood terrain.
+ * Boundary walls sit at ±19 (centre), half-thickness 0.2, so their inner face
+ * is at ±18.8.  With PLAYER_RADIUS 0.35 the AABB pushback stops the player
+ * centre at ±18.45.  This clamp (18.5) is a consistent last-resort fallback
+ * that agrees with the wall pushback and is never normally reached.
+ */
+const HALF_BOUNDS = 18.5
+
+/** Approximate horizontal radius of the player capsule (metres). */
+const PLAYER_RADIUS = 0.35
 
 // Reused each frame to avoid per-frame heap allocations.
 const _dir = new THREE.Vector3()
@@ -34,6 +43,8 @@ export function updatePlayer(
   delta: number,
   /** Camera yaw (radians). When provided, WASD moves relative to the camera. */
   cameraYaw = 0,
+  /** Static collidable bounding boxes – precomputed once, player is pushed out of each. */
+  collidables: THREE.Box3[] = [],
 ): void {
   _dir.set(0, 0, 0)
 
@@ -76,5 +87,26 @@ export function updatePlayer(
     player.mesh.rotation.y = angle
   } else {
     player.moveState = 'idle'
+  }
+
+  // AABB pushback — keep player outside all precomputed collidable bounding boxes.
+  for (const bbox of collidables) {
+    const ex = bbox.min.x - PLAYER_RADIUS
+    const EX = bbox.max.x + PLAYER_RADIUS
+    const ez = bbox.min.z - PLAYER_RADIUS
+    const EZ = bbox.max.z + PLAYER_RADIUS
+    const px = player.mesh.position.x
+    const pz = player.mesh.position.z
+    if (px > ex && px < EX && pz > ez && pz < EZ) {
+      const dL = px - ex
+      const dR = EX - px
+      const dF = pz - ez
+      const dB = EZ - pz
+      const m = Math.min(dL, dR, dF, dB)
+      if (m === dL) player.mesh.position.x = ex
+      else if (m === dR) player.mesh.position.x = EX
+      else if (m === dF) player.mesh.position.z = ez
+      else player.mesh.position.z = EZ
+    }
   }
 }
