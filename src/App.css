@@ -20,6 +20,7 @@ p {
 
 .scene-container {
   padding: 0 1.25rem 1.25rem;
+  position: relative;
 }
 
 .scene-container canvas {
@@ -28,4 +29,28 @@ p {
   display: block;
   border-radius: 0.75rem;
   border: 1px solid #363c44;
+}
+
+/* Phase 05 — interaction prompt overlay */
+.interaction-prompt {
+  position: absolute;
+  bottom: calc(1.25rem + 2.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.65);
+  color: #f0e8c0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.4rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(240, 232, 192, 0.25);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+}
+
+.interaction-prompt.visible {
+  opacity: 1;
 }

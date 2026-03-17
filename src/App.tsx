@@ -7,10 +7,14 @@ import {
   applyOrbitDrag,
   applyZoom,
 } from './engine/followCamera'
+import type { Interactable } from './engine/interactable'
+import { createInteractionState } from './engine/interactable'
+import { updateInteraction } from './engine/interaction'
 import './App.css'
 
 function App() {
   const sceneRef = useRef<HTMLDivElement>(null)
+  const promptRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const container = sceneRef.current
@@ -67,9 +71,66 @@ function App() {
     // Phase 04 — orbit camera state
     const camState = createCameraState()
 
+    // Phase 05 — interactable demo objects
+    const chest = new THREE.Mesh(
+      new THREE.BoxGeometry(0.7, 0.7, 0.7),
+      new THREE.MeshStandardMaterial({
+        color: 0xe8c44a,
+        roughness: 0.5,
+        emissive: new THREE.Color(0x000000),
+      }),
+    )
+    chest.position.set(5, 0.35, 0)
+    scene.add(chest)
+
+    const lever = new THREE.Mesh(
+      new THREE.BoxGeometry(0.4, 1.0, 0.4),
+      new THREE.MeshStandardMaterial({
+        color: 0xc04040,
+        roughness: 0.5,
+        emissive: new THREE.Color(0x000000),
+      }),
+    )
+    lever.position.set(-5, 0.5, 3)
+    scene.add(lever)
+
+    const interactables: Interactable[] = [
+      {
+        mesh: chest,
+        label: 'Wooden Chest',
+        interactRadius: 2.5,
+        onInteract: () => console.log('[Interact] Opened Wooden Chest'),
+      },
+      {
+        mesh: lever,
+        label: 'Gate Lever',
+        interactRadius: 2.0,
+        onInteract: () => console.log('[Interact] Pulled Gate Lever'),
+      },
+    ]
+
+    const interactionState = createInteractionState()
+
+    // Phase 05 — highlight material helper
+    let previousTarget: Interactable | null = null
+    const EMISSIVE_HOVER = new THREE.Color(0x886600)
+    const EMISSIVE_CLEAR = new THREE.Color(0x000000)
+
+    function applyHighlight(item: Interactable | null, color: THREE.Color) {
+      if (!item) return
+      const mesh = item.mesh as THREE.Mesh
+      const mat = mesh.material as THREE.MeshStandardMaterial
+      mat.emissive.copy(color)
+    }
+
     // Track which keys are currently held.
     const keys = new Set<string>()
-    const onKeyDown = (e: KeyboardEvent) => keys.add(e.code)
+    const onKeyDown = (e: KeyboardEvent) => {
+      keys.add(e.code)
+      if (e.code === 'KeyE' && interactionState.target) {
+        interactionState.target.onInteract()
+      }
+    }
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code)
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
@@ -136,6 +197,25 @@ function App() {
       const delta = clock.getDelta()
       updatePlayer(player, keys, delta, camState.theta)
       updateOrbitCamera(camera, player.mesh, camState, delta, collidables)
+
+      // Phase 05 — interaction targeting
+      updateInteraction(interactionState, player, interactables)
+      const tgt = interactionState.target
+      if (tgt !== previousTarget) {
+        applyHighlight(previousTarget, EMISSIVE_CLEAR)
+        applyHighlight(tgt, EMISSIVE_HOVER)
+        previousTarget = tgt
+        if (promptRef.current) {
+          if (tgt) {
+            promptRef.current.textContent = `[E]  ${tgt.label}`
+            promptRef.current.classList.add('visible')
+          } else {
+            promptRef.current.textContent = ''
+            promptRef.current.classList.remove('visible')
+          }
+        }
+      }
+
       renderer.render(scene, camera)
     }
     animate()
@@ -175,8 +255,8 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 04: orbit camera — right-drag to orbit, scroll to zoom, WASD to
-          move.
+          Phase 05: interaction targeting — WASD to move, right-drag to orbit,
+          scroll to zoom, E to interact when near an object.
         </p>
       </header>
       <div
@@ -185,7 +265,9 @@ function App() {
         role="region"
         aria-label="3D prototype world scene"
         aria-describedby="scene-description"
-      />
+      >
+        <div ref={promptRef} className="interaction-prompt" aria-live="polite" />
+      </div>
     </main>
   )
 }
