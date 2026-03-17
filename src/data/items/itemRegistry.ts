@@ -2,14 +2,14 @@
  * Phase 11 — Item Registry
  *
  * Central lookup for all ItemDefinitions.  Definitions are registered at
- * module load time; the registry is keyed by item id.
- *
- * Phase 12 will populate the full starter item set.  Two seed entries exist
- * here so that the two default inventory items already in the game store
- * resolve correctly right now.
+ * module load time; the registry is keyed by item id.  All item sets
+ * (Phase 11 seeds and the Phase 12 starter set) are registered here so
+ * any consumer of this module sees the full catalog without requiring
+ * additional imports at the entrypoint level.
  */
 
 import type { ItemDefinition } from './itemSchema'
+import { STARTER_ITEMS } from './starterItems'
 
 // ── Internal store ───────────────────────────────────────────────────────────
 
@@ -46,8 +46,6 @@ export function getAllItems(): ItemDefinition[] {
 }
 
 // ── Seed definitions — Phase 11 ─────────────────────────────────────────────
-// These two items are already placed in the default inventory (useGameStore).
-// Full starter set is added in Phase 12.
 
 registerItems([
   {
@@ -73,3 +71,7 @@ registerItems([
       'Brittle on its own, but bundles of them serve as tinder or fletching stock.',
   },
 ])
+
+// ── Starter item set — Phase 12 ──────────────────────────────────────────────
+
+registerItems(STARTER_ITEMS)
