@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
+import { createPlayer, updatePlayer } from './engine/player'
+import { updateFollowCamera } from './engine/followCamera'
 import './App.css'
 
 function App() {
@@ -54,11 +56,25 @@ function App() {
 
     scene.add(new THREE.GridHelper(24, 24, 0x7f8b99, 0x4b535d))
 
+    // Phase 03 — player controller
+    const player = createPlayer(scene)
+
+    // Track which keys are currently held.
+    const keys = new Set<string>()
+    const onKeyDown = (e: KeyboardEvent) => keys.add(e.code)
+    const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code)
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+
     window.addEventListener('resize', updateViewport)
 
+    const clock = new THREE.Clock()
     let animationFrame = 0
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
+      const delta = clock.getDelta()
+      updatePlayer(player, keys, delta)
+      updateFollowCamera(camera, player.mesh, delta)
       renderer.render(scene, camera)
     }
     animate()
@@ -66,6 +82,8 @@ function App() {
     return () => {
       cancelAnimationFrame(animationFrame)
       window.removeEventListener('resize', updateViewport)
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
       scene.traverse((object) => {
         const renderObject = object as THREE.Object3D & {
           geometry?: THREE.BufferGeometry
@@ -90,7 +108,7 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 02 rendering skeleton: camera, lights, loop, and test terrain.
+          Phase 03: player controller — move with WASD or arrow keys.
         </p>
       </header>
       <div
