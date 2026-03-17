@@ -32,6 +32,8 @@ export function updatePlayer(
   player: Player,
   keys: Set<string>,
   delta: number,
+  /** Camera yaw (radians). When provided, WASD moves relative to the camera. */
+  cameraYaw = 0,
 ): void {
   _dir.set(0, 0, 0)
 
@@ -44,7 +46,17 @@ export function updatePlayer(
     player.moveState = 'walk'
     _dir.normalize()
 
-    // Capture rotation angle from the unit-direction vector before scaling.
+    // Rotate the local-space direction into world space around the camera yaw.
+    // x_world =  x_local·cos(θ) + z_local·sin(θ)
+    // z_world = -x_local·sin(θ) + z_local·cos(θ)
+    const cos = Math.cos(cameraYaw)
+    const sin = Math.sin(cameraYaw)
+    const wx = _dir.x * cos + _dir.z * sin
+    const wz = -_dir.x * sin + _dir.z * cos
+    _dir.x = wx
+    _dir.z = wz
+
+    // Capture rotation angle from the world-space direction before scaling.
     const angle = Math.atan2(_dir.x, _dir.z)
 
     _dir.multiplyScalar(player.speed * delta)
