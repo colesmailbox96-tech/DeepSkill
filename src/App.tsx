@@ -10,11 +10,15 @@ import {
 import type { Interactable } from './engine/interactable'
 import { createInteractionState } from './engine/interactable'
 import { updateInteraction } from './engine/interaction'
+import { useGameStore } from './store/useGameStore'
 import './App.css'
 
 function App() {
   const sceneRef = useRef<HTMLDivElement>(null)
   const promptRef = useRef<HTMLDivElement>(null)
+
+  // Phase 06 — subscribe to player name from the global store
+  const playerName = useGameStore((s) => s.playerStats.name)
 
   useEffect(() => {
     const container = sceneRef.current
@@ -262,8 +266,8 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 05: interaction targeting — WASD to move, right-drag to orbit,
-          scroll to zoom, E to interact when near an object.
+          Phase 06: core state store — playing as <strong>{playerName}</strong>.
+          WASD to move, right-drag to orbit, scroll to zoom, E to interact.
         </p>
       </header>
       <div
