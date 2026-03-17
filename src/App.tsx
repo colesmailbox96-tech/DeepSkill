@@ -23,6 +23,7 @@ import {
 import type { TreeNode } from './engine/woodcutting'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
+import { getItem } from './data/items/itemRegistry'
 import { PlayerStrip } from './ui/hud/PlayerStrip'
 import { NotificationFeed } from './ui/hud/NotificationFeed'
 import { InventoryPanel } from './ui/hud/InventoryPanel'
@@ -231,9 +232,11 @@ function App() {
             choppingRef.current = null
             const cfg = VARIANT_CONFIG[sess.node.variant]
             const { addItem, grantSkillXp } = useGameStore.getState()
-            addItem({ id: cfg.logId, name: cfg.logName, quantity: 1 })
+            // Resolve display name from registry (single source of truth); id is the fallback.
+            const logName = getItem(cfg.logId)?.name ?? cfg.logId
+            addItem({ id: cfg.logId, name: logName, quantity: 1 })
             grantSkillXp('woodcutting', cfg.xp)
-            useNotifications.getState().push(`You cut ${article(cfg.logName)} ${cfg.logName.toLowerCase()}.`, 'success')
+            useNotifications.getState().push(`You cut ${article(logName)} ${logName.toLowerCase()}.`, 'success')
             fellTree(sess.node)
           }
         }

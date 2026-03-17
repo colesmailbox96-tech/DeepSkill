@@ -34,8 +34,6 @@ export interface VariantConfig {
   label: string
   /** Item ID granted on a successful chop. */
   logId: string
-  /** Display name for the log item (used as inventory name fallback). */
-  logName: string
   /** Seconds the player must continuously chop to yield one log. */
   chopDuration: number
   /** Woodcutting XP awarded per log cut. */
@@ -63,7 +61,6 @@ export const VARIANT_CONFIG: Readonly<Record<TreeVariant, VariantConfig>> = {
   sapling: {
     label: 'Ash Sapling',
     logId: 'ash_sapling_log',
-    logName: 'Ash Sapling Log',
     chopDuration: 2.0,
     xp: 15,
     levelReq: 1,
@@ -77,7 +74,6 @@ export const VARIANT_CONFIG: Readonly<Record<TreeVariant, VariantConfig>> = {
   ashwood: {
     label: 'Ashwood Tree',
     logId: 'ashwood_log',
-    logName: 'Ashwood Log',
     chopDuration: 3.0,
     xp: 25,
     levelReq: 1,
@@ -91,7 +87,6 @@ export const VARIANT_CONFIG: Readonly<Record<TreeVariant, VariantConfig>> = {
   ironbark: {
     label: 'Ironbark Youngling',
     logId: 'ironbark_log',
-    logName: 'Ironbark Log',
     chopDuration: 4.0,
     xp: 40,
     levelReq: 5,
