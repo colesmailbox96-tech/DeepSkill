@@ -11,6 +11,9 @@ export interface Player {
 /** Half-width of the 24×24 ground plane, with a small inset so the player stays visible. */
 const HALF_BOUNDS = 11.5
 
+// Reused each frame to avoid per-frame heap allocations.
+const _dir = new THREE.Vector3()
+
 export function createPlayer(scene: THREE.Scene): Player {
   const group = new THREE.Group()
 
@@ -30,29 +33,29 @@ export function updatePlayer(
   keys: Set<string>,
   delta: number,
 ): void {
-  const dir = new THREE.Vector3()
+  _dir.set(0, 0, 0)
 
-  if (keys.has('KeyW') || keys.has('ArrowUp')) dir.z -= 1
-  if (keys.has('KeyS') || keys.has('ArrowDown')) dir.z += 1
-  if (keys.has('KeyA') || keys.has('ArrowLeft')) dir.x -= 1
-  if (keys.has('KeyD') || keys.has('ArrowRight')) dir.x += 1
+  if (keys.has('KeyW') || keys.has('ArrowUp')) _dir.z -= 1
+  if (keys.has('KeyS') || keys.has('ArrowDown')) _dir.z += 1
+  if (keys.has('KeyA') || keys.has('ArrowLeft')) _dir.x -= 1
+  if (keys.has('KeyD') || keys.has('ArrowRight')) _dir.x += 1
 
-  if (dir.lengthSq() > 0) {
+  if (_dir.lengthSq() > 0) {
     player.moveState = 'walk'
-    dir.normalize()
+    _dir.normalize()
 
     // Capture rotation angle from the unit-direction vector before scaling.
-    const angle = Math.atan2(dir.x, dir.z)
+    const angle = Math.atan2(_dir.x, _dir.z)
 
-    dir.multiplyScalar(player.speed * delta)
+    _dir.multiplyScalar(player.speed * delta)
 
     player.mesh.position.x = THREE.MathUtils.clamp(
-      player.mesh.position.x + dir.x,
+      player.mesh.position.x + _dir.x,
       -HALF_BOUNDS,
       HALF_BOUNDS,
     )
     player.mesh.position.z = THREE.MathUtils.clamp(
-      player.mesh.position.z + dir.z,
+      player.mesh.position.z + _dir.z,
       -HALF_BOUNDS,
       HALF_BOUNDS,
     )
