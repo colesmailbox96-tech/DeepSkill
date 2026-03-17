@@ -1,0 +1,31 @@
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+header {
+  padding: 1rem 1.25rem 0.75rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+p {
+  margin: 0.3rem 0 0;
+  color: #9ca4b0;
+}
+
+.scene-container {
+  padding: 0 1.25rem 1.25rem;
+}
+
+.scene-container canvas {
+  width: 100%;
+  height: min(70vh, 600px);
+  display: block;
+  border-radius: 0.75rem;
+  border: 1px solid #363c44;
+}
