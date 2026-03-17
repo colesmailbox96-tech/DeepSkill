@@ -1,4 +1,9 @@
 import { create } from 'zustand'
+import { getItem } from '../data/items/itemRegistry'
+import type { ItemDefinition } from '../data/items/itemSchema'
+
+// Re-export so consumers can get the full definition alongside store types.
+export type { ItemDefinition }
 
 // ── Player Stats ────────────────────────────────────────────────────────────
 
@@ -26,6 +31,15 @@ const DEFAULT_PLAYER_STATS: PlayerStats = {
 
 // ── Inventory ───────────────────────────────────────────────────────────────
 
+/**
+ * A single stack in the player's inventory.
+ *
+ * Phase 11: the `id` field doubles as the ItemDefinition lookup key.
+ * Use `getItem(item.id)` (from itemRegistry) to obtain the full definition
+ * including type, value, icon, and metadata.  The `name` field is kept for
+ * backward-compatibility and is auto-populated from the registry when an item
+ * is added via addItem().
+ */
 export interface InventoryItem {
   id: string
   name: string
@@ -141,6 +155,11 @@ export const useGameStore = create<GameState>((set) => ({
       const qty = Math.floor(item.quantity)
       if (qty <= 0) return state
 
+      // Phase 11: auto-populate name from registry when available so callers
+      // don't have to duplicate display strings.
+      const def = getItem(item.id)
+      const resolvedName = def?.name ?? item.name
+
       const existing = state.inventory.slots.find((s) => s.id === item.id)
       if (existing) {
         return {
@@ -160,7 +179,7 @@ export const useGameStore = create<GameState>((set) => ({
       return {
         inventory: {
           ...state.inventory,
-          slots: [...state.inventory.slots, { ...item, quantity: qty }],
+          slots: [...state.inventory.slots, { ...item, name: resolvedName, quantity: qty }],
         },
       }
     }),

@@ -327,3 +327,25 @@ p {
   color: #9ca4b0;
 }
 
+.inv-tooltip__type {
+  font-size: 0.68rem;
+  color: #7ab8a0;
+  text-transform: capitalize;
+  font-style: italic;
+}
+
+.inv-tooltip__value {
+  font-size: 0.72rem;
+  color: #c8b870;
+}
+
+.inv-tooltip__desc {
+  font-size: 0.7rem;
+  color: #8a9298;
+  max-width: 180px;
+  line-height: 1.4;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.25rem;
+  margin-top: 0.1rem;
+}
+

@@ -233,7 +233,7 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 10: Inventory Foundation — playing as <strong>{playerName}</strong>.
+          Phase 11: Item Data Schema — playing as <strong>{playerName}</strong>.
           WASD to move, right-drag to orbit, scroll to zoom, E to interact, I to open inventory.
         </p>
       </header>
