@@ -1,10 +1,13 @@
 import { create } from 'zustand'
 import { getItem } from '../data/items/itemRegistry'
 import type { ItemDefinition } from '../data/items/itemSchema'
+import type { Skill } from '../data/skills/skillSchema'
 import { STARTER_SKILLS } from '../data/skills/starterSkills'
 
 // Re-export so consumers can get the full definition alongside store types.
 export type { ItemDefinition }
+// Re-export Skill so HUD components can import it from a single store entry-point.
+export type { Skill }
 
 // ── Player Stats ────────────────────────────────────────────────────────────
 
@@ -66,22 +69,12 @@ const DEFAULT_INVENTORY: InventoryState = {
 
 // ── Skills ──────────────────────────────────────────────────────────────────
 
-export interface Skill {
-  id: string
-  name: string
-  level: number
-  experience: number
-  experienceToNextLevel: number
-  /** Optional flavour text shown in the skills panel tooltip. */
-  description?: string
-}
-
 export interface SkillsState {
   skills: Skill[]
 }
 
 const DEFAULT_SKILLS: SkillsState = {
-  skills: STARTER_SKILLS.map((s) => ({ ...s })),
+  skills: STARTER_SKILLS,
 }
 
 // ── Settings ────────────────────────────────────────────────────────────────

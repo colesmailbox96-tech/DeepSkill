@@ -1,4 +1,4 @@
-import type { Skill } from '../../store/useGameStore'
+import type { Skill } from './skillSchema'
 
 /**
  * Phase 13 — Starter Skill Set

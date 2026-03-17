@@ -440,9 +440,16 @@ p {
   transition: background 0.12s, border-color 0.12s;
 }
 
-.skill-row:hover {
+.skill-row:hover,
+.skill-row:focus {
   background: rgba(255, 255, 255, 0.07);
   border-color: rgba(240, 232, 192, 0.2);
+  outline: none;
+}
+
+.skill-row:focus-visible {
+  border-color: rgba(110, 168, 216, 0.7);
+  box-shadow: 0 0 0 2px rgba(110, 168, 216, 0.3);
 }
 
 /* Name + level badge on one line */

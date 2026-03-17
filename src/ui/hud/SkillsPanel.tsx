@@ -102,7 +102,9 @@ export function SkillsPanel() {
               key={skill.id}
               className="skill-row"
               role="listitem"
+              tabIndex={0}
               aria-label={`${skill.name}, level ${skill.level}`}
+              aria-describedby={skill.description ? `skill-desc-${skill.id}` : undefined}
               onMouseEnter={(e) =>
                 setTooltip({ skill, x: e.clientX, y: e.clientY })
               }
@@ -115,6 +117,11 @@ export function SkillsPanel() {
                 })
               }}
               onMouseLeave={() => setTooltip(null)}
+              onFocus={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect()
+                setTooltip({ skill, x: rect.right + 8, y: rect.top })
+              }}
+              onBlur={() => setTooltip(null)}
             >
               {/* Skill name + level badge */}
               <div className="skill-row__info">
@@ -149,6 +156,7 @@ export function SkillsPanel() {
       {/* ── Hover tooltip ─────────────────────────────────────────────────── */}
       {tooltip && tooltip.skill.description && (
         <div
+          id={`skill-desc-${tooltip.skill.id}`}
           className="skills-tooltip"
           style={{ left: tooltip.x + 14, top: tooltip.y + 14 }}
           role="tooltip"
