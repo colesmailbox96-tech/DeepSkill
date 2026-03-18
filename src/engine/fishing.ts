@@ -229,6 +229,30 @@ export function buildFishingNodes(
 }
 
 /**
+ * Spawn fishing spots at arbitrary world positions and register their interactables.
+ * Used by secondary zones (e.g. Gloamwater Bank) that define their own placement data.
+ *
+ * @param scene         Three.js scene to add meshes to.
+ * @param interactables Mutable array; each spot's interactable is appended.
+ * @param placements    Custom (x, z) + variant pairs.
+ * @param onCastStart   Callback invoked when the player presses E on a ready spot.
+ * @param idPrefix      Prefix for node IDs so they don't collide with other sets.
+ */
+export function buildFishingNodesAt(
+  scene: THREE.Scene,
+  interactables: Interactable[],
+  placements: ReadonlyArray<{ pos: [number, number]; variant: FishVariant }>,
+  onCastStart: (node: FishingNode) => void,
+  idPrefix: string,
+): FishingNode[] {
+  return placements.map(({ pos: [x, z], variant }, idx) => {
+    const node = buildOneFishSpot(scene, `${idPrefix}_${idx}`, x, z, variant, onCastStart)
+    interactables.push(node.interactable)
+    return node
+  })
+}
+
+/**
  * Per-frame update: tick respawn timers and restore spot visuals when ready.
  * Call once per animation frame.
  */

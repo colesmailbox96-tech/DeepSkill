@@ -196,6 +196,8 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
   // Four thin collision volumes at the settlement perimeter (±19 units).
   // The north wall is split into two halves with a 6-unit opening at x = 0
   // so the player can walk north along the road toward Redwake Quarry.
+  // The east wall is split into two halves with a 6-unit opening at z = 0
+  // so the player can walk east along the road toward Gloamwater Bank.
   const BOUND = 19
   const boundWalls = [
     // North wall — left half (x = −20 → −3)
@@ -203,7 +205,10 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
     // North wall — right half (x = +3 → +20)
     _addWall(scene, 17, 6, 0.4,  11.5, 3, -BOUND, matBound),
     _addWall(scene, 40, 6, 0.4,  0,      3,  BOUND, matBound), // south
-    _addWall(scene, 0.4, 6, 40,  BOUND,  3,  0,     matBound), // east
+    // East wall — north half (z = −20 → −3)
+    _addWall(scene, 0.4, 6, 17,  BOUND, 3, -11.5, matBound),
+    // East wall — south half (z = +3 → +20)
+    _addWall(scene, 0.4, 6, 17,  BOUND, 3,  11.5, matBound),
     _addWall(scene, 0.4, 6, 40, -BOUND,  3,  0,     matBound), // west
   ]
   collidables.push(...boundWalls)
