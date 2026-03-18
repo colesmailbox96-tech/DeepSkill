@@ -30,6 +30,7 @@ import {
   ROCK_VARIANT_CONFIG,
 } from './engine/mining'
 import type { RockNode } from './engine/mining'
+import { buildQuarry } from './engine/quarry'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
 import { getItem } from './data/items/itemRegistry'
@@ -152,6 +153,13 @@ function App() {
 
     const rockNodes = buildRockNodes(scene, interactables, onMineStart)
 
+    // Phase 18 — Quarry Region Slice
+    // Build Redwake Quarry zone and merge its results into the shared collections.
+    const quarry = buildQuarry(scene, interactables, onMineStart)
+    collidables.push(...quarry.collidables)
+    const allRockNodes = [...rockNodes, ...quarry.rockNodes]
+    const allNpcs      = [...npcs, ...quarry.npcs]
+
     // Precompute world-space bounding boxes for static collidables once so that
     // updatePlayer() doesn't have to call setFromObject() every frame.
     const collidableBoxes: THREE.Box3[] = collidables.map((m) =>
@@ -258,7 +266,7 @@ function App() {
       updateOrbitCamera(camera, player.mesh, camState, delta, collidables)
 
       // Phase 08 — advance NPC ambient idle sway
-      updateNpcs(npcs, delta)
+      updateNpcs(allNpcs, delta)
 
       // Phase 15 — tick woodcutting session and respawn timers
       updateTreeNodes(treeNodes, delta)
@@ -285,7 +293,7 @@ function App() {
       }
 
       // Phase 17 — tick mining session and respawn timers
-      updateRockNodes(rockNodes, delta)
+      updateRockNodes(allRockNodes, delta)
       if (miningRef.current) {
         const sess = miningRef.current
         if (player.moveState === 'walk') {
@@ -365,8 +373,9 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 17: Mining Node System — playing as <strong>{playerName}</strong>.
-          WASD to move, right-drag to orbit, scroll to zoom, E to interact (chop trees, mine rocks!), I for inventory, K for skills.
+          Phase 18: Quarry Region Slice — playing as <strong>{playerName}</strong>.
+          WASD to move, right-drag to orbit, scroll to zoom, E to interact (chop trees, mine rocks!),
+          I for inventory, K for skills. Walk north through Hushwood to reach Redwake Quarry!
         </p>
       </header>
       <div
