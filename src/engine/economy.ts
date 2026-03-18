@@ -25,6 +25,8 @@
  * Sell price = Math.max(1, Math.floor(value / 3))  — one-third, min 1 Mark.
  */
 
+import type { ItemType } from '../data/items/itemSchema'
+
 // ── Currency identity ─────────────────────────────────────────────────────────
 
 /** Singular display name for one unit of currency. */
@@ -37,7 +39,7 @@ export const CURRENCY_PLURAL = 'Marks'
 export const CURRENCY_SYMBOL = '⬡'
 
 /**
- * Formats a coin amount for display.
+ * Formats a Mark amount for display.
  * Examples:  formatCurrency(1) → "⬡ 1 Mark"
  *            formatCurrency(5) → "⬡ 5 Marks"
  */
@@ -58,7 +60,7 @@ export type TransactionResult =
  * with a human-readable message the UI can surface directly.
  *
  * @param price           Buy price in Marks.
- * @param playerCoins     Current player coin balance.
+ * @param playerBalance   Current player Mark balance.
  * @param inventorySlots  Number of slots currently occupied.
  * @param maxSlots        Maximum inventory capacity.
  * @param alreadyHasItem  True when the item already exists in a slot
@@ -66,7 +68,7 @@ export type TransactionResult =
  */
 export function validatePurchase(
   price: number,
-  playerCoins: number,
+  playerBalance: number,
   inventorySlots: number,
   maxSlots: number,
   alreadyHasItem: boolean,
@@ -77,10 +79,10 @@ export function validatePurchase(
   if (!alreadyHasItem && inventorySlots >= maxSlots) {
     return { ok: false, reason: 'Your inventory is full.' }
   }
-  if (playerCoins < price) {
+  if (playerBalance < price) {
     return {
       ok: false,
-      reason: `Not enough ${CURRENCY_PLURAL}. Need ${price}, have ${playerCoins}.`,
+      reason: `Not enough ${CURRENCY_PLURAL}. Need ${price}, have ${playerBalance}.`,
     }
   }
   return { ok: true }
@@ -96,7 +98,7 @@ export function validatePurchase(
  * @param hasItemInInventory True when the item is confirmed in inventory.
  */
 export function validateSale(
-  itemType: string,
+  itemType: ItemType,
   hasItemInInventory: boolean,
 ): TransactionResult {
   if (itemType === 'quest') {

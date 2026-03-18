@@ -22,6 +22,7 @@ import {
   getBuyPrice,
   getSellPrice,
   CURRENCY_SYMBOL,
+  CURRENCY_NAME,
   CURRENCY_PLURAL,
   validatePurchase,
   validateSale,
@@ -103,7 +104,7 @@ export function ShopPanel() {
     if (!spendCoins(price)) return  // defensive — should never fire
     addItem({ id: itemId, name: def.name, quantity: 1 })
     useNotifications.getState().push(
-      `Bought ${def.name} for ${price} ${price === 1 ? 'Mark' : CURRENCY_PLURAL}.`,
+      `Bought ${def.name} for ${price} ${price === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}.`,
       'success',
     )
   }
@@ -127,7 +128,7 @@ export function ShopPanel() {
     removeItem(itemId, 1)
     addCoins(price)
     useNotifications.getState().push(
-      `Sold ${def.name} for ${price} ${price === 1 ? 'Mark' : CURRENCY_PLURAL}.`,
+      `Sold ${def.name} for ${price} ${price === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}.`,
       'success',
     )
   }
@@ -144,9 +145,9 @@ export function ShopPanel() {
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="shop-panel__header">
         <span className="shop-panel__title">Tomas's Shop</span>
-        <span className="shop-panel__coins" aria-label={`${coins} Marks`}>
+        <span className="shop-panel__coins" aria-label={`${coins} ${coins === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}`}>
           <span className="shop-panel__coin-icon">{CURRENCY_SYMBOL}</span>
-          {coins} <span className="shop-panel__coin-label">Marks</span>
+          {coins} <span className="shop-panel__coin-label">{coins === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}</span>
         </span>
         <button
           className="shop-panel__close"
@@ -195,7 +196,7 @@ export function ShopPanel() {
                   className="shop-row__btn"
                   onClick={() => handleBuy(id)}
                   disabled={!canAfford}
-                  aria-label={`Buy ${def.name} for ${price} ${price === 1 ? 'Mark' : CURRENCY_PLURAL}`}
+                  aria-label={`Buy ${def.name} for ${price} ${price === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}`}
                 >
                   Buy
                 </button>
@@ -231,7 +232,7 @@ export function ShopPanel() {
                   <button
                     className="shop-row__btn"
                     onClick={() => handleSell(item.id)}
-                    aria-label={`Sell ${item.name} for ${price} ${price === 1 ? 'Mark' : CURRENCY_PLURAL}`}
+                    aria-label={`Sell ${item.name} for ${price} ${price === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}`}
                   >
                     Sell
                   </button>
