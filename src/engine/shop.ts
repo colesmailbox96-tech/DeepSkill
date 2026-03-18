@@ -1,12 +1,23 @@
 /**
  * Phase 23 — Starter Shop / Trade Interface
+ * Phase 24 — Currency and Economy Base (re-exports economy helpers)
  *
  * Defines the vendor stock for Tomas (Travelling Merchant) and the
  * buy/sell pricing rules used by the ShopPanel UI.
  *
- * Buy  price = item.value (full registry value).
- * Sell price = Math.max(1, Math.floor(item.value / 3))  — one-third, min 1.
+ * Buy  price = item.value (full registry value in Marks).
+ * Sell price = Math.max(1, Math.floor(item.value / 3))  — one-third, min 1 Mark.
  */
+
+// Re-export Phase 24 economy constants so shop consumers need only one import.
+export {
+  CURRENCY_NAME,
+  CURRENCY_PLURAL,
+  CURRENCY_SYMBOL,
+  formatCurrency,
+  validatePurchase,
+  validateSale,
+} from './economy'
 
 // ── Vendor stock entry ────────────────────────────────────────────────────────
 

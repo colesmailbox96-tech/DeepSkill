@@ -22,7 +22,7 @@ export interface PlayerStats {
   maxHealth: number
   stamina: number
   maxStamina: number
-  /** Phase 23 — numeric coin currency. */
+  /** Phase 23 — numeric coin currency. Phase 24 — named Marks (⬡). */
   coins: number
 }
 
@@ -112,10 +112,10 @@ export interface GameState {
   setPlayerName: (name: string) => void
   setHealth: (health: number) => void
   setStamina: (stamina: number) => void
-  /** Phase 23 — add coins (positive amount only). */
+  /** Phase 23/24 — add Marks (positive amount only). */
   addCoins: (amount: number) => void
   /**
-   * Phase 23 — deduct coins.
+   * Phase 23/24 — deduct Marks.
    * Returns true on success, false when the player has insufficient funds.
    */
   spendCoins: (amount: number) => boolean

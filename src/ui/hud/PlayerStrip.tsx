@@ -1,4 +1,5 @@
 import { useGameStore } from '../../store/useGameStore'
+import { CURRENCY_SYMBOL, CURRENCY_NAME, CURRENCY_PLURAL } from '../../engine/economy'
 
 /**
  * Player name + level strip with health and stamina bars.
@@ -52,9 +53,10 @@ export function PlayerStrip() {
         </span>
       </div>
 
-      <div className="hud-coins" aria-label={`${coins} coins`}>
-        <span className="hud-coins__icon">⬡</span>
+      <div className="hud-coins" aria-label={`${coins} ${coins === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}`}>
+        <span className="hud-coins__icon">{CURRENCY_SYMBOL}</span>
         <span className="hud-coins__value">{coins}</span>
+        <span className="hud-coins__label">{coins === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}</span>
       </div>
     </div>
   )

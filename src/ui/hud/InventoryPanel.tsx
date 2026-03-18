@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGameStore, type InventoryItem } from '../../store/useGameStore'
 import { getItem } from '../../data/items/itemRegistry'
+import { CURRENCY_NAME, CURRENCY_PLURAL } from '../../engine/economy'
 
 interface TooltipState {
   item: InventoryItem
@@ -156,7 +157,7 @@ export function InventoryPanel() {
           <span className="inv-tooltip__qty">Qty: {tooltip.item.quantity}</span>
           {tooltipDef && (
             <span className="inv-tooltip__value">
-              Value: {tooltipDef.value} {tooltipDef.value === 1 ? 'coin' : 'coins'}
+              Value: {tooltipDef.value} {tooltipDef.value === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}
             </span>
           )}
           {tooltipDef?.description && (
