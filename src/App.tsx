@@ -66,6 +66,7 @@ import { InventoryPanel } from './ui/hud/InventoryPanel'
 import { SkillsPanel } from './ui/hud/SkillsPanel'
 import { ShopPanel } from './ui/hud/ShopPanel'
 import { LedgerPanel } from './ui/hud/LedgerPanel'
+import { EquipmentPanel } from './ui/hud/EquipmentPanel'
 import { MobileControls } from './ui/hud/MobileControls'
 import './App.css'
 
@@ -656,7 +657,7 @@ function App() {
         <p id="scene-description" className="app-header__desc">
           Playing as <strong>{playerName}</strong>.
           WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact.
-          I = inventory, K = skills, B = shop, L = ledger hall.
+          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment.
         </p>
       </header>
       <div
@@ -678,6 +679,8 @@ function App() {
           <ShopPanel />
           {/* Phase 25 — Ledger Hall / Storage panel */}
           <LedgerPanel />
+          {/* Phase 26 — Equipment panel */}
+          <EquipmentPanel />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}

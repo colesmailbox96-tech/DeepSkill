@@ -31,6 +31,7 @@ export function InventoryPanel() {
 
   const slots = useGameStore((s) => s.inventory.slots)
   const maxSlots = useGameStore((s) => s.inventory.maxSlots)
+  const equipItem = useGameStore((s) => s.equipItem)
 
   /** Close the panel and clear any lingering tooltip state. */
   const handleClose = useCallback(() => {
@@ -162,6 +163,17 @@ export function InventoryPanel() {
           )}
           {tooltipDef?.description && (
             <span className="inv-tooltip__desc">{tooltipDef.description}</span>
+          )}
+          {tooltipDef?.type === 'equipment' && (
+            <button
+              className="inv-tooltip__equip"
+              onClick={() => {
+                equipItem(tooltip.item.id)
+                setTooltip(null)
+              }}
+            >
+              Equip
+            </button>
           )}
         </div>
       )}
