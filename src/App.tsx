@@ -64,6 +64,7 @@ import { PlayerStrip } from './ui/hud/PlayerStrip'
 import { NotificationFeed } from './ui/hud/NotificationFeed'
 import { InventoryPanel } from './ui/hud/InventoryPanel'
 import { SkillsPanel } from './ui/hud/SkillsPanel'
+import { ShopPanel } from './ui/hud/ShopPanel'
 import { MobileControls } from './ui/hud/MobileControls'
 import './App.css'
 
@@ -654,7 +655,7 @@ function App() {
         <p id="scene-description" className="app-header__desc">
           Playing as <strong>{playerName}</strong>.
           WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact.
-          I = inventory, K = skills.
+          I = inventory, K = skills, B = shop.
         </p>
       </header>
       <div
@@ -672,6 +673,8 @@ function App() {
           <InventoryPanel />
           {/* Phase 14 — Skills panel */}
           <SkillsPanel />
+          {/* Phase 23 — Shop panel */}
+          <ShopPanel />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}
