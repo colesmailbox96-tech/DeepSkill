@@ -45,6 +45,8 @@ export function updatePlayer(
   cameraYaw = 0,
   /** Static collidable bounding boxes – precomputed once, player is pushed out of each. */
   collidables: THREE.Box3[] = [],
+  /** Optional virtual joystick direction from mobile controls (values in [-1, 1]). */
+  joystick?: { x: number; z: number },
 ): void {
   _dir.set(0, 0, 0)
 
@@ -52,6 +54,12 @@ export function updatePlayer(
   if (keys.has('KeyS') || keys.has('ArrowDown')) _dir.z += 1
   if (keys.has('KeyA') || keys.has('ArrowLeft')) _dir.x -= 1
   if (keys.has('KeyD') || keys.has('ArrowRight')) _dir.x += 1
+
+  // Virtual joystick input from mobile controls.
+  if (joystick && (Math.abs(joystick.x) > 0.15 || Math.abs(joystick.z) > 0.15)) {
+    _dir.x += joystick.x
+    _dir.z += joystick.z
+  }
 
   if (_dir.lengthSq() > 0) {
     player.moveState = 'walk'
