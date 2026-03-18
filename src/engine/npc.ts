@@ -45,6 +45,8 @@ interface NpcDef {
   color: number
   /** Ambient oscillation phase offset (radians). */
   phase: number
+  /** When true, interacting with this NPC opens the shop instead of a chat message. */
+  opensShop?: true
 }
 
 const NPC_DEFS: NpcDef[] = [
@@ -70,7 +72,7 @@ const NPC_DEFS: NpcDef[] = [
 
   // 6. Tomas — Travelling Merchant; just east of the storage shed
   //    Shed centre: (−10, 3) → east face at x = −7.5; Tomas faces west.
-  { name: 'Tomas (Merchant)',        x: -6.5, z:  1.5, idleAngle: -Math.PI / 2,  color: 0x7a5a30, phase: 1.9 },
+  { name: 'Tomas (Merchant)',        x: -6.5, z:  1.5, idleAngle: -Math.PI / 2,  color: 0x7a5a30, phase: 1.9, opensShop: true },
 ]
 
 // ─── Ambient oscillation constants ───────────────────────────────────────────
@@ -101,7 +103,7 @@ export function buildNpcs(
       mesh: npc.mesh,
       label: def.name,
       interactRadius: 2.2,
-      onInteract: def.name.startsWith('Tomas')
+      onInteract: def.opensShop
         ? () => useShopStore.getState().openShop()
         : () => useNotifications.getState().push(`Spoke with ${def.name}`, 'info'),
     })

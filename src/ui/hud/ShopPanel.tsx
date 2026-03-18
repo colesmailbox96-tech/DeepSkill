@@ -100,6 +100,9 @@ export function ShopPanel() {
       useNotifications.getState().push(`${def.name} cannot be sold.`, 'info')
       return
     }
+    // Atomic check: confirm the item is still in inventory before crediting coins.
+    const { inventory } = useGameStore.getState()
+    if (!inventory.slots.some((s) => s.id === itemId && s.quantity > 0)) return
     const price = getSellPrice(def.value)
     removeItem(itemId, 1)
     addCoins(price)
@@ -182,32 +185,37 @@ export function ShopPanel() {
       {/* ── Sell list ─────────────────────────────────────────────────────── */}
       {tab === 'sell' && (
         <ul className="shop-panel__list" role="list">
-          {slots.length === 0 && (
-            <li className="shop-row shop-row--empty">Nothing to sell.</li>
-          )}
-          {slots.map((item) => {
-            const def = getItem(item.id)
-            if (!def || def.type === 'quest') return null
-            const price = getSellPrice(def.value)
-            return (
-              <li key={item.id} className="shop-row" role="listitem">
-                <span className="shop-row__name">
-                  {item.name}
-                  {item.quantity > 1 && (
-                    <span className="shop-row__qty"> ×{item.quantity}</span>
-                  )}
-                </span>
-                <span className="shop-row__price">⬡ {price}</span>
-                <button
-                  className="shop-row__btn"
-                  onClick={() => handleSell(item.id)}
-                  aria-label={`Sell ${item.name} for ${price} coins`}
-                >
-                  Sell
-                </button>
-              </li>
-            )
-          })}
+          {(() => {
+            const sellableSlots = slots.filter((item) => {
+              const def = getItem(item.id)
+              return def && def.type !== 'quest'
+            })
+            if (sellableSlots.length === 0) {
+              return <li className="shop-row shop-row--empty">Nothing to sell.</li>
+            }
+            return sellableSlots.map((item) => {
+              const def = getItem(item.id)!
+              const price = getSellPrice(def.value)
+              return (
+                <li key={item.id} className="shop-row" role="listitem">
+                  <span className="shop-row__name">
+                    {item.name}
+                    {item.quantity > 1 && (
+                      <span className="shop-row__qty"> ×{item.quantity}</span>
+                    )}
+                  </span>
+                  <span className="shop-row__price">⬡ {price}</span>
+                  <button
+                    className="shop-row__btn"
+                    onClick={() => handleSell(item.id)}
+                    aria-label={`Sell ${item.name} for ${price} coins`}
+                  >
+                    Sell
+                  </button>
+                </li>
+              )
+            })
+          })()}
         </ul>
       )}
     </div>

@@ -50,7 +50,6 @@ export const VENDOR_STOCK: VendorItem[] = [
 /**
  * Returns the buy price for an item.
  * Uses the item's registry `value` directly.
- * Returns 0 when the item is not in the vendor catalog.
  */
 export function getBuyPrice(itemValue: number): number {
   return itemValue
