@@ -190,7 +190,6 @@ function App() {
     const quarry = buildQuarry(scene, interactables, onMineStart)
     collidables.push(...quarry.collidables)
     const allRockNodes = [...rockNodes, ...quarry.rockNodes]
-    const quarryNpcs   = [...npcs, ...quarry.npcs]
 
     // Phase 19 — Fishing Node System
     // Fishing session: tracks which spot is being fished and elapsed cast time.
@@ -249,7 +248,7 @@ function App() {
     const shoreline = buildShoreline(scene, interactables, onCastStart, onForageStart)
     collidables.push(...shoreline.collidables)
     const allFishingNodes = [...fishingNodes, ...shoreline.fishingNodes]
-    const allNpcs         = [...quarryNpcs, ...shoreline.npcs]
+    const allNpcs         = [...npcs, ...quarry.npcs, ...shoreline.npcs]
     const allForageNodes  = [...forageNodes, ...shoreline.forageNodes]
 
     // Precompute world-space bounding boxes for static collidables once so that

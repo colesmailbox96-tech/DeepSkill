@@ -62,8 +62,6 @@ const matBound   = new THREE.MeshStandardMaterial({ visible: false })
 export interface ShorelineResult {
   /** Collidable meshes — appended to the global collidables array in App.tsx. */
   collidables: THREE.Mesh[]
-  /** Interactable descriptors — appended to the global interactables array. */
-  interactables: Interactable[]
   /** Live fishing nodes at the bank for per-frame respawn ticking. */
   fishingNodes: FishingNode[]
   /** Live forage nodes (reed clumps) for per-frame respawn ticking. */
@@ -281,7 +279,7 @@ export function buildShoreline(
     'shore_forage',
   )
 
-  return { collidables, interactables, fishingNodes, forageNodes, npcs }
+  return { collidables, fishingNodes, forageNodes, npcs }
 }
 
 

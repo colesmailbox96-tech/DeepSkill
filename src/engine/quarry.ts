@@ -52,8 +52,6 @@ const matBound = new THREE.MeshStandardMaterial({ visible: false })
 export interface QuarryResult {
   /** Collidable meshes — appended to the global collidables array in App.tsx. */
   collidables: THREE.Mesh[]
-  /** Interactable descriptors — appended to the global interactables array. */
-  interactables: Interactable[]
   /** Live quarry rock nodes for per-frame respawn ticking. */
   rockNodes: RockNode[]
   /** Live NPC objects for per-frame ambient sway (the foreman). */
@@ -261,7 +259,7 @@ export function buildQuarry(
     'quarry_rock',
   )
 
-  return { collidables, interactables, rockNodes, npcs }
+  return { collidables, rockNodes, npcs }
 }
 
 // ─── Private helpers ──────────────────────────────────────────────────────────

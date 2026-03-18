@@ -104,9 +104,11 @@ export interface ForageNode {
 /**
  * Forage node positions for the Hushwood starting area.
  *
- * Positions avoid overlapping with known tree and rock placements:
- *   Trees : [-15,-13], [2,-16], [16,-6], [15,12], [-14,12], [-15,0]
- *   Rocks : [8,9], [-3,-15], [13,7], [17,-3], [-8,15], [5,17]
+ * Positions avoid overlapping with known tree, rock, and building placements:
+ *   Trees     : [-15,-13], [2,-16], [16,-6], [15,12], [-14,12], [-15,0]
+ *   Rocks     : [8,9], [-3,-15], [13,7], [17,-3], [-8,15], [5,17]
+ *   Buildings : Hall(0,-10,8×5), Forge(10,3,5×5), Shed(-10,3,5×4),
+ *               Inn(0,14,7×6), GuardHut(-11,-9,3×3)
  */
 const FORAGE_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: ForageVariant }> = [
   // marsh herbs near the damp margins of the settlement
@@ -114,9 +116,9 @@ const FORAGE_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: ForageV
   { pos: [ -6,   7], variant: 'marsh_herb' }, // west-south clearing
   { pos: [ 11,  14], variant: 'marsh_herb' }, // south-east fringe
 
-  // resin globs seeping from ironbark stands
-  { pos: [-11,  -9], variant: 'resin_glob' }, // north-west ironbark grove
-  { pos: [ -2,  13], variant: 'resin_glob' }, // south-centre stand
+  // resin globs seeping from ironbark bark near the ironbark stands
+  { pos: [-14, -15], variant: 'resin_glob' }, // north-west ironbark grove
+  { pos: [ 13,  10], variant: 'resin_glob' }, // south-east ironbark stand
 ]
 
 // ─── Visual builders ──────────────────────────────────────────────────────────

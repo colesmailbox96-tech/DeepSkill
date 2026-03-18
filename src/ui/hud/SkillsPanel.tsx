@@ -95,7 +95,7 @@ export function SkillsPanel() {
                   (skill.experience / skill.experienceToNextLevel) * 100,
                   100,
                 )
-              : 0
+              : 100 // max level — fill the bar completely
 
           return (
             <li
