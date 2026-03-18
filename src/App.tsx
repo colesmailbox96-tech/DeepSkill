@@ -40,6 +40,12 @@ import {
   FISH_SPOT_CONFIG,
 } from './engine/fishing'
 import type { FishingNode } from './engine/fishing'
+import {
+  buildShoreline,
+  updateReedNodes,
+  depleteReedNode,
+} from './engine/shoreline'
+import type { ReedNode } from './engine/shoreline'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
 import { getItem } from './data/items/itemRegistry'
@@ -206,6 +212,15 @@ function App() {
     }
 
     const fishingNodes = buildFishingNodes(scene, interactables, onCastStart)
+
+    // Phase 20 — Shoreline Region Slice
+    // Build Gloamwater Bank zone and merge its results into the shared collections.
+    const onReedGather = (node: ReedNode) => depleteReedNode(node)
+
+    const shoreline = buildShoreline(scene, interactables, onCastStart, onReedGather)
+    collidables.push(...shoreline.collidables)
+    const allFishingNodes = [...fishingNodes, ...shoreline.fishingNodes]
+    const allNpcs2        = [...allNpcs, ...shoreline.npcs]
 
     // Precompute world-space bounding boxes for static collidables once so that
     // updatePlayer() doesn't have to call setFromObject() every frame.
@@ -383,7 +398,7 @@ function App() {
       updateOrbitCamera(camera, player.mesh, camState, delta, collidables)
 
       // Phase 08 — advance NPC ambient idle sway
-      updateNpcs(allNpcs, delta)
+      updateNpcs(allNpcs2, delta)
 
       // Phase 15 — tick woodcutting session and respawn timers
       updateTreeNodes(treeNodes, delta)
@@ -434,7 +449,7 @@ function App() {
       }
 
       // Phase 19 — tick fishing session and respawn timers
-      updateFishingNodes(fishingNodes, delta)
+      updateFishingNodes(allFishingNodes, delta)
       if (fishingRef.current) {
         const sess = fishingRef.current
         if (player.moveState === 'walk') {
@@ -456,6 +471,9 @@ function App() {
           }
         }
       }
+
+      // Phase 20 — tick reed node respawn timers
+      updateReedNodes(shoreline.reedNodes, delta)
 
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
