@@ -51,6 +51,12 @@ import {
   FORAGE_VARIANT_CONFIG,
 } from './engine/foraging'
 import type { ForageNode } from './engine/foraging'
+import {
+  buildCookStation,
+  findCookableIngredient,
+  getCookingLevel,
+} from './engine/cooking'
+import type { CookRecipeConfig } from './engine/cooking'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
 import { getItem } from './data/items/itemRegistry'
@@ -71,6 +77,9 @@ interface MiningSession { node: RockNode; elapsed: number }
 
 /** Tracks an active fishing cast: which spot and elapsed cast time. */
 interface FishingSession { node: FishingNode; elapsed: number }
+
+/** Tracks an active hearthcraft cook: which recipe and elapsed cook time. */
+interface CookingSession { recipe: CookRecipeConfig; elapsed: number }
 
 function App() {
   const sceneRef = useRef<HTMLDivElement>(null)
@@ -255,6 +264,38 @@ function App() {
     const allFishingNodes = [...fishingNodes, ...shoreline.fishingNodes]
     const allNpcs         = [...npcs, ...quarry.npcs, ...shoreline.npcs]
     const allForageNodes  = [...forageNodes, ...shoreline.forageNodes]
+
+    // Phase 22 — Cooking System Foundation
+    // Cooking session: tracks which recipe is being cooked and elapsed cook time.
+    const cookingRef = { current: null as CookingSession | null }
+
+    const onCookStart = () => {
+      // Already cooking — do nothing.
+      if (cookingRef.current) return
+
+      const { inventory } = useGameStore.getState()
+      const recipe = findCookableIngredient(inventory.slots)
+
+      if (!recipe) {
+        useNotifications.getState().push('You have nothing to cook here.', 'info')
+        return
+      }
+      if (getCookingLevel() < recipe.levelReq) {
+        useNotifications.getState().push(
+          `You need level ${recipe.levelReq} Hearthcraft to cook this.`,
+          'info',
+        )
+        return
+      }
+
+      cookingRef.current = { recipe, elapsed: 0 }
+      useNotifications.getState().push(
+        `You begin cooking the ${recipe.label.toLowerCase()} over the hearthfire…`,
+        'info',
+      )
+    }
+
+    buildCookStation(scene, interactables, onCookStart)
 
     // Precompute world-space bounding boxes for static collidables once so that
     // updatePlayer() doesn't have to call setFromObject() every frame.
@@ -508,6 +549,45 @@ function App() {
 
       // Phase 21 — tick forage node respawn timers
       updateForageNodes(allForageNodes, delta)
+
+      // Phase 22 — tick cooking session
+      if (cookingRef.current) {
+        const sess = cookingRef.current
+        if (player.moveState === 'walk') {
+          // Moving away from the fire cancels the cook.
+          cookingRef.current = null
+          useNotifications.getState().push('You step away from the fire.', 'info')
+        } else {
+          sess.elapsed += delta
+          if (sess.elapsed >= sess.recipe.cookDuration) {
+            cookingRef.current = null
+            const { inventory, addItem, removeItem, grantSkillXp } = useGameStore.getState()
+            const cookedName = getItem(sess.recipe.cookedId)?.name ?? sess.recipe.cookedId
+            // Guard: ensure the cooked item can be received before consuming
+            // the raw ingredient.  The cooked slot will either stack onto an
+            // existing entry or occupy a new slot.  After removing one raw
+            // item the freed slot is only available when that stack hits zero,
+            // so we calculate available capacity conservatively.
+            const hasExistingCooked = inventory.slots.some((s) => s.id === sess.recipe.cookedId)
+            const rawStackSize = inventory.slots.find((s) => s.id === sess.recipe.rawId)?.quantity ?? 0
+            const slotsAfterRemove = rawStackSize === 1
+              ? inventory.slots.length - 1   // raw stack will disappear
+              : inventory.slots.length
+            const canAdd = hasExistingCooked || slotsAfterRemove < inventory.maxSlots
+            if (!canAdd) {
+              useNotifications.getState().push('Your inventory is full — make room before cooking.', 'info')
+              return
+            }
+            removeItem(sess.recipe.rawId, 1)
+            addItem({ id: sess.recipe.cookedId, name: cookedName, quantity: 1 })
+            grantSkillXp('hearthcraft', sess.recipe.xp)
+            useNotifications.getState().push(
+              `You cook the ${sess.recipe.label.toLowerCase()}. ${cookedName} ready!`,
+              'success',
+            )
+          }
+        }
+      }
 
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)

@@ -227,4 +227,58 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'A deep-dwelling fish with translucent fins and faint bioluminescent spots along its flank. ' +
       'Rarely surfaces in ordinary ponds — a sign of hidden thermal currents below.',
   },
+
+  // ── Phase 22 — Cooked food (Hearthcraft outputs) ───────────────────────
+
+  {
+    id: 'cooked_minnow',
+    name: 'Cooked Minnow',
+    type: 'consumable',
+    stackable: true,
+    value: 4,
+    icon: 'items/cooked_minnow.png',
+    description:
+      'A tiny minnow crisped over hearthfire coals. ' +
+      'A modest mouthful that takes the edge off minor scrapes and bruises.',
+    consumableMeta: { healsHp: 6, effect: 'Restores 6 HP' },
+  },
+
+  {
+    id: 'cooked_perch',
+    name: 'Cooked Perch',
+    type: 'consumable',
+    stackable: true,
+    value: 10,
+    icon: 'items/cooked_perch.png',
+    description:
+      'A perch fillet cooked through over an open fire, skin lightly charred. ' +
+      'Fills the stomach and closes shallow wounds with steady warmth.',
+    consumableMeta: { healsHp: 14, effect: 'Restores 14 HP' },
+  },
+
+  {
+    id: 'cooked_gloomfin',
+    name: 'Cooked Gloomfin',
+    type: 'consumable',
+    stackable: true,
+    value: 22,
+    icon: 'items/cooked_gloomfin.png',
+    description:
+      'A gloomfin steak rendered over hearthfire until its bioluminescent oils seep into the flesh. ' +
+      'Rich and restorative — prized by scouts venturing deep into the Reach.',
+    consumableMeta: { healsHp: 25, effect: 'Restores 25 HP' },
+  },
+
+  {
+    id: 'cooked_cinderhare',
+    name: 'Cooked Cinderhare',
+    type: 'consumable',
+    stackable: true,
+    value: 8,
+    icon: 'items/cooked_cinderhare.png',
+    description:
+      'A haunched loin of Cinderhare, properly fire-roasted until the sinew falls loose. ' +
+      'Far more restorative than the raw meat and carries a faint smoky warmth.',
+    consumableMeta: { healsHp: 18, effect: 'Restores 18 HP' },
+  },
 ]
