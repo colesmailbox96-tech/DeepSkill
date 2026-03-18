@@ -282,7 +282,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     consumableMeta: { healsHp: 18, effect: 'Restores 18 HP' },
   },
 
-  // ── Phase 26 — Starter Equipment (Foundation Gear) ─────────────────────────
+  // ── Phase 26 / 27 — Starter Equipment ────────────────────────────────────
 
   {
     id: 'patchplate_buckler',
@@ -334,5 +334,22 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'Knee-high boots of oiled leather with a wide, flat sole. ' +
       'Designed for waterlogged terrain — keeps the feet dry and the footing sure.',
     equipMeta: { slot: 'feet', defenceBonus: 1 },
+  },
+
+  {
+    id: 'ironspine_spear',
+    name: 'Ironspine Spear',
+    type: 'equipment',
+    stackable: false,
+    value: 28,
+    icon: 'items/ironspine_spear.png',
+    description:
+      'A slender iron-tipped spear with a ridged spine running the length of the shaft. ' +
+      'Favoured by frontier scouts for its reach — demands steady footing and trail-hardened arms.',
+    equipMeta: {
+      slot: 'mainHand',
+      attackBonus: 6,
+      requirements: { wayfaring: 2 },
+    },
   },
 ]

@@ -377,6 +377,77 @@ p {
   color: #f8e080;
 }
 
+/* Phase 27 — locked equip button (requirements not met) */
+.inv-tooltip__equip--locked {
+  background: rgba(60, 20, 20, 0.85);
+  border-color: rgba(180, 60, 60, 0.4);
+  color: #c07070;
+  cursor: not-allowed;
+}
+
+.inv-tooltip__equip--locked:hover {
+  background: rgba(80, 30, 30, 0.95);
+  color: #d88080;
+}
+
+/* Phase 27 — equipment stat lines in tooltip */
+.inv-tooltip__equip-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.2rem;
+  margin-top: 0.1rem;
+}
+
+.inv-tooltip__stat {
+  font-size: 0.72rem;
+}
+
+.inv-tooltip__stat--atk {
+  color: #e8a060;
+}
+
+.inv-tooltip__stat--def {
+  color: #70a8d8;
+}
+
+.inv-tooltip__slot {
+  font-size: 0.68rem;
+  color: #7ab8a0;
+  font-style: italic;
+  text-transform: capitalize;
+}
+
+/* Phase 27 — requirement lines in tooltip */
+.inv-tooltip__reqs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.2rem;
+  margin-top: 0.1rem;
+}
+
+.inv-tooltip__reqs-label {
+  font-size: 0.68rem;
+  color: #9ca4b0;
+  font-weight: 700;
+}
+
+.inv-tooltip__req {
+  font-size: 0.7rem;
+  padding-left: 0.4rem;
+}
+
+.inv-tooltip__req--met {
+  color: #70c880;
+}
+
+.inv-tooltip__req--unmet {
+  color: #d86060;
+}
+
 /* ── Phase 13 — Skills Panel Foundation ─────────────────────────────────── */
 
 /**

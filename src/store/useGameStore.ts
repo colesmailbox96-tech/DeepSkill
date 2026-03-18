@@ -75,11 +75,13 @@ const DEFAULT_INVENTORY: InventoryState = {
     { id: 'camp_rations', name: 'Camp Rations', quantity: 3 },
     { id: 'rough_stone', name: 'Rough Stone', quantity: 5 },
     { id: 'ash_twig', name: 'Ash Twig', quantity: 2 },
-    // Phase 26 — starter equipment pieces so the equipment system is immediately testable.
+    // Phase 26 / 27 — starter equipment pieces so the equipment system is immediately testable.
     { id: 'patchplate_buckler', name: 'Patchplate Buckler', quantity: 1 },
     { id: 'roughhide_vest', name: 'Roughhide Vest', quantity: 1 },
     { id: 'ashwood_club', name: 'Ashwood Club', quantity: 1 },
     { id: 'marsh_boots', name: 'Marsh Boots', quantity: 1 },
+    // Phase 27 — Ironspine Spear (requires Wayfaring 2 to equip).
+    { id: 'ironspine_spear', name: 'Ironspine Spear', quantity: 1 },
   ],
   maxSlots: 20,
 }

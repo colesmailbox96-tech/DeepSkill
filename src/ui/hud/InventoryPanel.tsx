@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGameStore, type InventoryItem } from '../../store/useGameStore'
 import { getItem } from '../../data/items/itemRegistry'
 import { CURRENCY_NAME, CURRENCY_PLURAL } from '../../engine/economy'
+import { meetsEquipRequirements } from '../../engine/equipment'
 import { useNotifications } from '../../store/useNotifications'
 
 interface TooltipState {
@@ -33,6 +34,7 @@ export function InventoryPanel() {
   const slots = useGameStore((s) => s.inventory.slots)
   const maxSlots = useGameStore((s) => s.inventory.maxSlots)
   const equipItem = useGameStore((s) => s.equipItem)
+  const skills = useGameStore((s) => s.skills.skills)
 
   /** Close the panel and clear any lingering tooltip state. */
   const handleClose = useCallback(() => {
@@ -82,6 +84,17 @@ export function InventoryPanel() {
 
   // Resolve the hovered item's definition once, outside JSX, to avoid an IIFE.
   const tooltipDef = tooltip ? getItem(tooltip.item.id) : null
+
+  // Build a skill-level map for requirement checking (equipment items only).
+  const skillMap: Partial<Record<string, number>> = {}
+  for (const sk of skills) {
+    skillMap[sk.id] = sk.level
+  }
+  // True when all equip requirements for the tooltip item are satisfied.
+  const tooltipReqsMet =
+    tooltipDef?.type === 'equipment' && tooltipDef.equipMeta
+      ? meetsEquipRequirements(tooltipDef, skillMap)
+      : true
 
   return (
     <div
@@ -162,25 +175,64 @@ export function InventoryPanel() {
               Value: {tooltipDef.value} {tooltipDef.value === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}
             </span>
           )}
+          {/* Phase 27 — Equipment stat bonuses */}
+          {tooltipDef?.equipMeta && (
+            <div className="inv-tooltip__equip-stats">
+              {(tooltipDef.equipMeta.attackBonus ?? 0) !== 0 && (
+                <span className="inv-tooltip__stat inv-tooltip__stat--atk">
+                  ⚔ Attack <strong>+{tooltipDef.equipMeta.attackBonus}</strong>
+                </span>
+              )}
+              {(tooltipDef.equipMeta.defenceBonus ?? 0) !== 0 && (
+                <span className="inv-tooltip__stat inv-tooltip__stat--def">
+                  🛡 Defence <strong>+{tooltipDef.equipMeta.defenceBonus}</strong>
+                </span>
+              )}
+              <span className="inv-tooltip__slot">
+                Slot: {tooltipDef.equipMeta.slot}
+              </span>
+            </div>
+          )}
+          {/* Phase 27 — Skill requirements */}
+          {tooltipDef?.equipMeta?.requirements &&
+            Object.keys(tooltipDef.equipMeta.requirements).length > 0 && (
+              <div className="inv-tooltip__reqs">
+                <span className="inv-tooltip__reqs-label">Requires:</span>
+                {Object.entries(tooltipDef.equipMeta.requirements).map(([skillId, minLvl]) => {
+                  const playerLvl = skillMap[skillId] ?? 0
+                  const met = playerLvl >= (minLvl ?? 0)
+                  return (
+                    <span
+                      key={skillId}
+                      className={`inv-tooltip__req${met ? ' inv-tooltip__req--met' : ' inv-tooltip__req--unmet'}`}
+                    >
+                      {skillId.charAt(0).toUpperCase() + skillId.slice(1)} {minLvl}
+                      {met ? ' ✓' : ` (${playerLvl}/${minLvl})`}
+                    </span>
+                  )
+                })}
+              </div>
+            )}
           {tooltipDef?.description && (
             <span className="inv-tooltip__desc">{tooltipDef.description}</span>
           )}
           {tooltipDef?.type === 'equipment' && (
             <button
-              className="inv-tooltip__equip"
+              className={`inv-tooltip__equip${tooltipReqsMet ? '' : ' inv-tooltip__equip--locked'}`}
               onClick={() => {
                 const equipped = equipItem(tooltip.item.id)
                 if (equipped) {
                   setTooltip(null)
                 } else {
-                  useNotifications.getState().push(
-                    `Cannot equip ${tooltipDef?.name ?? tooltip.item.id}.`,
-                    'info',
-                  )
+                  const name = tooltipDef?.name ?? tooltip.item.id
+                  const msg = tooltipReqsMet
+                    ? `Cannot equip ${name}.`
+                    : `Requirements not met for ${name}.`
+                  useNotifications.getState().push(msg, 'info')
                 }
               }}
             >
-              Equip
+              {tooltipReqsMet ? 'Equip' : 'Requirements not met'}
             </button>
           )}
         </div>
