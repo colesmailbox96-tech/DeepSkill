@@ -7,7 +7,7 @@ import { getItem } from '../../data/items/itemRegistry'
  * Phase 26 — Equipment Panel
  *
  * Displays all equipment slots in a paper-doll list.  Occupied slots show
- * the equipped item name; clicking an occupied slot unequips the item.
+ * the equipped item name and a "Remove" button that unequips the item.
  * Also displays the derived attack and defence bonuses from all gear.
  *
  * Toggled with the Q key.  Close via ✕, pressing Q again, or Escape.
@@ -59,7 +59,7 @@ export function EquipmentPanel() {
       tabIndex={-1}
       role="dialog"
       aria-label="Equipment"
-      aria-modal="true"
+      aria-modal="false"
     >
       {/* Header */}
       <div className="equip-panel__header">

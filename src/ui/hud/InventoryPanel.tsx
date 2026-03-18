@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGameStore, type InventoryItem } from '../../store/useGameStore'
 import { getItem } from '../../data/items/itemRegistry'
 import { CURRENCY_NAME, CURRENCY_PLURAL } from '../../engine/economy'
+import { useNotifications } from '../../store/useNotifications'
 
 interface TooltipState {
   item: InventoryItem
@@ -168,8 +169,15 @@ export function InventoryPanel() {
             <button
               className="inv-tooltip__equip"
               onClick={() => {
-                equipItem(tooltip.item.id)
-                setTooltip(null)
+                const equipped = equipItem(tooltip.item.id)
+                if (equipped) {
+                  setTooltip(null)
+                } else {
+                  useNotifications.getState().push(
+                    `Cannot equip ${tooltipDef?.name ?? tooltip.item.id}.`,
+                    'info',
+                  )
+                }
               }}
             >
               Equip

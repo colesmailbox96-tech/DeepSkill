@@ -117,8 +117,8 @@ const DEFAULT_SETTINGS: Settings = {
 /**
  * Phase 26 — Equipment State
  *
- * Maps each EquipSlot to the InventoryItem currently occupying it, or null
- * when the slot is empty.
+ * Maps each EquipSlot to the InventoryItem currently occupying it.
+ * Absent keys (undefined) indicate an empty slot.
  */
 export type EquipmentState = Partial<Record<EquipSlot, InventoryItem>>
 
@@ -422,8 +422,16 @@ export const useGameStore = create<GameState>((set, get) => ({
     const equipped = state.equipment[slot]
     if (!equipped) return
 
-    // Return the item to inventory.
+    // Check capacity before returning to inventory — only stack if item
+    // already exists, otherwise a free slot is required.
     const existing = state.inventory.slots.find((s) => s.id === equipped.id)
+    if (!existing && state.inventory.slots.length >= state.inventory.maxSlots) {
+      const { push } = useNotifications.getState()
+      push('Inventory is full — cannot unequip.', 'info')
+      return
+    }
+
+    // Return the item to inventory.
     const updatedSlots = existing
       ? state.inventory.slots.map((s) =>
           s.id === equipped.id ? { ...s, quantity: s.quantity + 1 } : s,
