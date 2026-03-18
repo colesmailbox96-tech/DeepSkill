@@ -2,6 +2,7 @@ import { useGameStore } from '../../store/useGameStore'
 
 /**
  * Player name + level strip with health and stamina bars.
+ * Phase 23: also shows coin balance.
  * Reads live values from the global game store.
  */
 export function PlayerStrip() {
@@ -11,6 +12,7 @@ export function PlayerStrip() {
   const maxHealth = useGameStore((s) => s.playerStats.maxHealth)
   const stamina = useGameStore((s) => s.playerStats.stamina)
   const maxStamina = useGameStore((s) => s.playerStats.maxStamina)
+  const coins = useGameStore((s) => s.playerStats.coins)
 
   const healthPct = maxHealth > 0 ? (health / maxHealth) * 100 : 0
   const staminaPct = maxStamina > 0 ? (stamina / maxStamina) * 100 : 0
@@ -48,6 +50,11 @@ export function PlayerStrip() {
         <span className="hud-bar__label">
           {stamina} / {maxStamina}
         </span>
+      </div>
+
+      <div className="hud-coins" aria-label={`${coins} coins`}>
+        <span className="hud-coins__icon">⬡</span>
+        <span className="hud-coins__value">{coins}</span>
       </div>
     </div>
   )

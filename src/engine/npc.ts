@@ -16,6 +16,7 @@
 import * as THREE from 'three'
 import type { Interactable } from './interactable'
 import { useNotifications } from '../store/useNotifications'
+import { useShopStore } from '../store/useShopStore'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -100,7 +101,9 @@ export function buildNpcs(
       mesh: npc.mesh,
       label: def.name,
       interactRadius: 2.2,
-      onInteract: () => useNotifications.getState().push(`Spoke with ${def.name}`, 'info'),
+      onInteract: def.name.startsWith('Tomas')
+        ? () => useShopStore.getState().openShop()
+        : () => useNotifications.getState().push(`Spoke with ${def.name}`, 'info'),
     })
   }
 

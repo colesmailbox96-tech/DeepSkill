@@ -547,6 +547,217 @@ p {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   Phase 23 — Shop / Trade Panel
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Shop panel uses the same positioning / pointer-events conventions as the
+ * inventory and skills panels (sits inside .hud-overlay, re-enables pointer
+ * events for itself).
+ */
+.shop-panel {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(320px, calc(100vw - 1.5rem));
+  background: rgba(14, 18, 22, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.55rem;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.75);
+  max-height: min(420px, 55vh);
+  outline: none;
+}
+
+.shop-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.shop-panel__title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #f0e8c0;
+  flex: 1;
+}
+
+.shop-panel__coins {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #f0d060;
+}
+
+.shop-panel__coin-icon {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
+.shop-panel__close {
+  background: none;
+  border: none;
+  color: #6e7880;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.1rem 0.25rem;
+  border-radius: 0.2rem;
+  line-height: 1;
+  transition: color 0.12s;
+}
+
+.shop-panel__close:hover {
+  color: #f0e8c0;
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+
+.shop-panel__tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.shop-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #6e7880;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.45rem 0;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: color 0.12s, border-bottom-color 0.12s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.shop-tab:hover {
+  color: #c8d0d8;
+}
+
+.shop-tab--active {
+  color: #f0e8c0;
+  border-bottom-color: #f0d060;
+}
+
+/* ── Item list ───────────────────────────────────────────────────────────── */
+
+.shop-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.shop-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.38rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.1s;
+}
+
+.shop-row:last-child {
+  border-bottom: none;
+}
+
+.shop-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.shop-row--empty {
+  color: #4e5860;
+  font-size: 0.8rem;
+  justify-content: center;
+  border-bottom: none;
+}
+
+.shop-row__name {
+  flex: 1;
+  font-size: 0.8rem;
+  color: #c8d0d8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shop-row__qty {
+  color: #6e7880;
+  font-size: 0.75rem;
+}
+
+.shop-row__price {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #f0d060;
+  white-space: nowrap;
+}
+
+.shop-row__price--insufficient {
+  color: #c0392b;
+}
+
+.shop-row__btn {
+  background: rgba(30, 60, 90, 0.85);
+  border: 1px solid rgba(110, 168, 216, 0.35);
+  color: #a8c8e8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+
+.shop-row__btn:hover:not(:disabled) {
+  background: rgba(40, 90, 140, 0.95);
+  color: #d0e8f8;
+}
+
+.shop-row__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── HUD coin display (PlayerStrip addition) ─────────────────────────────── */
+
+.hud-coins {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.15rem;
+}
+
+.hud-coins__icon {
+  font-size: 0.7rem;
+  color: #f0d060;
+  opacity: 0.9;
+}
+
+.hud-coins__value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #f0d060;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
    Mobile / touch layout
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -624,6 +835,14 @@ p {
     left: 0.5rem;
     width: min(220px, calc(100vw - 1rem));
     max-height: min(50vh, 320px);
+  }
+
+  .shop-panel {
+    bottom: 8rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(280px, calc(100vw - 1rem));
+    max-height: min(55vh, 360px);
   }
 
   /* Notification feed: narrower on small screens */
@@ -796,6 +1015,10 @@ p {
     .skills-panel {
       bottom: calc(8rem + env(safe-area-inset-bottom));
       left: calc(0.5rem + env(safe-area-inset-left));
+    }
+
+    .shop-panel {
+      bottom: calc(8rem + env(safe-area-inset-bottom));
     }
 
     .interaction-prompt {

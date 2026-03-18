@@ -22,6 +22,8 @@ export interface PlayerStats {
   maxHealth: number
   stamina: number
   maxStamina: number
+  /** Phase 23 — numeric coin currency. */
+  coins: number
 }
 
 const DEFAULT_PLAYER_STATS: PlayerStats = {
@@ -33,6 +35,7 @@ const DEFAULT_PLAYER_STATS: PlayerStats = {
   maxHealth: 100,
   stamina: 50,
   maxStamina: 50,
+  coins: 50,
 }
 
 // ── Inventory ───────────────────────────────────────────────────────────────
@@ -109,6 +112,13 @@ export interface GameState {
   setPlayerName: (name: string) => void
   setHealth: (health: number) => void
   setStamina: (stamina: number) => void
+  /** Phase 23 — add coins (positive amount only). */
+  addCoins: (amount: number) => void
+  /**
+   * Phase 23 — deduct coins.
+   * Returns true on success, false when the player has insufficient funds.
+   */
+  spendCoins: (amount: number) => boolean
 
   // Inventory mutators
   addItem: (item: InventoryItem) => void
@@ -135,7 +145,7 @@ export interface GameState {
   updateSettings: (patch: Partial<Settings>) => void
 }
 
-export const useGameStore = create<GameState>((set) => ({
+export const useGameStore = create<GameState>((set, get) => ({
   playerStats: structuredClone(DEFAULT_PLAYER_STATS),
   inventory: structuredClone(DEFAULT_INVENTORY),
   skills: structuredClone(DEFAULT_SKILLS),
@@ -162,6 +172,22 @@ export const useGameStore = create<GameState>((set) => ({
         stamina: Math.max(0, Math.min(stamina, state.playerStats.maxStamina)),
       },
     })),
+
+  addCoins: (amount) =>
+    set((state) => {
+      const n = Math.floor(amount)
+      if (n <= 0) return state
+      return { playerStats: { ...state.playerStats, coins: state.playerStats.coins + n } }
+    }),
+
+  spendCoins: (amount) => {
+    const n = Math.floor(amount)
+    if (n <= 0) return false
+    const current = get().playerStats.coins
+    if (current < n) return false
+    set((state) => ({ playerStats: { ...state.playerStats, coins: state.playerStats.coins - n } }))
+    return true
+  },
 
   // ── Inventory mutators ───────────────────────────────────────────────────
   addItem: (item) =>
