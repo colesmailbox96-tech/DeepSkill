@@ -31,6 +31,15 @@ import {
 } from './engine/mining'
 import type { RockNode } from './engine/mining'
 import { buildQuarry } from './engine/quarry'
+import {
+  buildFishingNodes,
+  updateFishingNodes,
+  depleteFishSpot,
+  hasRod,
+  getFishingLevel,
+  FISH_SPOT_CONFIG,
+} from './engine/fishing'
+import type { FishingNode } from './engine/fishing'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
 import { getItem } from './data/items/itemRegistry'
@@ -47,6 +56,9 @@ interface ChoppingSession { node: TreeNode; elapsed: number }
 
 /** Tracks an active mining attempt: which rock and elapsed time. */
 interface MiningSession { node: RockNode; elapsed: number }
+
+/** Tracks an active fishing cast: which spot and elapsed cast time. */
+interface FishingSession { node: FishingNode; elapsed: number }
 
 function App() {
   const sceneRef = useRef<HTMLDivElement>(null)
@@ -159,6 +171,32 @@ function App() {
     collidables.push(...quarry.collidables)
     const allRockNodes = [...rockNodes, ...quarry.rockNodes]
     const allNpcs      = [...npcs, ...quarry.npcs]
+
+    // Phase 19 — Fishing Node System
+    // Fishing session: tracks which spot is being fished and elapsed cast time.
+    const fishingRef = { current: null as FishingSession | null }
+
+    const onCastStart = (node: FishingNode) => {
+      if (!hasRod()) {
+        useNotifications.getState().push('You need a fishing rod to fish here.', 'info')
+        return
+      }
+      // Level requirement check
+      const cfg = FISH_SPOT_CONFIG[node.variant]
+      if (getFishingLevel() < cfg.levelReq) {
+        useNotifications.getState().push(
+          `You need level ${cfg.levelReq} Fishing to fish here.`,
+          'info',
+        )
+        return
+      }
+      // Already casting at this exact spot — do nothing.
+      if (fishingRef.current?.node === node) return
+      fishingRef.current = { node, elapsed: 0 }
+      useNotifications.getState().push(`You cast your line at the ${cfg.label.toLowerCase()}…`, 'info')
+    }
+
+    const fishingNodes = buildFishingNodes(scene, interactables, onCastStart)
 
     // Precompute world-space bounding boxes for static collidables once so that
     // updatePlayer() doesn't have to call setFromObject() every frame.
@@ -316,6 +354,30 @@ function App() {
         }
       }
 
+      // Phase 19 — tick fishing session and respawn timers
+      updateFishingNodes(fishingNodes, delta)
+      if (fishingRef.current) {
+        const sess = fishingRef.current
+        if (player.moveState === 'walk') {
+          // Moving cancels the active cast.
+          fishingRef.current = null
+          useNotifications.getState().push('You reel in your line.', 'info')
+        } else {
+          sess.elapsed += delta
+          if (sess.elapsed >= FISH_SPOT_CONFIG[sess.node.variant].castDuration) {
+            fishingRef.current = null
+            const cfg = FISH_SPOT_CONFIG[sess.node.variant]
+            const { addItem, grantSkillXp } = useGameStore.getState()
+            // Resolve display name from registry (single source of truth); id is the fallback.
+            const fishName = getItem(cfg.fishId)?.name ?? cfg.fishId
+            addItem({ id: cfg.fishId, name: fishName, quantity: 1 })
+            grantSkillXp('fishing', cfg.xp)
+            useNotifications.getState().push(`You catch ${article(fishName)} ${fishName.toLowerCase()}!`, 'success')
+            depleteFishSpot(sess.node)
+          }
+        }
+      }
+
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
       const tgt = interactionState.target
@@ -373,9 +435,9 @@ function App() {
       <header>
         <h1>Veilmarch Prototype</h1>
         <p id="scene-description">
-          Phase 18: Quarry Region Slice — playing as <strong>{playerName}</strong>.
-          WASD to move, right-drag to orbit, scroll to zoom, E to interact (chop trees, mine rocks!),
-          I for inventory, K for skills. Walk north through Hushwood to reach Redwake Quarry!
+          Phase 19: Fishing Node System — playing as <strong>{playerName}</strong>.
+          WASD to move, right-drag to orbit, scroll to zoom, E to interact (chop trees, mine rocks, fish!),
+          I for inventory, K for skills. Walk east to the pond to fish, or north to Redwake Quarry!
         </p>
       </header>
       <div
