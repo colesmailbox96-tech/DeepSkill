@@ -222,7 +222,7 @@ export function buildShoreline(
   fireRing.rotation.x = -Math.PI / 2
   fireRing.position.set(47, 0.12, -6)
   scene.add(fireRing)
-  // Fire stones (three rough dodecahedra around the ring)
+  // Fire stones (four rough dodecahedra around the ring)
   const matFireStone = new THREE.MeshStandardMaterial({ color: 0x8e8680, roughness: 0.88 })
   for (let i = 0; i < 4; i++) {
     const angle = (i / 4) * Math.PI * 2
@@ -345,6 +345,10 @@ function _buildOneReedNode(
   scene.add(cluster)
 
   // Cluster of thin reed stalks
+  // Clone materials once per cluster so emissive highlighting works per-interactable
+  // while avoiding redundant allocations across the individual stalk meshes.
+  const clusterReedMat = matReed.clone()
+  const clusterHeadMat = matReedHead.clone()
   const stalkOffsets: Array<[number, number, number]> = [
     [ 0.0, 0,  0.0],
     [ 0.2, 0,  0.3],
@@ -356,14 +360,14 @@ function _buildOneReedNode(
     const height = 1.1 + Math.random() * 0.4
     const stalk = new THREE.Mesh(
       new THREE.CylinderGeometry(0.03, 0.05, height, 5),
-      matReed.clone(),
+      clusterReedMat,
     )
     stalk.position.set(ox, height / 2, oz)
     stalk.rotation.z = (Math.random() - 0.5) * 0.18
     cluster.add(stalk)
 
     // Cattail head at the tip of each stalk
-    const head = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.22, 7), matReedHead.clone())
+    const head = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.22, 7), clusterHeadMat)
     head.position.set(ox, height + 0.1, oz)
     cluster.add(head)
   }
