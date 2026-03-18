@@ -18,6 +18,7 @@ import type { Interactable } from './interactable'
 import type { Npc } from './npc'
 import { buildNpcs } from './npc'
 import { useNotifications } from '../store/useNotifications'
+import { useLedgerStore } from '../store/useLedgerStore'
 
 // ─── Shared materials ────────────────────────────────────────────────────────
 
@@ -149,7 +150,7 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
     mesh: storage,
     label: 'Storage Shed',
     interactRadius: 3.0,
-    onInteract: () => useNotifications.getState().push('Opened Storage Shed', 'info'),
+    onInteract: () => useLedgerStore.getState().openLedger(),
   })
 
   // 4. Inn / Tavern — south
