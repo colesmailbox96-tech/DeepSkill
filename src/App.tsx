@@ -47,6 +47,7 @@ import { PlayerStrip } from './ui/hud/PlayerStrip'
 import { NotificationFeed } from './ui/hud/NotificationFeed'
 import { InventoryPanel } from './ui/hud/InventoryPanel'
 import { SkillsPanel } from './ui/hud/SkillsPanel'
+import { MobileControls } from './ui/hud/MobileControls'
 import './App.css'
 
 // ── Gather-session types (used by both woodcutting and mining loops) ───────────
@@ -66,6 +67,14 @@ function App() {
 
   // Phase 06 — subscribe to player name from the global store
   const playerName = useGameStore((s) => s.playerStats.name)
+
+  // ── Mobile controls shared state ────────────────────────────────────────
+  /** Joystick direction written by MobileControls, read by the game loop. */
+  const mobileJoystickRef = useRef<{ x: number; z: number }>({ x: 0, z: 0 })
+  /** Interact callback set by the game loop, called by the mobile interact button. */
+  const mobileInteractRef = useRef<() => void>(() => {})
+  /** True when the player is in range of an interactable – drives the interact button pulse. */
+  const mobileHasTargetRef = useRef(false)
 
   useEffect(() => {
     const container = sceneRef.current
@@ -212,6 +221,11 @@ function App() {
 
     const interactionState = createInteractionState()
 
+    // Wire up the mobile interact button to trigger the current interaction target.
+    mobileInteractRef.current = () => {
+      if (interactionState.target) interactionState.target.onInteract()
+    }
+
     // Phase 05 — highlight material helper
     let previousTarget: Interactable | null = null
     const EMISSIVE_HOVER = new THREE.Color(0x886600)
@@ -285,6 +299,66 @@ function App() {
     // Suppress browser context menu so right-drag isn't interrupted.
     const onContextMenu = (e: Event) => e.preventDefault()
 
+    // ── Touch controls (mobile) ──────────────────────────────────────────────
+    // Single-finger drag → camera orbit; two-finger pinch → zoom.
+    // The virtual joystick (MobileControls component) handles movement separately.
+    type TouchPhase = 'none' | 'orbit' | 'pinch'
+    let touchPhase: TouchPhase = 'none'
+    let orbitTouchId = -1
+    let orbitLastX = 0
+    let orbitLastY = 0
+    let pinchLastDist = 0
+
+    const onTouchStart = (e: TouchEvent) => {
+      // Prevent page scroll / zoom on the canvas.
+      e.preventDefault()
+      if (e.touches.length === 1) {
+        touchPhase = 'orbit'
+        orbitTouchId = e.touches[0].identifier
+        orbitLastX = e.touches[0].clientX
+        orbitLastY = e.touches[0].clientY
+      } else if (e.touches.length >= 2) {
+        touchPhase = 'pinch'
+        const t0 = e.touches[0]
+        const t1 = e.touches[1]
+        const dx = t1.clientX - t0.clientX
+        const dy = t1.clientY - t0.clientY
+        pinchLastDist = Math.sqrt(dx * dx + dy * dy)
+      }
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault()
+      if (touchPhase === 'orbit' && e.touches.length === 1) {
+        const touch = Array.from(e.touches).find((t) => t.identifier === orbitTouchId)
+        if (!touch) return
+        applyOrbitDrag(camState, touch.clientX - orbitLastX, touch.clientY - orbitLastY)
+        orbitLastX = touch.clientX
+        orbitLastY = touch.clientY
+      } else if (e.touches.length >= 2) {
+        touchPhase = 'pinch'
+        const t0 = e.touches[0]
+        const t1 = e.touches[1]
+        const dx = t1.clientX - t0.clientX
+        const dy = t1.clientY - t0.clientY
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        // Pinching in (shrinking distance) zooms in → negative scroll equivalent.
+        applyZoom(camState, (pinchLastDist - dist) * 2)
+        pinchLastDist = dist
+      }
+    }
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        touchPhase = 'none'
+      } else if (e.touches.length === 1) {
+        touchPhase = 'orbit'
+        orbitTouchId = e.touches[0].identifier
+        orbitLastX = e.touches[0].clientX
+        orbitLastY = e.touches[0].clientY
+      }
+    }
+
     const canvas = renderer.domElement
     canvas.addEventListener('pointerdown', onPointerDown)
     canvas.addEventListener('pointermove', onPointerMove)
@@ -292,15 +366,20 @@ function App() {
     canvas.addEventListener('pointercancel', onPointerCancel)
     canvas.addEventListener('wheel', onWheel, { passive: false })
     canvas.addEventListener('contextmenu', onContextMenu)
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false })
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false })
+    canvas.addEventListener('touchend', onTouchEnd, { passive: false })
+    canvas.addEventListener('touchcancel', onTouchEnd, { passive: false })
 
     window.addEventListener('resize', updateViewport)
 
     const clock = new THREE.Clock()
     let animationFrame = 0
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
       const delta = clock.getDelta()
-      updatePlayer(player, keys, delta, camState.theta, collidableBoxes)
+      updatePlayer(player, keys, delta, camState.theta, collidableBoxes, mobileJoystickRef.current)
       updateOrbitCamera(camera, player.mesh, camState, delta, collidables)
 
       // Phase 08 — advance NPC ambient idle sway
@@ -381,6 +460,7 @@ function App() {
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
       const tgt = interactionState.target
+      mobileHasTargetRef.current = !!tgt
       if (tgt !== previousTarget) {
         applyHighlight(previousTarget, EMISSIVE_CLEAR)
         applyHighlight(tgt, EMISSIVE_HOVER)
@@ -388,7 +468,7 @@ function App() {
       }
       if (promptRef.current) {
         if (tgt) {
-          promptRef.current.textContent = `[E]  ${tgt.label}`
+          promptRef.current.textContent = isTouchDevice ? `TAP  ${tgt.label}` : `[E]  ${tgt.label}`
           promptRef.current.classList.add('visible')
         } else {
           promptRef.current.textContent = ''
@@ -411,6 +491,10 @@ function App() {
       canvas.removeEventListener('pointercancel', onPointerCancel)
       canvas.removeEventListener('wheel', onWheel)
       canvas.removeEventListener('contextmenu', onContextMenu)
+      canvas.removeEventListener('touchstart', onTouchStart)
+      canvas.removeEventListener('touchmove', onTouchMove)
+      canvas.removeEventListener('touchend', onTouchEnd)
+      canvas.removeEventListener('touchcancel', onTouchEnd)
       scene.traverse((object) => {
         const renderObject = object as THREE.Object3D & {
           geometry?: THREE.BufferGeometry
@@ -432,12 +516,12 @@ function App() {
 
   return (
     <main className="app-shell">
-      <header>
-        <h1>Veilmarch Prototype</h1>
-        <p id="scene-description">
-          Phase 19: Fishing Node System — playing as <strong>{playerName}</strong>.
-          WASD to move, right-drag to orbit, scroll to zoom, E to interact (chop trees, mine rocks, fish!),
-          I for inventory, K for skills. Walk east to the pond to fish, or north to Redwake Quarry!
+      <header className="app-header">
+        <h1>Veilmarch</h1>
+        <p id="scene-description" className="app-header__desc">
+          Playing as <strong>{playerName}</strong>.
+          WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact.
+          I = inventory, K = skills.
         </p>
       </header>
       <div
@@ -455,6 +539,12 @@ function App() {
           <InventoryPanel />
           {/* Phase 14 — Skills panel */}
           <SkillsPanel />
+          {/* Mobile gesture controls (hidden on pointer:fine devices) */}
+          <MobileControls
+            joystickRef={mobileJoystickRef}
+            onInteract={() => mobileInteractRef.current()}
+            hasTargetRef={mobileHasTargetRef}
+          />
         </div>
         <div ref={promptRef} className="interaction-prompt" aria-live="polite" />
       </div>
