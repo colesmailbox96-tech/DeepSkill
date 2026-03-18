@@ -357,6 +357,26 @@ p {
   margin-top: 0.1rem;
 }
 
+.inv-tooltip__equip {
+  margin-top: 0.35rem;
+  background: rgba(80, 60, 20, 0.85);
+  border: 1px solid rgba(200, 160, 60, 0.4);
+  color: #e8c860;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.2rem;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.1s, color 0.1s;
+}
+
+.inv-tooltip__equip:hover {
+  background: rgba(120, 90, 30, 0.95);
+  color: #f8e080;
+}
+
 /* ── Phase 13 — Skills Panel Foundation ─────────────────────────────────── */
 
 /**
@@ -1059,6 +1079,167 @@ p {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Phase 26 — Equipment Panel
+   Sits inside .hud-overlay (pointer-events:none) — re-enables pointer events
+   for itself.  Positioned bottom-right mirroring the inventory panel.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.equip-panel {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  width: min(300px, calc(100vw - 1.5rem));
+  background: rgba(14, 18, 22, 0.96);
+  border: 1px solid rgba(180, 140, 80, 0.25);
+  border-radius: 0.55rem;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.75);
+  max-height: min(480px, 60vh);
+  outline: none;
+}
+
+.equip-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.equip-panel__title-block {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.equip-panel__title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e8d090;
+}
+
+.equip-panel__count {
+  font-size: 0.72rem;
+  color: #6e7880;
+  margin-top: 0.05rem;
+}
+
+.equip-panel__close {
+  background: none;
+  border: none;
+  color: #6e7880;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.1rem 0.25rem;
+  border-radius: 0.2rem;
+  line-height: 1;
+  transition: color 0.12s;
+  flex-shrink: 0;
+}
+
+.equip-panel__close:hover {
+  color: #f0e8c0;
+}
+
+/* ── Stat summary row ────────────────────────────────────────────────────── */
+
+.equip-panel__stats {
+  display: flex;
+  justify-content: space-around;
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.equip-panel__stat {
+  font-size: 0.78rem;
+  color: #9ca4b0;
+}
+
+.equip-panel__stat strong {
+  color: #e8d090;
+  margin-left: 0.2rem;
+}
+
+/* ── Slot list ───────────────────────────────────────────────────────────── */
+
+.equip-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.equip-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.equip-row__slot {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6e7880;
+  letter-spacing: 0.03em;
+  width: 5.5rem;
+  flex-shrink: 0;
+}
+
+.equip-row__empty {
+  font-size: 0.78rem;
+  color: #3e4450;
+  font-style: italic;
+}
+
+.equip-row__name {
+  font-size: 0.8rem;
+  color: #d8c888;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equip-row__unequip {
+  background: rgba(60, 30, 30, 0.7);
+  border: 1px solid rgba(160, 80, 80, 0.3);
+  color: #c07070;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.2rem;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.equip-row__unequip:hover {
+  background: rgba(100, 40, 40, 0.9);
+  color: #e09090;
+}
+
+/* ── Hint footer ─────────────────────────────────────────────────────────── */
+
+.equip-panel__hint {
+  font-size: 0.68rem;
+  color: #4e5660;
+  text-align: center;
+  padding: 0.4rem 0.75rem;
+  margin: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+}
+
 /* ── Mobile controls overlay ─────────────────────────────────────────────── */
 
 /**
@@ -1211,6 +1392,10 @@ p {
     }
 
     .ledger-panel {
+      bottom: calc(8rem + env(safe-area-inset-bottom));
+    }
+
+    .equip-panel {
       bottom: calc(8rem + env(safe-area-inset-bottom));
     }
 

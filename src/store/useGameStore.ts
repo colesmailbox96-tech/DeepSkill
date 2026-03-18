@@ -1,15 +1,22 @@
 import { create } from 'zustand'
 import { getItem } from '../data/items/itemRegistry'
-import type { ItemDefinition } from '../data/items/itemSchema'
+import type { ItemDefinition, EquipSlot } from '../data/items/itemSchema'
 import type { Skill } from '../data/skills/skillSchema'
 import { STARTER_SKILLS } from '../data/skills/starterSkills'
 import { applyXp } from '../data/skills/xpCurve'
 import { useNotifications } from './useNotifications'
+import {
+  computeEquipStats,
+  meetsEquipRequirements,
+} from '../engine/equipment'
+import type { EquipStats } from '../engine/equipment'
 
 // Re-export so consumers can get the full definition alongside store types.
-export type { ItemDefinition }
+export type { ItemDefinition, EquipSlot }
 // Re-export Skill so HUD components can import it from a single store entry-point.
 export type { Skill }
+// Re-export EquipStats for UI consumers.
+export type { EquipStats }
 
 // ── Player Stats ────────────────────────────────────────────────────────────
 
@@ -68,6 +75,11 @@ const DEFAULT_INVENTORY: InventoryState = {
     { id: 'camp_rations', name: 'Camp Rations', quantity: 3 },
     { id: 'rough_stone', name: 'Rough Stone', quantity: 5 },
     { id: 'ash_twig', name: 'Ash Twig', quantity: 2 },
+    // Phase 26 — starter equipment pieces so the equipment system is immediately testable.
+    { id: 'patchplate_buckler', name: 'Patchplate Buckler', quantity: 1 },
+    { id: 'roughhide_vest', name: 'Roughhide Vest', quantity: 1 },
+    { id: 'ashwood_club', name: 'Ashwood Club', quantity: 1 },
+    { id: 'marsh_boots', name: 'Marsh Boots', quantity: 1 },
   ],
   maxSlots: 20,
 }
@@ -100,6 +112,18 @@ const DEFAULT_SETTINGS: Settings = {
   showFps: false,
 }
 
+// ── Equipment ────────────────────────────────────────────────────────────────
+
+/**
+ * Phase 26 — Equipment State
+ *
+ * Maps each EquipSlot to the InventoryItem currently occupying it.
+ * Absent keys (undefined) indicate an empty slot.
+ */
+export type EquipmentState = Partial<Record<EquipSlot, InventoryItem>>
+
+const DEFAULT_EQUIPMENT: EquipmentState = {}
+
 // ── Store ────────────────────────────────────────────────────────────────────
 
 export interface GameState {
@@ -107,6 +131,10 @@ export interface GameState {
   inventory: InventoryState
   skills: SkillsState
   settings: Settings
+  /** Phase 26 — currently equipped items, keyed by slot. */
+  equipment: EquipmentState
+  /** Phase 26 — aggregated bonuses from all equipped gear. */
+  equipStats: EquipStats
 
   // Player stat mutators
   setPlayerName: (name: string) => void
@@ -143,6 +171,22 @@ export interface GameState {
 
   // Settings mutators
   updateSettings: (patch: Partial<Settings>) => void
+
+  /**
+   * Phase 26 — Equip an inventory item.
+   *
+   * Moves the item from the player's inventory into the correct equipment
+   * slot.  Any item already in that slot is swapped back into inventory.
+   * Returns `true` on success, `false` when the item is not equippable or
+   * the player does not meet the requirements.
+   */
+  equipItem: (itemId: string) => boolean
+  /**
+   * Phase 26 — Unequip the item in the given slot.
+   *
+   * Moves the item back into inventory.  No-op when the slot is empty.
+   */
+  unequipItem: (slot: EquipSlot) => void
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -150,6 +194,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   inventory: structuredClone(DEFAULT_INVENTORY),
   skills: structuredClone(DEFAULT_SKILLS),
   settings: structuredClone(DEFAULT_SETTINGS),
+  equipment: structuredClone(DEFAULT_EQUIPMENT),
+  equipStats: { totalAttack: 0, totalDefence: 0 },
 
   // ── Player stat mutators ─────────────────────────────────────────────────
   setPlayerName: (name) =>
@@ -311,4 +357,100 @@ export const useGameStore = create<GameState>((set, get) => ({
     set((state) => ({
       settings: { ...state.settings, ...patch },
     })),
+
+  // ── Equipment mutators ───────────────────────────────────────────────────
+  equipItem: (itemId) => {
+    const state = get()
+
+    // Item must be in inventory.
+    const invSlot = state.inventory.slots.find((s) => s.id === itemId)
+    if (!invSlot) return false
+
+    // Item must be of type 'equipment' and have equipMeta.
+    const def = getItem(itemId)
+    if (!def || def.type !== 'equipment' || !def.equipMeta) return false
+
+    const equipSlot = def.equipMeta.slot
+
+    // Check skill requirements.
+    const skillMap: Partial<Record<string, number>> = {}
+    for (const sk of state.skills.skills) {
+      skillMap[sk.id] = sk.level
+    }
+    if (!meetsEquipRequirements(def, skillMap)) return false
+
+    // Build new equipment map — put item into slot.
+    const newEquipment: EquipmentState = { ...state.equipment }
+    const displaced = newEquipment[equipSlot] ?? null
+
+    newEquipment[equipSlot] = { id: itemId, name: def.name, quantity: 1 }
+
+    // Remove one unit from inventory.
+    const updatedSlots = state.inventory.slots
+      .map((s) => (s.id === itemId ? { ...s, quantity: s.quantity - 1 } : s))
+      .filter((s) => s.quantity > 0)
+
+    // If something was displaced, return it to inventory.
+    const finalSlots = displaced
+      ? (() => {
+          const existing = updatedSlots.find((s) => s.id === displaced.id)
+          if (existing) {
+            return updatedSlots.map((s) =>
+              s.id === displaced.id ? { ...s, quantity: s.quantity + 1 } : s,
+            )
+          }
+          return [...updatedSlots, { ...displaced, quantity: 1 }]
+        })()
+      : updatedSlots
+
+    // Recompute aggregate stats.
+    const allEquippedDefs = Object.values(newEquipment).map((it) =>
+      it ? getItem(it.id) : null,
+    )
+    const newEquipStats = computeEquipStats(allEquippedDefs)
+
+    set({
+      equipment: newEquipment,
+      equipStats: newEquipStats,
+      inventory: { ...state.inventory, slots: finalSlots },
+    })
+    return true
+  },
+
+  unequipItem: (slot) => {
+    const state = get()
+    const equipped = state.equipment[slot]
+    if (!equipped) return
+
+    // Check capacity before returning to inventory — only stack if item
+    // already exists, otherwise a free slot is required.
+    const existing = state.inventory.slots.find((s) => s.id === equipped.id)
+    if (!existing && state.inventory.slots.length >= state.inventory.maxSlots) {
+      const { push } = useNotifications.getState()
+      push('Inventory is full — cannot unequip.', 'info')
+      return
+    }
+
+    // Return the item to inventory.
+    const updatedSlots = existing
+      ? state.inventory.slots.map((s) =>
+          s.id === equipped.id ? { ...s, quantity: s.quantity + 1 } : s,
+        )
+      : [...state.inventory.slots, { ...equipped, quantity: 1 }]
+
+    const newEquipment: EquipmentState = { ...state.equipment }
+    delete newEquipment[slot]
+
+    // Recompute aggregate stats.
+    const allEquippedDefs = Object.values(newEquipment).map((it) =>
+      it ? getItem(it.id) : null,
+    )
+    const newEquipStats = computeEquipStats(allEquippedDefs)
+
+    set({
+      equipment: newEquipment,
+      equipStats: newEquipStats,
+      inventory: { ...state.inventory, slots: updatedSlots },
+    })
+  },
 }))

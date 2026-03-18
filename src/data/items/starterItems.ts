@@ -281,4 +281,58 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'Far more restorative than the raw meat and carries a faint smoky warmth.',
     consumableMeta: { healsHp: 18, effect: 'Restores 18 HP' },
   },
+
+  // ── Phase 26 — Starter Equipment (Foundation Gear) ─────────────────────────
+
+  {
+    id: 'patchplate_buckler',
+    name: 'Patchplate Buckler',
+    type: 'equipment',
+    stackable: false,
+    value: 18,
+    icon: 'items/patchplate_buckler.png',
+    description:
+      'A dented iron buckler reinforced with mismatched leather patches. ' +
+      'Offers modest protection — better than nothing when the alternative is an open hand.',
+    equipMeta: { slot: 'offHand', defenceBonus: 3 },
+  },
+
+  {
+    id: 'roughhide_vest',
+    name: 'Roughhide Vest',
+    type: 'equipment',
+    stackable: false,
+    value: 22,
+    icon: 'items/roughhide_vest.png',
+    description:
+      'A stiff vest of cured marsh-hide, stitched with sinew thread. ' +
+      'Cheap and serviceable — standard frontier wear for those expecting trouble.',
+    equipMeta: { slot: 'chest', defenceBonus: 4 },
+  },
+
+  {
+    id: 'ashwood_club',
+    name: 'Ashwood Club',
+    type: 'equipment',
+    stackable: false,
+    value: 14,
+    icon: 'items/ashwood_club.png',
+    description:
+      'A knob-headed club carved from dense ashwood, sanded smooth at the grip. ' +
+      'Simple and reliable — deals a respectable blow without demanding skilled hands.',
+    equipMeta: { slot: 'mainHand', attackBonus: 4 },
+  },
+
+  {
+    id: 'marsh_boots',
+    name: 'Marsh Boots',
+    type: 'equipment',
+    stackable: false,
+    value: 12,
+    icon: 'items/marsh_boots.png',
+    description:
+      'Knee-high boots of oiled leather with a wide, flat sole. ' +
+      'Designed for waterlogged terrain — keeps the feet dry and the footing sure.',
+    equipMeta: { slot: 'feet', defenceBonus: 1 },
+  },
 ]
