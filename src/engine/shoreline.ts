@@ -100,7 +100,9 @@ const REED_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: 'reed_clu
 
 /**
  * Populate `scene` with all Gloamwater Bank geometry and return collidables,
- * interactables, fishing nodes, forage nodes, and NPC objects.
+ * fishing nodes, forage nodes, and NPC objects.  Interactables are appended
+ * directly to the shared `interactables` array passed in — they are not part
+ * of the return value.
  *
  * @param scene         Three.js scene to add meshes to.
  * @param interactables Shared interactables array (mutated in place).

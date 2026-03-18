@@ -87,7 +87,8 @@ const QUARRY_ROCK_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: 'l
 
 /**
  * Populate `scene` with all Redwake Quarry geometry and return collidables,
- * interactables, rock nodes, and NPC objects.
+ * rock nodes, and NPC objects.  Interactables are appended directly to the
+ * shared `interactables` array passed in — they are not part of the return value.
  *
  * @param scene         Three.js scene to add meshes to.
  * @param interactables Shared interactables array (mutated in place).
