@@ -803,11 +803,17 @@ p {
     }
 
     .hud-player-strip {
+      top: calc(0.5rem + env(safe-area-inset-top));
       left: calc(0.5rem + env(safe-area-inset-left));
     }
 
     .hud-notification-feed {
+      top: calc(0.5rem + env(safe-area-inset-top));
       right: calc(0.5rem + env(safe-area-inset-right));
+    }
+
+    .app-header {
+      padding-top: calc(0.4rem + env(safe-area-inset-top));
     }
   }
 }
