@@ -120,7 +120,12 @@ function App() {
       camera.updateProjectionMatrix()
       renderer.setSize(width, height, false)
     }
-    updateViewport()
+
+    // ResizeObserver fires once CSS layout has settled (including on first paint
+    // and on orientation change) which makes it more reliable than a one-shot
+    // updateViewport() call or a window 'resize' listener alone.
+    const resizeObserver = new ResizeObserver(updateViewport)
+    resizeObserver.observe(renderer.domElement)
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.45)
     const directionalLight = new THREE.DirectionalLight(0xffe2c2, 1.25)
@@ -529,6 +534,7 @@ function App() {
 
     return () => {
       cancelAnimationFrame(animationFrame)
+      resizeObserver.disconnect()
       window.removeEventListener('resize', updateViewport)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)

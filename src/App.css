@@ -556,8 +556,9 @@ p {
  */
 @media (pointer: coarse), (max-width: 640px) {
   .app-shell {
+    min-height: 0;
+    height: 100vh; /* fallback for browsers without dvh support */
     height: 100dvh;
-    height: 100vh; /* fallback for browsers without dvh */
     overflow: hidden;
     grid-template-rows: auto 1fr;
   }
@@ -594,12 +595,14 @@ p {
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .scene-container canvas {
     width: 100%;
     flex: 1;
-    height: 100%;
+    min-height: 0;
     border-radius: 0;
     border: none;
     max-height: none;
@@ -769,4 +772,48 @@ p {
 @keyframes mobile-interact-pulse {
   0%, 100% { box-shadow: 0 3px 12px rgba(0, 0, 0, 0.6); }
   50%       { box-shadow: 0 3px 18px rgba(110, 168, 216, 0.6), 0 0 0 4px rgba(110, 168, 216, 0.2); }
+}
+
+/* ── Safe-area insets (iPhone X+ notch / home indicator) ─────────────────── */
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (pointer: coarse) {
+    .joystick-base {
+      bottom: calc(1.5rem + env(safe-area-inset-bottom));
+      left: calc(1.5rem + env(safe-area-inset-left));
+    }
+
+    .mobile-actions {
+      bottom: calc(1.5rem + env(safe-area-inset-bottom));
+      right: calc(1.5rem + env(safe-area-inset-right));
+    }
+
+    .inv-panel {
+      bottom: calc(8rem + env(safe-area-inset-bottom));
+      right: calc(0.5rem + env(safe-area-inset-right));
+    }
+
+    .skills-panel {
+      bottom: calc(8rem + env(safe-area-inset-bottom));
+      left: calc(0.5rem + env(safe-area-inset-left));
+    }
+
+    .interaction-prompt {
+      bottom: calc(7rem + 1.25rem + env(safe-area-inset-bottom));
+    }
+
+    .hud-player-strip {
+      top: calc(0.5rem + env(safe-area-inset-top));
+      left: calc(0.5rem + env(safe-area-inset-left));
+    }
+
+    .hud-notification-feed {
+      top: calc(0.5rem + env(safe-area-inset-top));
+      right: calc(0.5rem + env(safe-area-inset-right));
+    }
+
+    .app-header {
+      padding-top: calc(0.4rem + env(safe-area-inset-top));
+    }
+  }
 }
