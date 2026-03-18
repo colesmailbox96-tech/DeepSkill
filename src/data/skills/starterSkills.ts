@@ -40,6 +40,15 @@ export const STARTER_SKILLS: Skill[] = [
       'Working the geothermal seep-lines where warm upwellings draw cold-water fish toward the shallows. Patience and technique matter as much as the rod.',
   },
   {
+    id: 'foraging',
+    name: 'Foraging',
+    level: 1,
+    experience: 0,
+    experienceToNextLevel: xpToNextLevel(1),
+    description:
+      'Gathering plants, fungi, reeds, and resin from the wild margins of Cinderglen Reach. A trained forager reads the terrain and coaxes richer yields from the same patch.',
+  },
+  {
     id: 'hearthcraft',
     name: 'Hearthcraft',
     level: 1,
