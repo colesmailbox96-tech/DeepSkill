@@ -760,8 +760,8 @@ p {
 /* ═══════════════════════════════════════════════════════════════════════════
    Ledger Hall / Storage panel (Phase 25)
    Sits inside .hud-overlay (pointer-events:none) — re-enables pointer events
-   for itself.  Positioned at the bottom-right, mirroring the inventory panel
-   position but on the left side to keep it distinct.
+   for itself.  Centered horizontally at the bottom of the viewport via
+   left:50% + translateX(-50%), matching the shop panel layout.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .ledger-panel {

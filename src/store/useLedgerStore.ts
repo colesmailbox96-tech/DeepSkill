@@ -39,16 +39,17 @@ export interface LedgerState {
 
   /**
    * Deposit `quantity` of `item` into the Ledger Hall.
-   * Returns true when the deposit succeeds, false when storage is full
-   * (new slot needed but capacity is reached).
+   * Returns true when the deposit succeeds.
+   * Returns false when `quantity` floors to 0 or below, or when a new slot
+   * is needed but the hall has reached capacity.
    */
   depositItem: (id: string, name: string, quantity: number) => boolean
 
   /**
-   * Withdraw `quantity` of item `id` from the Ledger Hall.
-   * Silently no-ops if the item is not present or quantity exceeds stored amount.
-   * Returns the actual quantity withdrawn (may be less than requested if stack
-   * is smaller).
+   * Withdraw up to `quantity` of item `id` from the Ledger Hall.
+   * Returns the actual quantity withdrawn, which may be less than `quantity`
+   * when the stored stack is smaller.
+   * Returns 0 if the item is not present or `quantity` floors to 0 or below.
    */
   withdrawItem: (id: string, quantity: number) => number
 

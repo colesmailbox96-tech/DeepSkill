@@ -1,7 +1,7 @@
 /**
  * Phase 25 — Storage / Ledger Hall System
  *
- * Defines the Ledger Hall storage constants and the StorageItem type.
+ * Defines the Ledger Hall storage constants.
  * The Ledger Hall is a personal storage facility located inside the
  * Hushwood Storage Shed.  Players can deposit items from their inventory
  * and withdraw them later.  Storage persists as long as the game session
