@@ -52,8 +52,6 @@ const matBound = new THREE.MeshStandardMaterial({ visible: false })
 export interface QuarryResult {
   /** Collidable meshes — appended to the global collidables array in App.tsx. */
   collidables: THREE.Mesh[]
-  /** Interactable descriptors — appended to the global interactables array. */
-  interactables: Interactable[]
   /** Live quarry rock nodes for per-frame respawn ticking. */
   rockNodes: RockNode[]
   /** Live NPC objects for per-frame ambient sway (the foreman). */
@@ -89,7 +87,8 @@ const QUARRY_ROCK_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: 'l
 
 /**
  * Populate `scene` with all Redwake Quarry geometry and return collidables,
- * interactables, rock nodes, and NPC objects.
+ * rock nodes, and NPC objects.  Interactables are appended directly to the
+ * shared `interactables` array passed in — they are not part of the return value.
  *
  * @param scene         Three.js scene to add meshes to.
  * @param interactables Shared interactables array (mutated in place).
@@ -261,7 +260,7 @@ export function buildQuarry(
     'quarry_rock',
   )
 
-  return { collidables, interactables, rockNodes, npcs }
+  return { collidables, rockNodes, npcs }
 }
 
 // ─── Private helpers ──────────────────────────────────────────────────────────

@@ -42,9 +42,15 @@ import {
 import type { FishingNode } from './engine/fishing'
 import {
   buildShoreline,
-  updateReedNodes,
-  depleteReedNode,
 } from './engine/shoreline'
+import {
+  buildForageNodes,
+  updateForageNodes,
+  depleteForageNode,
+  getForagingLevel,
+  FORAGE_VARIANT_CONFIG,
+} from './engine/foraging'
+import type { ForageNode } from './engine/foraging'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
 import { getItem } from './data/items/itemRegistry'
@@ -184,7 +190,6 @@ function App() {
     const quarry = buildQuarry(scene, interactables, onMineStart)
     collidables.push(...quarry.collidables)
     const allRockNodes = [...rockNodes, ...quarry.rockNodes]
-    const quarryNpcs   = [...npcs, ...quarry.npcs]
 
     // Phase 19 — Fishing Node System
     // Fishing session: tracks which spot is being fished and elapsed cast time.
@@ -212,12 +217,39 @@ function App() {
 
     const fishingNodes = buildFishingNodes(scene, interactables, onCastStart)
 
+    // Phase 21 — Foraging System Base
+    // Foraging is instant (no session timer) — level is checked, reward granted,
+    // and the node depleted all within this single callback.
+    const onForageStart = (node: ForageNode) => {
+      const cfg = FORAGE_VARIANT_CONFIG[node.variant]
+      if (getForagingLevel() < cfg.levelReq) {
+        useNotifications.getState().push(
+          `You need level ${cfg.levelReq} Foraging to gather this.`,
+          'info',
+        )
+        return
+      }
+      const { addItem, grantSkillXp } = useGameStore.getState()
+      const itemName = getItem(cfg.itemId)?.name ?? cfg.itemId
+      addItem({ id: cfg.itemId, name: itemName, quantity: 1 })
+      grantSkillXp('foraging', cfg.xp)
+      useNotifications.getState().push(
+        `You gather ${article(itemName)} ${itemName.toLowerCase()}.`,
+        'success',
+      )
+      depleteForageNode(node)
+    }
+
+    // Hushwood-area forage nodes (marsh herbs + resin globs)
+    const forageNodes = buildForageNodes(scene, interactables, onForageStart)
+
     // Phase 20 — Shoreline Region Slice
     // Build Gloamwater Bank zone and merge its results into the shared collections.
-    const shoreline = buildShoreline(scene, interactables, onCastStart, depleteReedNode)
+    const shoreline = buildShoreline(scene, interactables, onCastStart, onForageStart)
     collidables.push(...shoreline.collidables)
     const allFishingNodes = [...fishingNodes, ...shoreline.fishingNodes]
-    const allNpcs         = [...quarryNpcs, ...shoreline.npcs]
+    const allNpcs         = [...npcs, ...quarry.npcs, ...shoreline.npcs]
+    const allForageNodes  = [...forageNodes, ...shoreline.forageNodes]
 
     // Precompute world-space bounding boxes for static collidables once so that
     // updatePlayer() doesn't have to call setFromObject() every frame.
@@ -469,8 +501,8 @@ function App() {
         }
       }
 
-      // Phase 20 — tick reed node respawn timers
-      updateReedNodes(shoreline.reedNodes, delta)
+      // Phase 21 — tick forage node respawn timers
+      updateForageNodes(allForageNodes, delta)
 
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)

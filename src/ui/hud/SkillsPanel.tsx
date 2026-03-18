@@ -95,7 +95,12 @@ export function SkillsPanel() {
                   (skill.experience / skill.experienceToNextLevel) * 100,
                   100,
                 )
-              : 0
+              : 100 // max level — fill the bar completely
+
+          // For max-level skills, set ARIA meter bounds to [0, 1] with
+          // valuenow=1 so the role="meter" element has a valid, non-zero range.
+          const ariaMax = skill.experienceToNextLevel > 0 ? skill.experienceToNextLevel : 1
+          const ariaNow = skill.experienceToNextLevel > 0 ? skill.experience : 1
 
           return (
             <li
@@ -134,9 +139,9 @@ export function SkillsPanel() {
                 className="skill-row__bar"
                 role="meter"
                 aria-label={`${skill.name} XP`}
-                aria-valuenow={skill.experience}
+                aria-valuenow={ariaNow}
                 aria-valuemin={0}
-                aria-valuemax={skill.experienceToNextLevel}
+                aria-valuemax={ariaMax}
               >
                 <div
                   className="skill-row__bar-fill"

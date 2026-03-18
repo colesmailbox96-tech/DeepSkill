@@ -166,6 +166,30 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'Too small for serious construction, but handy as a throwing weight or grinding surface.',
   },
 
+  {
+    id: 'marsh_herb',
+    name: 'Marsh Herb',
+    type: 'material',
+    stackable: true,
+    value: 3,
+    icon: 'items/marsh_herb.png',
+    description:
+      'A cluster of flat, moisture-loving leaves gathered from damp ground near waterways. ' +
+      'Bitter-smelling but valued for hearthcraft preparations and field poultices.',
+  },
+
+  {
+    id: 'resin_glob',
+    name: 'Resin Glob',
+    type: 'material',
+    stackable: true,
+    value: 4,
+    icon: 'items/resin_glob.png',
+    description:
+      'A hardened bead of amber-hued resin scraped from the bark of a stressed ironbark tree. ' +
+      'Useful as a natural sealant, tinder accelerant, or raw ingredient in tinkering.',
+  },
+
   // ── Fish ───────────────────────────────────────────────────────────────────
 
   {
