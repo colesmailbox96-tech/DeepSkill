@@ -165,4 +165,42 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'A smooth, fist-sized stone gathered from the road verge or riverbed. ' +
       'Too small for serious construction, but handy as a throwing weight or grinding surface.',
   },
+
+  // ── Fish ───────────────────────────────────────────────────────────────────
+
+  {
+    id: 'minnow',
+    name: 'Minnow',
+    type: 'material',
+    stackable: true,
+    value: 2,
+    icon: 'items/minnow.png',
+    description:
+      'A tiny silver fish pulled from the shallow edges of a calm pond. ' +
+      'Too small to eat outright, but useful for cooking stock or as bait.',
+  },
+
+  {
+    id: 'perch',
+    name: 'Perch',
+    type: 'material',
+    stackable: true,
+    value: 5,
+    icon: 'items/perch.png',
+    description:
+      'A striped freshwater perch caught from a reed-sheltered pool. ' +
+      'Firm white flesh — good eating once cleaned and cooked over a fire.',
+  },
+
+  {
+    id: 'gloomfin',
+    name: 'Gloomfin',
+    type: 'material',
+    stackable: true,
+    value: 10,
+    icon: 'items/gloomfin.png',
+    description:
+      'A deep-dwelling fish with translucent fins and faint bioluminescent spots along its flank. ' +
+      'Rarely surfaces in ordinary ponds — a sign of hidden thermal currents below.',
+  },
 ]
