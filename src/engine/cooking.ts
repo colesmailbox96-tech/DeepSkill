@@ -115,17 +115,11 @@ function _buildCampfireMesh(): THREE.Group {
 
   const matStone = new THREE.MeshStandardMaterial({ color: 0x8e8680, roughness: 0.85 })
   const matLog   = new THREE.MeshStandardMaterial({ color: 0x6a4a28, roughness: 0.90 })
-  const matEmber = new THREE.MeshStandardMaterial({
-    color: 0xff5500,
-    emissive: new THREE.Color(0xff3300),
-    emissiveIntensity: 0.95,
-    roughness: 0.55,
-  })
-  const matFlame = new THREE.MeshStandardMaterial({
+  // Use MeshBasicMaterial for ember and flame so the interaction highlight
+  // system (which overwrites MeshStandardMaterial.emissive) cannot dim them.
+  const matEmber = new THREE.MeshBasicMaterial({ color: 0xff5500 })
+  const matFlame = new THREE.MeshBasicMaterial({
     color: 0xff9900,
-    emissive: new THREE.Color(0xff6600),
-    emissiveIntensity: 1.2,
-    roughness: 0.40,
     transparent: true,
     opacity: 0.85,
   })

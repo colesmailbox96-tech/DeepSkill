@@ -561,8 +561,23 @@ function App() {
           sess.elapsed += delta
           if (sess.elapsed >= sess.recipe.cookDuration) {
             cookingRef.current = null
-            const { addItem, removeItem, grantSkillXp } = useGameStore.getState()
+            const { inventory, addItem, removeItem, grantSkillXp } = useGameStore.getState()
             const cookedName = getItem(sess.recipe.cookedId)?.name ?? sess.recipe.cookedId
+            // Guard: ensure the cooked item can be received before consuming
+            // the raw ingredient.  The cooked slot will either stack onto an
+            // existing entry or occupy a new slot.  After removing one raw
+            // item the freed slot is only available when that stack hits zero,
+            // so we calculate available capacity conservatively.
+            const hasExistingCooked = inventory.slots.some((s) => s.id === sess.recipe.cookedId)
+            const rawStackSize = inventory.slots.find((s) => s.id === sess.recipe.rawId)?.quantity ?? 0
+            const slotsAfterRemove = rawStackSize === 1
+              ? inventory.slots.length - 1   // raw stack will disappear
+              : inventory.slots.length
+            const canAdd = hasExistingCooked || slotsAfterRemove < inventory.maxSlots
+            if (!canAdd) {
+              useNotifications.getState().push('Your inventory is full — make room before cooking.', 'info')
+              return
+            }
             removeItem(sess.recipe.rawId, 1)
             addItem({ id: sess.recipe.cookedId, name: cookedName, quantity: 1 })
             grantSkillXp('hearthcraft', sess.recipe.xp)
