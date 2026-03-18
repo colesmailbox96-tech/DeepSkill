@@ -1,13 +1,15 @@
 /**
  * Phase 23 — Starter Shop / Trade Interface
+ * Phase 24 — uses economy module for currency naming and transaction validation.
  *
  * Two-tab panel (Buy / Sell) opened by interacting with Tomas (Merchant).
  * Close via the ✕ button, pressing Escape, or pressing B again.
  *
- * Buy tab  — shows vendor stock with item names and buy prices.
- * Sell tab — shows player inventory items with sell prices.
+ * Buy tab  — shows vendor stock with item names and buy prices in Marks.
+ * Sell tab — shows player inventory items with sell prices in Marks.
  *
- * Currency: coins displayed in the header.  Buy deducts coins; sell adds coins.
+ * Currency: Marks (⬡) displayed in the header.
+ * Buy deducts Marks; sell adds Marks.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -15,7 +17,15 @@ import { useGameStore } from '../../store/useGameStore'
 import { useShopStore } from '../../store/useShopStore'
 import { useNotifications } from '../../store/useNotifications'
 import { getItem } from '../../data/items/itemRegistry'
-import { VENDOR_STOCK, getBuyPrice, getSellPrice } from '../../engine/shop'
+import {
+  VENDOR_STOCK,
+  getBuyPrice,
+  getSellPrice,
+  CURRENCY_SYMBOL,
+  CURRENCY_PLURAL,
+  validatePurchase,
+  validateSale,
+} from '../../engine/shop'
 
 type ShopTab = 'buy' | 'sell'
 
@@ -73,21 +83,29 @@ export function ShopPanel() {
     const def = getItem(itemId)
     if (!def) return
     const price = getBuyPrice(def.value)
-
-    // Check inventory space.
-    const existsInInv = slots.some((s) => s.id === itemId)
     const { inventory } = useGameStore.getState()
-    if (!existsInInv && inventory.slots.length >= inventory.maxSlots) {
-      useNotifications.getState().push('Your inventory is full.', 'info')
+    const alreadyHasItem = inventory.slots.some((s) => s.id === itemId)
+
+    const result = validatePurchase(
+      price,
+      coins,
+      inventory.slots.length,
+      inventory.maxSlots,
+      alreadyHasItem,
+    )
+    if (!result.ok) {
+      useNotifications.getState().push(result.reason, 'info')
       return
     }
 
-    if (!spendCoins(price)) {
-      useNotifications.getState().push(`Not enough coins. Need ${price}.`, 'info')
-      return
-    }
+    // validatePurchase already confirmed the player has sufficient funds,
+    // so spendCoins is guaranteed to succeed here.
+    if (!spendCoins(price)) return  // defensive — should never fire
     addItem({ id: itemId, name: def.name, quantity: 1 })
-    useNotifications.getState().push(`Bought ${def.name} for ${price} coin${price !== 1 ? 's' : ''}.`, 'success')
+    useNotifications.getState().push(
+      `Bought ${def.name} for ${price} ${price === 1 ? 'Mark' : CURRENCY_PLURAL}.`,
+      'success',
+    )
   }
 
   // ── Sell tab ─────────────────────────────────────────────────────────────────
@@ -95,18 +113,23 @@ export function ShopPanel() {
   const handleSell = (itemId: string) => {
     const def = getItem(itemId)
     if (!def) return
-    // Quest items cannot be sold.
-    if (def.type === 'quest') {
-      useNotifications.getState().push(`${def.name} cannot be sold.`, 'info')
+    // Atomic check: confirm the item is still in inventory before processing the transaction.
+    const { inventory } = useGameStore.getState()
+    const hasItem = inventory.slots.some((s) => s.id === itemId && s.quantity > 0)
+
+    const result = validateSale(def.type, hasItem)
+    if (!result.ok) {
+      useNotifications.getState().push(result.reason, 'info')
       return
     }
-    // Atomic check: confirm the item is still in inventory before crediting coins.
-    const { inventory } = useGameStore.getState()
-    if (!inventory.slots.some((s) => s.id === itemId && s.quantity > 0)) return
+
     const price = getSellPrice(def.value)
     removeItem(itemId, 1)
     addCoins(price)
-    useNotifications.getState().push(`Sold ${def.name} for ${price} coin${price !== 1 ? 's' : ''}.`, 'success')
+    useNotifications.getState().push(
+      `Sold ${def.name} for ${price} ${price === 1 ? 'Mark' : CURRENCY_PLURAL}.`,
+      'success',
+    )
   }
 
   return (
@@ -121,9 +144,9 @@ export function ShopPanel() {
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="shop-panel__header">
         <span className="shop-panel__title">Tomas's Shop</span>
-        <span className="shop-panel__coins">
-          <span className="shop-panel__coin-icon">⬡</span>
-          {coins}
+        <span className="shop-panel__coins" aria-label={`${coins} Marks`}>
+          <span className="shop-panel__coin-icon">{CURRENCY_SYMBOL}</span>
+          {coins} <span className="shop-panel__coin-label">Marks</span>
         </span>
         <button
           className="shop-panel__close"
@@ -166,13 +189,13 @@ export function ShopPanel() {
               <li key={id} className="shop-row" role="listitem">
                 <span className="shop-row__name">{def.name}</span>
                 <span className={`shop-row__price${canAfford ? '' : ' shop-row__price--insufficient'}`}>
-                  ⬡ {price}
+                  {CURRENCY_SYMBOL} {price}
                 </span>
                 <button
                   className="shop-row__btn"
                   onClick={() => handleBuy(id)}
                   disabled={!canAfford}
-                  aria-label={`Buy ${def.name} for ${price} coins`}
+                  aria-label={`Buy ${def.name} for ${price} ${price === 1 ? 'Mark' : CURRENCY_PLURAL}`}
                 >
                   Buy
                 </button>
@@ -204,11 +227,11 @@ export function ShopPanel() {
                       <span className="shop-row__qty"> ×{item.quantity}</span>
                     )}
                   </span>
-                  <span className="shop-row__price">⬡ {price}</span>
+                  <span className="shop-row__price">{CURRENCY_SYMBOL} {price}</span>
                   <button
                     className="shop-row__btn"
                     onClick={() => handleSell(item.id)}
-                    aria-label={`Sell ${item.name} for ${price} coins`}
+                    aria-label={`Sell ${item.name} for ${price} ${price === 1 ? 'Mark' : CURRENCY_PLURAL}`}
                   >
                     Sell
                   </button>
