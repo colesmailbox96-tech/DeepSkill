@@ -662,7 +662,7 @@ p {
   pointer-events: none;
 }
 
-@media (pointer: coarse), (max-width: 640px) {
+@media (pointer: coarse) {
   .mobile-controls {
     display: block;
   }

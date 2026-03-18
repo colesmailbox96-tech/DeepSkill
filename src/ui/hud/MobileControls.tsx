@@ -26,7 +26,8 @@ export function MobileControls({ joystickRef, onInteract, hasTargetRef }: Mobile
 
   useEffect(() => {
     const id = setInterval(() => {
-      setHasTarget(hasTargetRef.current)
+      const next = hasTargetRef.current
+      setHasTarget((prev) => (prev === next ? prev : next))
     }, 100)
     return () => clearInterval(id)
   }, [hasTargetRef])
@@ -94,7 +95,11 @@ export function MobileControls({ joystickRef, onInteract, hasTargetRef }: Mobile
   const onJoystickEnd = useCallback(
     (e: React.TouchEvent) => {
       e.stopPropagation()
-      resetKnob()
+      // Only reset if the touch that ended is the one driving the joystick.
+      const ended = Array.from(e.changedTouches).some(
+        (t) => t.identifier === activeTouchRef.current,
+      )
+      if (ended) resetKnob()
     },
     [resetKnob],
   )
@@ -131,11 +136,12 @@ export function MobileControls({ joystickRef, onInteract, hasTargetRef }: Mobile
   )
 
   return (
-    <div className="mobile-controls" aria-hidden="true">
-      {/* ── Virtual joystick (bottom-left) ────────────────────────── */}
+    <div className="mobile-controls">
+      {/* ── Virtual joystick (bottom-left) — purely decorative element ── */}
       <div
         ref={baseRef}
         className="joystick-base"
+        aria-hidden="true"
         onTouchStart={onJoystickStart}
         onTouchMove={onJoystickMove}
         onTouchEnd={onJoystickEnd}
