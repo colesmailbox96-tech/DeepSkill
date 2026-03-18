@@ -758,6 +758,195 @@ p {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   Ledger Hall / Storage panel (Phase 25)
+   Sits inside .hud-overlay (pointer-events:none) — re-enables pointer events
+   for itself.  Centered horizontally at the bottom of the viewport via
+   left:50% + translateX(-50%), matching the shop panel layout.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ledger-panel {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(320px, calc(100vw - 1.5rem));
+  background: rgba(14, 18, 22, 0.96);
+  border: 1px solid rgba(140, 180, 130, 0.2);
+  border-radius: 0.55rem;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.75);
+  max-height: min(420px, 55vh);
+  outline: none;
+}
+
+.ledger-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.ledger-panel__title-block {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.ledger-panel__title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #c8e8b0;
+}
+
+.ledger-panel__capacity {
+  font-size: 0.72rem;
+  color: #6e7880;
+  margin-top: 0.05rem;
+}
+
+.ledger-panel__sort {
+  background: rgba(40, 70, 40, 0.7);
+  border: 1px solid rgba(140, 180, 130, 0.3);
+  color: #90c080;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ledger-panel__sort:hover {
+  background: rgba(60, 100, 60, 0.85);
+  color: #b8e0a0;
+}
+
+.ledger-panel__close {
+  background: none;
+  border: none;
+  color: #6e7880;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.1rem 0.25rem;
+  border-radius: 0.2rem;
+  line-height: 1;
+  transition: color 0.12s;
+  flex-shrink: 0;
+}
+
+.ledger-panel__close:hover {
+  color: #f0e8c0;
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+
+.ledger-panel__tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.ledger-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #6e7880;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.45rem 0;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: color 0.12s, border-bottom-color 0.12s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.ledger-tab:hover {
+  color: #c8d0d8;
+}
+
+.ledger-tab--active {
+  color: #c8e8b0;
+  border-bottom-color: #90c080;
+}
+
+/* ── Item list ───────────────────────────────────────────────────────────── */
+
+.ledger-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.ledger-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.38rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.1s;
+}
+
+.ledger-row:last-child {
+  border-bottom: none;
+}
+
+.ledger-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ledger-row--empty {
+  color: #4e5860;
+  font-size: 0.8rem;
+  justify-content: center;
+  border-bottom: none;
+}
+
+.ledger-row__name {
+  flex: 1;
+  font-size: 0.8rem;
+  color: #c8d0d8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ledger-row__qty {
+  color: #6e7880;
+  font-size: 0.75rem;
+}
+
+.ledger-row__btn {
+  background: rgba(30, 70, 40, 0.85);
+  border: 1px solid rgba(140, 180, 130, 0.3);
+  color: #90c080;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+
+.ledger-row__btn:hover {
+  background: rgba(50, 110, 60, 0.95);
+  color: #b8e0a0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    Mobile / touch layout
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -1018,6 +1207,10 @@ p {
     }
 
     .shop-panel {
+      bottom: calc(8rem + env(safe-area-inset-bottom));
+    }
+
+    .ledger-panel {
       bottom: calc(8rem + env(safe-area-inset-bottom));
     }
 
