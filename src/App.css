@@ -378,16 +378,13 @@ p {
 }
 
 /* Phase 27 — locked equip button (requirements not met) */
+.inv-tooltip__equip:disabled,
 .inv-tooltip__equip--locked {
   background: rgba(60, 20, 20, 0.85);
   border-color: rgba(180, 60, 60, 0.4);
   color: #c07070;
   cursor: not-allowed;
-}
-
-.inv-tooltip__equip--locked:hover {
-  background: rgba(80, 30, 30, 0.95);
-  color: #d88080;
+  pointer-events: none;
 }
 
 /* Phase 27 — equipment stat lines in tooltip */

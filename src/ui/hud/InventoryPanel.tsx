@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore, type InventoryItem } from '../../store/useGameStore'
 import { getItem } from '../../data/items/itemRegistry'
 import { CURRENCY_NAME, CURRENCY_PLURAL } from '../../engine/economy'
-import { meetsEquipRequirements } from '../../engine/equipment'
+import { meetsEquipRequirements, EQUIP_SLOT_META } from '../../engine/equipment'
 import { useNotifications } from '../../store/useNotifications'
 
 interface TooltipState {
@@ -72,6 +72,15 @@ export function InventoryPanel() {
     return () => cancelAnimationFrame(rafRef.current)
   }, [])
 
+  // Memoize the skill-level map so it is only rebuilt when skills change, not on every render.
+  const skillMap = useMemo(() => {
+    const map: Partial<Record<string, number>> = {}
+    for (const sk of skills) {
+      map[sk.id] = sk.level
+    }
+    return map
+  }, [skills])
+
   if (!isOpen) return null
 
   // Build a fixed-length array so empty slots always render.
@@ -85,11 +94,6 @@ export function InventoryPanel() {
   // Resolve the hovered item's definition once, outside JSX, to avoid an IIFE.
   const tooltipDef = tooltip ? getItem(tooltip.item.id) : null
 
-  // Build a skill-level map for requirement checking (equipment items only).
-  const skillMap: Partial<Record<string, number>> = {}
-  for (const sk of skills) {
-    skillMap[sk.id] = sk.level
-  }
   // True when all equip requirements for the tooltip item are satisfied.
   const tooltipReqsMet =
     tooltipDef?.type === 'equipment' && tooltipDef.equipMeta
@@ -189,7 +193,7 @@ export function InventoryPanel() {
                 </span>
               )}
               <span className="inv-tooltip__slot">
-                Slot: {tooltipDef.equipMeta.slot}
+                Slot: {EQUIP_SLOT_META[tooltipDef.equipMeta.slot].label}
               </span>
             </div>
           )}
@@ -219,16 +223,18 @@ export function InventoryPanel() {
           {tooltipDef?.type === 'equipment' && (
             <button
               className={`inv-tooltip__equip${tooltipReqsMet ? '' : ' inv-tooltip__equip--locked'}`}
+              disabled={!tooltipReqsMet}
+              aria-disabled={!tooltipReqsMet}
               onClick={() => {
+                if (!tooltipReqsMet) return
                 const equipped = equipItem(tooltip.item.id)
                 if (equipped) {
                   setTooltip(null)
                 } else {
-                  const name = tooltipDef?.name ?? tooltip.item.id
-                  const msg = tooltipReqsMet
-                    ? `Cannot equip ${name}.`
-                    : `Requirements not met for ${name}.`
-                  useNotifications.getState().push(msg, 'info')
+                  useNotifications.getState().push(
+                    `Cannot equip ${tooltipDef?.name ?? tooltip.item.id}.`,
+                    'info',
+                  )
                 }
               }}
             >
