@@ -4,6 +4,8 @@ import { getItem } from '../../data/items/itemRegistry'
 import { CURRENCY_NAME, CURRENCY_PLURAL } from '../../engine/economy'
 import { meetsEquipRequirements, EQUIP_SLOT_META } from '../../engine/equipment'
 import { useNotifications } from '../../store/useNotifications'
+import { useFoodStore } from '../../store/useFoodStore'
+import { useCombatStore } from '../../store/useCombatStore'
 
 interface TooltipState {
   item: InventoryItem
@@ -35,6 +37,11 @@ export function InventoryPanel() {
   const maxSlots = useGameStore((s) => s.inventory.maxSlots)
   const equipItem = useGameStore((s) => s.equipItem)
   const skills = useGameStore((s) => s.skills.skills)
+
+  // Phase 33 — food consumption
+  const foodCooldown = useFoodStore((s) => s.cooldownRemaining)
+  const eatFood = useFoodStore((s) => s.eat)
+  const inCombat = useCombatStore((s) => s.targetName !== null)
 
   /** Close the panel and clear any lingering tooltip state. */
   const handleClose = useCallback(() => {
@@ -239,6 +246,24 @@ export function InventoryPanel() {
               }}
             >
               {tooltipReqsMet ? 'Equip' : 'Requirements not met'}
+            </button>
+          )}
+          {/* Phase 33 — Eat button for consumable food items */}
+          {tooltipDef?.type === 'consumable' && tooltipDef.consumableMeta?.healsHp && (
+            <button
+              className={`inv-tooltip__eat${inCombat && foodCooldown > 0 ? ' inv-tooltip__eat--cooldown' : ''}`}
+              disabled={inCombat && foodCooldown > 0}
+              aria-disabled={inCombat && foodCooldown > 0}
+              onClick={() => {
+                const consumed = eatFood(tooltipDef.id, inCombat)
+                if (consumed) {
+                  setTooltip(null)
+                }
+              }}
+            >
+              {inCombat && foodCooldown > 0
+                ? `On cooldown (${Math.ceil(foodCooldown)}s)`
+                : `Eat (+${tooltipDef.consumableMeta.healsHp} HP)`}
             </button>
           )}
         </div>
