@@ -317,9 +317,23 @@ function App() {
       }
       const chance = def.dropChance ?? 0.75
       if (Math.random() < chance) {
-        const { addItem } = useGameStore.getState()
+        const { addItem, inventory } = useGameStore.getState()
         const itemDef = getItem(def.dropItemId)
         const itemName = itemDef?.name ?? def.dropItemId
+
+        // Inventory capacity check: addItem is a silent no-op when the slot is
+        // new and the inventory is full — guard here so we don't mislead the
+        // player with a success notification or consume the cooldown for nothing.
+        const alreadyStacked = inventory.slots.some((s) => s.id === def.dropItemId)
+        const inventoryFull = inventory.slots.length >= inventory.maxSlots
+        if (inventoryFull && !alreadyStacked) {
+          useNotifications.getState().push(
+            `Your inventory is full — drop something to harvest the ${def.name}.`,
+            'info',
+          )
+          return
+        }
+
         addItem({ id: def.dropItemId, name: itemName, quantity: 1 })
         useNotifications.getState().push(
           `You harvest ${article(itemName)} ${itemName.toLowerCase()} from the ${def.name}.`,
@@ -331,7 +345,8 @@ function App() {
           'info',
         )
       }
-      // Start the drop cooldown and trigger flee.
+      // Start the drop cooldown and trigger flee only when the interaction
+      // completed (item awarded or the creature simply bolted without dropping).
       creature.dropCooldown = 25
       triggerFlee(creature, player.mesh.position)
     }

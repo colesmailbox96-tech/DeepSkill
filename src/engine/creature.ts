@@ -374,7 +374,8 @@ function _startFlee(c: Creature, playerPos: THREE.Vector3): void {
   const awayZ = pos.z - playerPos.z
   const len = Math.sqrt(awayX * awayX + awayZ * awayZ) || 1
 
-  // Sprint a distance equal to the full pursuitRadius in that direction.
+  // Sprint 60 % of pursuitRadius in the away direction — far enough to feel
+  // urgent while staying well within the safety boundary before clamping.
   const sprintDist = c.def.pursuitRadius * 0.6
   let targetX = pos.x + (awayX / len) * sprintDist
   let targetZ = pos.z + (awayZ / len) * sprintDist
