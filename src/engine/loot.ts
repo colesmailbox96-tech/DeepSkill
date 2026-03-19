@@ -1,7 +1,7 @@
 /**
  * Phase 32 — Loot Drop System
  *
- * Defines rarity-weighted loot tables for hostile creatures and provides
+ * Defines chance-based loot tables for hostile creatures and provides
  * the rollLoot() helper that resolves a kill into awarded items and optional
  * currency.  The caller (App.tsx) is responsible for adding results to the
  * player's inventory and coin balance.
@@ -10,11 +10,12 @@
  *   - Each LootEntry carries its own independent drop chance (0–1), so
  *     multiple entries can trigger from a single kill.
  *   - Rarity is metadata only (for display / future filter purposes); the
- *     actual probability is encoded in `chance`.
+ *     actual probability is encoded in `chance` — rarity does not alter odds.
  *   - Currency is rolled as a uniform integer in [currencyMin, currencyMax].
  *     A range of [0, 0] (default) means no coin drop.
- *   - rollLoot() is deterministic in the sense that each call uses fresh
- *     Math.random() rolls — no seeding is needed for the RPG use-case.
+ *   - rollLoot() is stateless but non-deterministic: each call samples
+ *     Math.random() independently, so two calls for the same creature may
+ *     yield different results.
  */
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -156,9 +157,13 @@ export function rollLoot(creatureId: string): LootResult {
 }
 
 /**
- * Return the loot table for the given creature id, or undefined if none exists.
+ * Return a deep clone of the loot table for the given creature id, or
+ * undefined if none exists.  A clone is returned so callers cannot
+ * accidentally mutate the global tables and affect future drops.
  * Useful for UI previews or future loot-inspect features.
  */
 export function getLootTable(creatureId: string): LootTable | undefined {
-  return CREATURE_LOOT_TABLES[creatureId]
+  const table = CREATURE_LOOT_TABLES[creatureId]
+  if (!table) return undefined
+  return structuredClone(table)
 }
