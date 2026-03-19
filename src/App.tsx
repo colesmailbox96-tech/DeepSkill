@@ -79,6 +79,9 @@ import {
 } from './engine/combat'
 import { rollLoot } from './engine/loot'
 import { useCombatStore } from './store/useCombatStore'
+import { RESPAWN_X, RESPAWN_Y, RESPAWN_Z, RESPAWN_LOCATION_LABEL } from './engine/respawn'
+import { useRespawnStore } from './store/useRespawnStore'
+import { RespawnOverlay } from './ui/hud/RespawnOverlay'
 import './App.css'
 
 // ── Gather-session types (used by both woodcutting and mining loops) ───────────
@@ -395,20 +398,31 @@ function App() {
     // Phase 03 — player controller
     const player = createPlayer(scene)
 
-    // Phase 31 — player defeat fallback.
-    // Notifies the player, restores full HP, clears the combat target, and
-    // teleports back to the settlement origin.  Phase 34 will replace this
-    // with a proper respawn / penalty system.
+    // Phase 34 — Respawn / Safe Recovery Loop.
+    // Restores full HP, clears combat, teleports the player to the settlement
+    // hearth, and triggers the respawn overlay.  The player retains all items
+    // and currency (no punishing item loss).  The blocking overlay prevents
+    // any further input until the player explicitly dismisses it.
     _onPlayerDefeated = () => {
       const { playerStats, setHealth } = useGameStore.getState()
+      // Restore full health.
       setHealth(playerStats.maxHealth)
+      // Clear combat target to prevent immediate re-aggro on wake.
       setTarget(combatRef.current, null)
       useCombatStore.getState().clearTarget()
-      player.mesh.position.set(0, 0, 0)
-      useNotifications.getState().push(
-        'You have been defeated and wake back at the settlement.',
-        'warning',
-      )
+      // Teleport to settlement hearth (world origin).
+      player.mesh.position.set(RESPAWN_X, RESPAWN_Y, RESPAWN_Z)
+      // Clear any held movement inputs so the player doesn't slide after waking.
+      keys.clear()
+      mobileJoystickRef.current.x = 0
+      mobileJoystickRef.current.z = 0
+      // Cancel any in-progress gathering/cooking sessions (player teleported away).
+      choppingRef.current = null
+      miningRef.current = null
+      fishingRef.current = null
+      cookingRef.current = null
+      // Show the blocking respawn overlay.
+      useRespawnStore.getState().triggerDefeat(RESPAWN_LOCATION_LABEL)
     }
 
     // Phase 31 — player-attack hit notification.
@@ -520,6 +534,14 @@ function App() {
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code)
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
+
+    // Phase 34 — track defeated state in a ref so the animation loop avoids
+    // a Zustand store read every frame.  A lightweight subscription keeps the
+    // ref in sync whenever the state actually changes.
+    let isDefeated = useRespawnStore.getState().defeated
+    const unsubscribeRespawn = useRespawnStore.subscribe(
+      (s) => { isDefeated = s.defeated },
+    )
 
     // ── Orbit drag (right mouse button) ────────────────────────────────────
     let isDragging = false
@@ -696,12 +718,20 @@ function App() {
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
       const delta = clock.getDelta()
-      updatePlayer(player, keys, delta, camState.theta, collidableBoxes, mobileJoystickRef.current)
+
+      // Phase 34 — freeze all player-input and combat systems while the
+      // respawn overlay is visible.  The camera, NPC ambient sway, and
+      // resource-node timers still advance so the world looks alive.
+
+      if (!isDefeated) {
+        updatePlayer(player, keys, delta, camState.theta, collidableBoxes, mobileJoystickRef.current)
+      }
       updateOrbitCamera(camera, player.mesh, camState, delta, collidables)
 
       // Phase 08 — advance NPC ambient idle sway
       updateNpcs(allNpcs, delta)
 
+      if (!isDefeated) {
       // Phase 15 — tick woodcutting session and respawn timers
       updateTreeNodes(treeNodes, delta)
       if (choppingRef.current) {
@@ -869,6 +899,7 @@ function App() {
           promptRef.current.classList.remove('visible')
         }
       }
+      } // end !isDefeated
 
       renderer.render(scene, camera)
     }
@@ -877,6 +908,7 @@ function App() {
     return () => {
       cancelAnimationFrame(animationFrame)
       resizeObserver.disconnect()
+      unsubscribeRespawn()
       window.removeEventListener('resize', updateViewport)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
@@ -943,6 +975,8 @@ function App() {
           <LedgerPanel />
           {/* Phase 26 — Equipment panel */}
           <EquipmentPanel />
+          {/* Phase 34 — Respawn / Safe Recovery overlay */}
+          <RespawnOverlay />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}

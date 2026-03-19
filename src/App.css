@@ -1580,3 +1580,91 @@ p {
     top: calc(0.5rem + env(safe-area-inset-top, 0px));
   }
 }
+
+/* ── Phase 34 — Respawn / Safe Recovery Overlay ──────────────────────────── */
+
+/**
+ * Full-screen modal that blocks pointer events to prevent input while the
+ * player is in the defeated state.  The overlay sits above all other HUD
+ * layers via a very high z-index.
+ */
+.respawn-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.78);
+  pointer-events: all;
+  animation: respawn-overlay-in 0.35s ease forwards;
+}
+
+@keyframes respawn-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.respawn-overlay__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(18, 14, 12, 0.96);
+  border: 1px solid rgba(180, 100, 40, 0.55);
+  border-radius: 6px;
+  padding: 2.2rem 2.8rem;
+  max-width: 420px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 36px rgba(0, 0, 0, 0.7);
+}
+
+.respawn-overlay__title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #c0392b;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.respawn-overlay__body {
+  margin: 0;
+  font-size: 0.88rem;
+  color: rgba(220, 210, 195, 0.9);
+  line-height: 1.55;
+}
+
+.respawn-overlay__location {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(180, 160, 130, 0.85);
+}
+
+.respawn-overlay__location-label {
+  font-weight: 600;
+  color: rgba(200, 175, 120, 0.9);
+}
+
+.respawn-overlay__btn {
+  margin-top: 0.4rem;
+  padding: 0.55rem 1.8rem;
+  background: linear-gradient(160deg, #7a3a10, #5a2808);
+  border: 1px solid rgba(200, 120, 50, 0.5);
+  border-radius: 4px;
+  color: #f0dfc0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.respawn-overlay__btn:hover,
+.respawn-overlay__btn:focus-visible {
+  background: linear-gradient(160deg, #9a4e18, #7a3a10);
+  border-color: rgba(220, 150, 70, 0.7);
+  outline: none;
+}
+
