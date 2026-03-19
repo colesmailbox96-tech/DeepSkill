@@ -76,6 +76,7 @@ import {
   updateCombat,
   setTarget,
 } from './engine/combat'
+import { rollLoot } from './engine/loot'
 import { useCombatStore } from './store/useCombatStore'
 import './App.css'
 
@@ -417,13 +418,38 @@ function App() {
       )
     }
 
-    // Phase 31 — player-attack kill notification.
+    // Phase 31 / 32 — player-attack kill: notify, roll loot, award items + currency.
     const onPlayerKill = (target: Creature) => {
       useCombatStore.getState().clearTarget()
       useNotifications.getState().push(
         `You defeat the ${target.def.name}!`,
         'success',
       )
+
+      // Phase 32 — roll loot table and award results.
+      const { items, currency } = rollLoot(target.def.id)
+      const { addItem, addCoins } = useGameStore.getState()
+
+      for (const drop of items) {
+        const def = getItem(drop.itemId)
+        addItem({ id: drop.itemId, name: def?.name ?? drop.itemId, quantity: drop.qty })
+      }
+
+      if (currency > 0) {
+        addCoins(currency)
+      }
+
+      if (items.length > 0 || currency > 0) {
+        const parts: string[] = items.map((d) => {
+          const def = getItem(d.itemId)
+          return `${d.qty}× ${def?.name ?? d.itemId}`
+        })
+        if (currency > 0) parts.push(`${currency} ⬡`)
+        useNotifications.getState().push(
+          `Loot: ${parts.join(', ')}`,
+          'info',
+        )
+      }
     }
 
     // Phase 04 — orbit camera state
