@@ -296,6 +296,32 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     consumableMeta: { healsHp: 18, effect: 'Restores 18 HP' },
   },
 
+  // ── Phase 32 — Hostile creature drops ────────────────────────────────────
+
+  {
+    id: 'thornling_shard',
+    name: 'Thornling Shard',
+    type: 'material',
+    stackable: true,
+    value: 5,
+    icon: 'items/thornling_shard.png',
+    description:
+      'A jagged briar spike broken from the dense thorn-armour of a Thornling. ' +
+      'Surprisingly hard and sharply barbed — useful in basic trapping and rough-crafting.',
+  },
+
+  {
+    id: 'mossback_hide',
+    name: 'Mossback Hide',
+    type: 'material',
+    stackable: true,
+    value: 4,
+    icon: 'items/mossback_hide.png',
+    description:
+      'A patch of thick, moss-patterned hide stripped from a defeated Mossback Toad. ' +
+      'Soft yet surprisingly water-resistant; suitable for patching light armour or lining boots.',
+  },
+
   // ── Phase 26 / 27 — Starter Equipment ────────────────────────────────────
 
   {

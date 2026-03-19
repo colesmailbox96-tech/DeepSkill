@@ -76,6 +76,7 @@ import {
   updateCombat,
   setTarget,
 } from './engine/combat'
+import { rollLoot } from './engine/loot'
 import { useCombatStore } from './store/useCombatStore'
 import './App.css'
 
@@ -417,13 +418,65 @@ function App() {
       )
     }
 
-    // Phase 31 — player-attack kill notification.
+    // Phase 31 / 32 — player-attack kill: notify, roll loot, award items + currency.
     const onPlayerKill = (target: Creature) => {
       useCombatStore.getState().clearTarget()
       useNotifications.getState().push(
         `You defeat the ${target.def.name}!`,
         'success',
       )
+
+      // Phase 32 — roll loot table and award results.
+      const { items, currency } = rollLoot(target.def.id)
+      const { addItem, addCoins, inventory } = useGameStore.getState()
+
+      // Pre-compute a Set of item ids already in the inventory so the per-drop
+      // stacking check is O(1) rather than a repeated linear scan.
+      const stackedIds = new Set(inventory.slots.map((s) => s.id))
+      // Track free slots locally so sequential non-stackable drops within the
+      // same kill correctly decrement the budget without re-reading Zustand.
+      let freeSlots = inventory.maxSlots - inventory.slots.length
+
+      const awarded: Array<{ name: string; qty: number }> = []
+
+      for (const drop of items) {
+        const def = getItem(drop.itemId)
+        const name = def?.name ?? drop.itemId
+        const mergesIntoStack = (def?.stackable ?? false) && stackedIds.has(drop.itemId)
+
+        // addItem is a silent no-op when the inventory is full and the item
+        // doesn't already occupy a stack.  Pre-check so we only announce items
+        // the player actually receives.
+        const canAdd = mergesIntoStack || freeSlots > 0
+        if (canAdd) {
+          addItem({ id: drop.itemId, name, quantity: drop.qty })
+          awarded.push({ name, qty: drop.qty })
+          if (!mergesIntoStack) {
+            freeSlots--
+          }
+        }
+        // else: inventory full — item silently skipped, not announced.
+      }
+
+      if (currency > 0) {
+        addCoins(currency)
+      }
+
+      const lostItems = items.length - awarded.length
+      if (awarded.length > 0 || currency > 0) {
+        const parts: string[] = awarded.map((d) => `${d.qty}× ${d.name}`)
+        if (currency > 0) parts.push(`${currency} ⬡`)
+        useNotifications.getState().push(
+          `Loot: ${parts.join(', ')}`,
+          'info',
+        )
+      }
+      if (lostItems > 0) {
+        useNotifications.getState().push(
+          `${lostItems} loot item${lostItems > 1 ? 's' : ''} lost — inventory full!`,
+          'warning',
+        )
+      }
     }
 
     // Phase 04 — orbit camera state
