@@ -68,8 +68,15 @@ import { ShopPanel } from './ui/hud/ShopPanel'
 import { LedgerPanel } from './ui/hud/LedgerPanel'
 import { EquipmentPanel } from './ui/hud/EquipmentPanel'
 import { MobileControls } from './ui/hud/MobileControls'
+import { CombatTargetHud } from './ui/hud/CombatTargetHud'
 import { buildCreatures, updateCreatures, triggerFlee } from './engine/creature'
 import type { Creature } from './engine/creature'
+import {
+  createCombatState,
+  updateCombat,
+  setTarget,
+} from './engine/combat'
+import { useCombatStore } from './store/useCombatStore'
 import './App.css'
 
 // ── Gather-session types (used by both woodcutting and mining loops) ───────────
@@ -357,6 +364,8 @@ function App() {
     // Invoked each time a hostile creature lands a melee hit on the player.
     // Applies damage factoring in equipped defence bonus, clamps health to 0,
     // and pushes a warning notification.
+    // Phase 31 — defeat fallback is called here; defined after player is created.
+    let _onPlayerDefeated: () => void = () => {}
     const onCreatureAttack = (creature: Creature, rawDamage: number) => {
       const { playerStats, equipStats, setHealth } = useGameStore.getState()
       const mitigated = Math.max(1, rawDamage - equipStats.totalDefence)
@@ -366,7 +375,14 @@ function App() {
         `The ${creature.def.name} strikes you for ${mitigated} damage!`,
         'warning',
       )
+      // Phase 31 — player defeat fallback.
+      if (newHp <= 0) {
+        _onPlayerDefeated()
+      }
     }
+
+    // Phase 31 — combat state (target + player attack timer).
+    const combatRef = { current: createCombatState() }
 
     // Precompute world-space bounding boxes for static collidables once so that
     // updatePlayer() doesn't have to call setFromObject() every frame.
@@ -376,6 +392,39 @@ function App() {
 
     // Phase 03 — player controller
     const player = createPlayer(scene)
+
+    // Phase 31 — player defeat fallback.
+    // Notifies the player, restores full HP, clears the combat target, and
+    // teleports back to the settlement origin.  Phase 34 will replace this
+    // with a proper respawn / penalty system.
+    _onPlayerDefeated = () => {
+      const { playerStats, setHealth } = useGameStore.getState()
+      setHealth(playerStats.maxHealth)
+      setTarget(combatRef.current, null)
+      useCombatStore.getState().clearTarget()
+      player.mesh.position.set(0, 0, 0)
+      useNotifications.getState().push(
+        'You have been defeated and wake back at the settlement.',
+        'warning',
+      )
+    }
+
+    // Phase 31 — player-attack hit notification.
+    const onPlayerHit = (target: Creature, damage: number) => {
+      useNotifications.getState().push(
+        `You strike the ${target.def.name} for ${damage} damage.`,
+        'info',
+      )
+    }
+
+    // Phase 31 — player-attack kill notification.
+    const onPlayerKill = (target: Creature) => {
+      useCombatStore.getState().clearTarget()
+      useNotifications.getState().push(
+        `You defeat the ${target.def.name}!`,
+        'success',
+      )
+    }
 
     // Phase 04 — orbit camera state
     const camState = createCameraState()
@@ -520,7 +569,60 @@ function App() {
       }
     }
 
+    // ── Phase 31 — Left-click target selection ──────────────────────────────
+    // Raycasts against creature meshes on left-click; clicking a hostile
+    // creature sets it as the combat target; clicking empty space clears it.
+    const raycaster = new THREE.Raycaster()
+    const _clickNdc = new THREE.Vector2()
+
+    const onCanvasClick = (e: MouseEvent) => {
+      // Only respond to unmodified left-click (not right-drag release).
+      if (e.button !== 0) return
+
+      const rect = canvas.getBoundingClientRect()
+      _clickNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+      _clickNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+
+      raycaster.setFromCamera(_clickNdc, camera)
+
+      // Collect all creature mesh objects and test against them.
+      const creatureMeshes = creatures.map((c) => c.mesh)
+      const hits = raycaster.intersectObjects(creatureMeshes, true)
+
+      if (hits.length > 0) {
+        // Walk up the hierarchy to find the matching Creature.
+        const hitObj = hits[0].object
+        const matched = creatures.find((c) => {
+          let obj: THREE.Object3D | null = hitObj
+          while (obj) {
+            if (obj === c.mesh) return true
+            obj = obj.parent
+          }
+          return false
+        })
+        if (matched && matched.def.aggroRadius && matched.state !== 'dead') {
+          setTarget(combatRef.current, matched)
+          useCombatStore.getState().setTargetInfo(
+            matched.def.name,
+            matched.hp,
+            matched.def.maxHp ?? matched.hp,
+          )
+          useNotifications.getState().push(
+            `You target the ${matched.def.name}.`,
+            'info',
+          )
+        }
+      } else {
+        // Clicked empty space — deselect.
+        if (combatRef.current.target) {
+          setTarget(combatRef.current, null)
+          useCombatStore.getState().clearTarget()
+        }
+      }
+    }
+
     const canvas = renderer.domElement
+    canvas.addEventListener('click', onCanvasClick)
     canvas.addEventListener('pointerdown', onPointerDown)
     canvas.addEventListener('pointermove', onPointerMove)
     canvas.addEventListener('pointerup', onPointerUp)
@@ -665,6 +767,31 @@ function App() {
 
       // Phase 29/30 — tick creature AI (roaming, flee, aggro, pursuit bounds, reset)
       updateCreatures(creatures, delta, player.mesh.position, onCreatureAttack)
+
+      // Phase 31 — tick player combat loop (auto-attack, cooldown, kill detection)
+      updateCombat(
+        combatRef.current,
+        delta,
+        player.mesh.position,
+        useGameStore.getState().equipStats.totalAttack,
+        onPlayerHit,
+        onPlayerKill,
+      )
+      // Sync live target HP to the combat store so the React overlay stays current.
+      const combatTarget = combatRef.current.target
+      if (combatTarget && combatTarget.state !== 'dead') {
+        useCombatStore.getState().setTargetInfo(
+          combatTarget.def.name,
+          combatTarget.hp,
+          combatTarget.def.maxHp ?? combatTarget.hp,
+        )
+      } else if (!combatTarget) {
+        // Target was cleared (killed or deselected) — ensure UI is also cleared.
+        if (useCombatStore.getState().targetName !== null) {
+          useCombatStore.getState().clearTarget()
+        }
+      }
+
       const tgt = interactionState.target
       mobileHasTargetRef.current = !!tgt
       if (tgt !== previousTarget) {
@@ -702,6 +829,7 @@ function App() {
       canvas.removeEventListener('touchmove', onTouchMove)
       canvas.removeEventListener('touchend', onTouchEnd)
       canvas.removeEventListener('touchcancel', onTouchEnd)
+      canvas.removeEventListener('click', onCanvasClick)
       scene.traverse((object) => {
         const renderObject = object as THREE.Object3D & {
           geometry?: THREE.BufferGeometry
@@ -727,7 +855,7 @@ function App() {
         <h1>Veilmarch</h1>
         <p id="scene-description" className="app-header__desc">
           Playing as <strong>{playerName}</strong>.
-          WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact.
+          WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact · click creature to target.
           I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment.
         </p>
       </header>
@@ -741,6 +869,8 @@ function App() {
         {/* Phase 09 — HUD overlay */}
         <div className="hud-overlay">
           <PlayerStrip />
+          {/* Phase 31 — Combat target nameplate + HP bar */}
+          <CombatTargetHud />
           <NotificationFeed />
           {/* Phase 10 — Inventory panel */}
           <InventoryPanel />

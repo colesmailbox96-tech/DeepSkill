@@ -1486,3 +1486,66 @@ p {
     }
   }
 }
+
+/* ── Phase 31 — Combat Target HUD ────────────────────────────────────────── */
+
+/**
+ * Nameplate shown just below the player strip when a hostile creature is
+ * targeted.  Uses the same visual language as the player bars.
+ */
+.combat-target-hud {
+  position: absolute;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 160px;
+  max-width: 240px;
+  pointer-events: none;
+}
+
+.combat-target-hud__name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f0e8c0;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.04em;
+}
+
+.combat-target-hud__bar {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.combat-target-hud__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7d1a1a, #c0392b);
+  transition: width 0.2s ease;
+}
+
+.combat-target-hud__label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.03em;
+  pointer-events: none;
+}
+
+@media (pointer: coarse) {
+  .combat-target-hud {
+    top: calc(0.5rem + env(safe-area-inset-top, 0px));
+  }
+}
