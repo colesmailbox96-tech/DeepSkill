@@ -59,6 +59,7 @@ import {
 import type { CookRecipeConfig } from './engine/cooking'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
+import { useFoodStore } from './store/useFoodStore'
 import { getItem } from './data/items/itemRegistry'
 import { PlayerStrip } from './ui/hud/PlayerStrip'
 import { NotificationFeed } from './ui/hud/NotificationFeed'
@@ -830,6 +831,8 @@ function App() {
         onPlayerHit,
         onPlayerKill,
       )
+      // Phase 33 — tick food cooldown timer
+      useFoodStore.getState().tickCooldown(delta)
       // Sync live target HP to the combat store so the React overlay stays current.
       // Cache the last values written to avoid redundant Zustand updates every frame.
       const combatTarget = combatRef.current.target
