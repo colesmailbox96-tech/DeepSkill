@@ -778,13 +778,18 @@ function App() {
         onPlayerKill,
       )
       // Sync live target HP to the combat store so the React overlay stays current.
+      // Cache the last values written to avoid redundant Zustand updates every frame.
       const combatTarget = combatRef.current.target
       if (combatTarget && combatTarget.state !== 'dead') {
-        useCombatStore.getState().setTargetInfo(
-          combatTarget.def.name,
-          combatTarget.hp,
-          combatTarget.def.maxHp ?? combatTarget.hp,
-        )
+        const store = useCombatStore.getState()
+        const newMaxHp = combatTarget.def.maxHp ?? combatTarget.hp
+        if (
+          store.targetName !== combatTarget.def.name ||
+          store.targetHp !== combatTarget.hp ||
+          store.targetMaxHp !== newMaxHp
+        ) {
+          store.setTargetInfo(combatTarget.def.name, combatTarget.hp, newMaxHp)
+        }
       } else if (!combatTarget) {
         // Target was cleared (killed or deselected) — ensure UI is also cleared.
         if (useCombatStore.getState().targetName !== null) {

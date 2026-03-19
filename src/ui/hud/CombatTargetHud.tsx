@@ -9,15 +9,15 @@ import { useCombatStore } from '../../store/useCombatStore'
 
 export function CombatTargetHud() {
   const targetName = useCombatStore((s) => s.targetName)
-  const targetHp   = useCombatStore((s) => s.targetHp)
+  const targetHp = useCombatStore((s) => s.targetHp)
   const targetMaxHp = useCombatStore((s) => s.targetMaxHp)
 
   if (!targetName) return null
 
-  const hpPct = targetMaxHp > 0 ? Math.max(0, (targetHp / targetMaxHp) * 100) : 0
+  const hpPct = targetMaxHp > 0 ? Math.min(100, Math.max(0, (targetHp / targetMaxHp) * 100)) : 0
 
   return (
-    <div className="combat-target-hud" role="status" aria-label="Combat target">
+    <div className="combat-target-hud" aria-label="Combat target">
       <div className="combat-target-hud__name">{targetName}</div>
       <div
         className="combat-target-hud__bar"

@@ -27,8 +27,9 @@ export const PLAYER_BASE_ATTACK = 5
 
 /**
  * Distance (metres) within which the player can land a melee hit on a
- * targeted creature.  Matches the hostile creature's MELEE_RANGE so combat
- * feels symmetrical — both parties start swinging at the same proximity.
+ * targeted creature.  Intentionally slightly larger than the hostile
+ * creature's own MELEE_RANGE (1.8 m) so the player can initiate a swing
+ * just before the creature enters its own attack arc.
  */
 export const PLAYER_MELEE_RANGE = 2.0
 

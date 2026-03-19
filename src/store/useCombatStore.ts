@@ -29,7 +29,12 @@ export const useCombatStore = create<CombatUIState>((set) => ({
   targetMaxHp: 0,
 
   setTargetInfo: (name, hp, maxHp) =>
-    set({ targetName: name, targetHp: hp, targetMaxHp: maxHp }),
+    set((state) => {
+      if (state.targetName === name && state.targetHp === hp && state.targetMaxHp === maxHp) {
+        return state
+      }
+      return { targetName: name, targetHp: hp, targetMaxHp: maxHp }
+    }),
 
   clearTarget: () =>
     set({ targetName: null, targetHp: 0, targetMaxHp: 0 }),
