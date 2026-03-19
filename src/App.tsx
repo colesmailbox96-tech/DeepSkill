@@ -353,6 +353,21 @@ function App() {
 
     const creatures: Creature[] = buildCreatures(scene, interactables, onHarvest)
 
+    // Phase 30 — creature attack handler.
+    // Invoked each time a hostile creature lands a melee hit on the player.
+    // Applies damage factoring in equipped defence bonus, clamps health to 0,
+    // and pushes a warning notification.
+    const onCreatureAttack = (creature: Creature, rawDamage: number) => {
+      const { playerStats, equipStats, setHealth } = useGameStore.getState()
+      const mitigated = Math.max(1, rawDamage - equipStats.totalDefence)
+      const newHp = Math.max(0, playerStats.health - mitigated)
+      setHealth(newHp)
+      useNotifications.getState().push(
+        `The ${creature.def.name} strikes you for ${mitigated} damage!`,
+        'warning',
+      )
+    }
+
     // Precompute world-space bounding boxes for static collidables once so that
     // updatePlayer() doesn't have to call setFromObject() every frame.
     const collidableBoxes: THREE.Box3[] = collidables.map((m) =>
@@ -648,8 +663,8 @@ function App() {
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
 
-      // Phase 29 — tick creature AI (roaming, flee, pursuit bounds, reset)
-      updateCreatures(creatures, delta, player.mesh.position)
+      // Phase 29/30 — tick creature AI (roaming, flee, aggro, pursuit bounds, reset)
+      updateCreatures(creatures, delta, player.mesh.position, onCreatureAttack)
       const tgt = interactionState.target
       mobileHasTargetRef.current = !!tgt
       if (tgt !== previousTarget) {

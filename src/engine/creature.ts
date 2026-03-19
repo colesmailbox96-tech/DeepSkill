@@ -1,8 +1,8 @@
 /**
  * Phase 29 — Non-Aggressive Wildlife
+ * Phase 30 — Starter Hostile Creatures
  *
- * Extends the Phase 28 creature framework with wildlife-specific behaviour:
- *
+ * Phase 29 extensions:
  *   Flee state:
  *     Non-aggressive creatures sprint away from the player when the player
  *     enters their fleeRadius.  The flee target is the point directly opposite
@@ -20,11 +20,27 @@
  *     - Cinderhare  — long-eared, quick; drops cinderhare_meat.
  *     - Slatebeak   — stocky wading bird; drops slatebeak_feather.
  *
- *   Three placeholder creatures from Phase 28 (murkweasel, bog_lurker,
- *   drift_moth) are retired in favour of the Phase 29 wildlife.
+ * Phase 30 extensions:
+ *   Aggro state:
+ *     Hostile creatures charge the player when the player enters their
+ *     aggroRadius.  They pursue until the player escapes beyond pursuitRadius
+ *     from the creature's spawn, at which point they reset.  While adjacent
+ *     (within MELEE_RANGE) they fire periodic attacks governed by attackCooldown.
+ *     Each attack invokes the optional `onAttack` callback so callers can apply
+ *     damage to the player.
  *
- *   Phase 30 will introduce hostile Thornling and Mossback Toad using the
- *   same schema with an aggro state instead of flee.
+ *   Health / defeat / respawn:
+ *     Hostile creatures have a finite HP pool (maxHp).  When hp reaches zero
+ *     the creature enters the 'dead' state: its mesh is hidden and a respawn
+ *     countdown begins.  After respawnDelay seconds the creature is fully
+ *     restored and re-enters idle at its spawn position.
+ *
+ *   Phase 30 hostile creatures:
+ *     - Thornling     — dense briar-beast lurking north of the settlement.
+ *     - Mossback Toad — bloated swamp amphibian from the marsh margins.
+ *
+ *   Phase 31 will add target selection and player-side damage application using
+ *   the exported damageCreature() helper added in this phase.
  */
 
 import * as THREE from 'three'
@@ -33,7 +49,7 @@ import type { Interactable } from './interactable'
 // ─── Public types ─────────────────────────────────────────────────────────────
 
 /** State of the creature's finite-state machine. */
-export type CreatureState = 'idle' | 'roam' | 'flee' | 'reset'
+export type CreatureState = 'idle' | 'roam' | 'flee' | 'reset' | 'aggro' | 'dead'
 
 /**
  * Static data schema for a creature type.
@@ -91,6 +107,35 @@ export interface CreatureDef {
    * Defaults to 0.75 when `dropItemId` is set.
    */
   dropChance?: number
+
+  // ── Phase 30 hostile fields ───────────────────────────────────────────────
+
+  /**
+   * Distance from the player (metres) at which a hostile creature transitions
+   * to the 'aggro' state and begins pursuing.  Set to 0 or omit for
+   * non-aggressive creatures.
+   */
+  aggroRadius?: number
+  /**
+   * Maximum hit-points for this creature.  Omit for non-combative wildlife.
+   * Hostile creatures (aggroRadius > 0) must set this.
+   */
+  maxHp?: number
+  /**
+   * Damage dealt to the player per melee hit (default: DEFAULT_ATTACK_DAMAGE).
+   * Only relevant for hostile creatures.
+   */
+  attackDamage?: number
+  /**
+   * Seconds between successive attacks while in melee range
+   * (default: DEFAULT_ATTACK_COOLDOWN).
+   */
+  attackCooldown?: number
+  /**
+   * Seconds after defeat before the creature respawns at its origin
+   * (default: DEFAULT_RESPAWN_DELAY).
+   */
+  respawnDelay?: number
 }
 
 /** A live creature instance in the world. */
@@ -112,13 +157,46 @@ export interface Creature {
    * Prevents repeated harvesting from the same instance.
    */
   dropCooldown: number
+
+  // ── Phase 30 combat fields ────────────────────────────────────────────────
+
+  /**
+   * Current hit-points.  Equals def.maxHp on spawn.  0 for non-hostile
+   * creatures that have no maxHp defined.
+   */
+  hp: number
+  /**
+   * Seconds until this creature can land another melee hit on the player.
+   * Reloads from def.attackCooldown after each attack.
+   */
+  attackTimer: number
+  /**
+   * Countdown (seconds) while the creature is in the 'dead' state.
+   * Decrements each frame; when it reaches 0 the creature respawns.
+   */
+  respawnTimer: number
 }
 
 // ─── Creature definitions ─────────────────────────────────────────────────────
 
+// ── Phase 30 constants ────────────────────────────────────────────────────────
+
+/** Melee range (metres): distance at which a hostile creature can land a hit. */
+const MELEE_RANGE = 1.8
+
+/** Default damage per hit when def.attackDamage is not set. */
+const DEFAULT_ATTACK_DAMAGE = 4
+
+/** Default seconds between successive hits when def.attackCooldown is not set. */
+const DEFAULT_ATTACK_COOLDOWN = 1.5
+
+/** Default seconds before a defeated creature respawns. */
+const DEFAULT_RESPAWN_DELAY = 30
+
 /**
  * Phase 29 wildlife: two non-aggressive species that roam the settlement
  * surroundings, flee from approaching players, and yield optional drops.
+ * Phase 30 hostile creatures: two aggressive species that pursue and attack.
  */
 const CREATURE_DEFS: CreatureDef[] = [
   // 1. Cinderhare — swift, long-eared animal that nests near the geothermal
@@ -157,6 +235,48 @@ const CREATURE_DEFS: CreatureDef[] = [
     fleeRadius: 5.0,
     dropItemId: 'slatebeak_feather',
     dropChance: 0.75,
+  },
+
+  // 3. Thornling — Phase 30 hostile creature.  A dense, briar-wrapped biped
+  //    that lurks north of the settlement.  Aggressive on sight; slow but hits
+  //    hard.
+  {
+    id: 'thornling',
+    name: 'Thornling',
+    x: 8,
+    z: 18,
+    color: 0x2d5a27,
+    scale: 1.05,
+    roamRadius: 6,
+    pursuitRadius: 22,
+    speed: 1.8,
+    idleBase: 3.5,
+    aggroRadius: 7,
+    maxHp: 20,
+    attackDamage: 4,
+    attackCooldown: 2.0,
+    respawnDelay: 45,
+  },
+
+  // 4. Mossback Toad — Phase 30 hostile creature.  A bloated amphibian haunting
+  //    the western marsh margins.  Quicker than it looks; weaker but more
+  //    frequent attacks.
+  {
+    id: 'mossback_toad',
+    name: 'Mossback Toad',
+    x: -14,
+    z: 20,
+    color: 0x556b2f,
+    scale: 0.8,
+    roamRadius: 5,
+    pursuitRadius: 18,
+    speed: 2.2,
+    idleBase: 4.0,
+    aggroRadius: 5,
+    maxHp: 12,
+    attackDamage: 3,
+    attackCooldown: 1.5,
+    respawnDelay: 30,
   },
 ]
 
@@ -205,6 +325,9 @@ export function spawnCreature(
     state: 'idle',
     idleTimer: def.idleBase * (0.5 + Math.random()),
     dropCooldown: 0,
+    hp: def.maxHp ?? 0,
+    attackTimer: 0,
+    respawnTimer: 0,
   }
 
   // Register as an interactable if it has a drop and a harvest callback.
@@ -228,20 +351,47 @@ export function spawnCreature(
  *
  * @param creatures  The live creature array returned by buildCreatures().
  * @param delta      Frame time in seconds.
- * @param playerPos  Current player world position; used for flee detection.
+ * @param playerPos  Current player world position; used for flee/aggro detection.
+ * @param onAttack   Optional callback invoked when a hostile creature lands a
+ *                   melee hit on the player.  Receives the attacker and the raw
+ *                   damage value so the caller can apply it to player HP.
  */
 export function updateCreatures(
   creatures: Creature[],
   delta: number,
   playerPos: THREE.Vector3,
+  onAttack?: (creature: Creature, damage: number) => void,
 ): void {
   for (const creature of creatures) {
     // Tick drop cooldown regardless of AI state.
     if (creature.dropCooldown > 0) {
       creature.dropCooldown = Math.max(0, creature.dropCooldown - delta)
     }
-    _stepCreature(creature, delta, playerPos)
+    _stepCreature(creature, delta, playerPos, onAttack)
   }
+}
+
+/**
+ * Phase 30 — Deal damage to a hostile creature.
+ *
+ * Reduces the creature's HP by `amount` (clamped to ≥ 0).  If HP reaches
+ * zero the creature is defeated: its mesh is hidden and a respawn countdown
+ * starts.
+ *
+ * Returns `true` when this hit kills the creature, `false` otherwise.
+ * Returns `false` immediately for non-hostile creatures (no maxHp defined)
+ * or creatures already in the 'dead' state.
+ *
+ * Phase 31 will call this from the player-attack handler.
+ */
+export function damageCreature(creature: Creature, amount: number): boolean {
+  if (creature.state === 'dead' || creature.def.maxHp == null) return false
+  creature.hp = Math.max(0, creature.hp - amount)
+  if (creature.hp <= 0) {
+    _killCreature(creature)
+    return true
+  }
+  return false
 }
 
 /**
@@ -258,31 +408,77 @@ export function triggerFlee(creature: Creature, fromPos: THREE.Vector3): void {
  * Run one FSM step for a single creature.
  *
  * States:
- *   idle  → decrement timer; check flee trigger; on expiry pick a roam target.
- *   roam  → translate toward targetPos; check flee trigger; on arrival → idle.
+ *   idle  → decrement timer; check flee/aggro trigger; on expiry pick a roam target.
+ *   roam  → translate toward targetPos; check flee/aggro trigger; on arrival → idle.
  *   flee  → sprint away from player; on arrival → idle (skittish pause).
  *   reset → teleport back to spawn; enter idle.
+ *   aggro → (Phase 30) pursue player; attack on contact; give up when too far from spawn.
+ *   dead  → (Phase 30) hidden; respawnTimer ticks down; restore and idle on expiry.
  *
  * Flee logic:
  *   When the player is within `fleeRadius` the creature computes a flee target
  *   directly opposite the player, clamped to pursuitRadius from spawn.  The
  *   flee state uses fleeSpeedMult × speed to sprint.
  *
+ * Aggro logic (Phase 30):
+ *   When the player is within `aggroRadius` the creature charges.  It pursues
+ *   until the player moves beyond pursuitRadius from the creature's spawn, then
+ *   resets.  When the player is within MELEE_RANGE and attackTimer is 0, the
+ *   onAttack callback fires and attackTimer reloads.
+ *
  * Pursuit / safety bounds:
- *   Before the FSM runs, if the creature is beyond pursuitRadius from its spawn
- *   position it is immediately snapped back and enters idle.
+ *   Before the FSM runs (for non-aggro, non-dead states), if the creature is
+ *   beyond pursuitRadius from its spawn position it is immediately snapped back
+ *   and enters idle.
  */
-function _stepCreature(c: Creature, delta: number, playerPos: THREE.Vector3): void {
+function _stepCreature(
+  c: Creature,
+  delta: number,
+  playerPos: THREE.Vector3,
+  onAttack?: (creature: Creature, damage: number) => void,
+): void {
   const pos = c.mesh.position
 
-  // ── Pursue-radius safety bounds ──────────────────────────────────────────
-  if (pos.distanceTo(c.spawnPos) > c.def.pursuitRadius) {
-    _resetToSpawn(c)
+  // ── Dead state — tick respawn timer, restore when done ──────────────────
+  if (c.state === 'dead') {
+    c.respawnTimer -= delta
+    if (c.respawnTimer <= 0) {
+      c.hp = c.def.maxHp ?? 0
+      c.attackTimer = 0
+      c.mesh.visible = true
+      _resetToSpawn(c)
+    }
     return
   }
 
-  // ── Flee trigger — overrides idle/roam but not an already-active flee ───
-  if (c.state !== 'flee' && c.state !== 'reset') {
+  // ── Tick attack cooldown ─────────────────────────────────────────────────
+  if (c.attackTimer > 0) {
+    c.attackTimer = Math.max(0, c.attackTimer - delta)
+  }
+
+  // ── Pursue-radius safety bounds (skip when already in aggro/reset) ───────
+  if (c.state !== 'aggro' && c.state !== 'reset') {
+    if (pos.distanceTo(c.spawnPos) > c.def.pursuitRadius) {
+      _resetToSpawn(c)
+      return
+    }
+  }
+
+  // ── Aggro trigger — overrides idle/roam for hostile creatures ────────────
+  if (c.state === 'idle' || c.state === 'roam') {
+    const ar = c.def.aggroRadius ?? 0
+    if (ar > 0) {
+      const dx = pos.x - playerPos.x
+      const dz = pos.z - playerPos.z
+      if (Math.sqrt(dx * dx + dz * dz) < ar) {
+        c.state = 'aggro'
+        // Fall through to the FSM switch so aggro movement starts immediately.
+      }
+    }
+  }
+
+  // ── Flee trigger — overrides idle/roam but not flee/aggro/reset ──────────
+  if (c.state !== 'flee' && c.state !== 'reset' && c.state !== 'aggro') {
     const fr = c.def.fleeRadius ?? 0
     if (fr > 0) {
       const dx = pos.x - playerPos.x
@@ -358,6 +554,36 @@ function _stepCreature(c: Creature, delta: number, playerPos: THREE.Vector3): vo
       _resetToSpawn(c)
       break
     }
+
+    // ── Phase 30: Aggro — chase the player and attack on contact ──────────
+    case 'aggro': {
+      const dx = playerPos.x - pos.x
+      const dz = playerPos.z - pos.z
+      const distToPlayer = Math.sqrt(dx * dx + dz * dz)
+
+      // Give up if creature has wandered too far from its spawn origin.
+      if (pos.distanceTo(c.spawnPos) > c.def.pursuitRadius) {
+        _resetToSpawn(c)
+        break
+      }
+
+      // Face and move toward the player while outside melee range.
+      if (distToPlayer > MELEE_RANGE) {
+        const step = Math.min(c.def.speed * delta, distToPlayer)
+        const invDist = 1 / distToPlayer
+        pos.x += dx * invDist * step
+        pos.z += dz * invDist * step
+        c.mesh.rotation.y = Math.atan2(dx * invDist, dz * invDist)
+      }
+
+      // Attack when in melee range and the cooldown has elapsed.
+      if (distToPlayer <= MELEE_RANGE && c.attackTimer <= 0 && onAttack) {
+        const dmg = c.def.attackDamage ?? DEFAULT_ATTACK_DAMAGE
+        onAttack(c, dmg)
+        c.attackTimer = c.def.attackCooldown ?? DEFAULT_ATTACK_COOLDOWN
+      }
+      break
+    }
   }
 }
 
@@ -394,6 +620,13 @@ function _startFlee(c: Creature, playerPos: THREE.Vector3): void {
   c.state = 'flee'
 }
 
+/** Phase 30 — Transition a creature to the 'dead' state and begin respawn timer. */
+function _killCreature(c: Creature): void {
+  c.state = 'dead'
+  c.mesh.visible = false
+  c.respawnTimer = c.def.respawnDelay ?? DEFAULT_RESPAWN_DELAY
+}
+
 /** Teleport the creature back to its spawn origin and restart idle. */
 function _resetToSpawn(c: Creature): void {
   c.mesh.position.copy(c.spawnPos)
@@ -421,10 +654,13 @@ function _buildMesh(def: CreatureDef): THREE.Group {
 
   // Eye-point — a tiny emissive sphere at the front-upper face of the body.
   // Gives creatures a distinct look and hints at facing direction.
+  // Phase 30: hostile creatures (aggroRadius > 0) get a red eye to signal danger.
+  const isHostile = (def.aggroRadius ?? 0) > 0
+  const eyeColor = isHostile ? 0xff3a1a : 0xffd060
   const eyeMat = new THREE.MeshStandardMaterial({
-    color: 0xffd060,
-    emissive: new THREE.Color(0xffd060),
-    emissiveIntensity: 0.6,
+    color: eyeColor,
+    emissive: new THREE.Color(eyeColor),
+    emissiveIntensity: 0.7,
     roughness: 0.4,
   })
   const eyeR = 0.055 * def.scale
