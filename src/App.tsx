@@ -68,6 +68,8 @@ import { ShopPanel } from './ui/hud/ShopPanel'
 import { LedgerPanel } from './ui/hud/LedgerPanel'
 import { EquipmentPanel } from './ui/hud/EquipmentPanel'
 import { MobileControls } from './ui/hud/MobileControls'
+import { buildCreatures, updateCreatures } from './engine/creature'
+import type { Creature } from './engine/creature'
 import './App.css'
 
 // ── Gather-session types (used by both woodcutting and mining loops) ───────────
@@ -299,6 +301,10 @@ function App() {
     }
 
     buildCookStation(scene, interactables, onCookStart)
+
+    // Phase 28 — Basic Creature Framework
+    // Spawn the starter creature set; returned instances are ticked every frame.
+    const creatures: Creature[] = buildCreatures(scene)
 
     // Precompute world-space bounding boxes for static collidables once so that
     // updatePlayer() doesn't have to call setFromObject() every frame.
@@ -594,6 +600,9 @@ function App() {
 
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
+
+      // Phase 28 — tick creature AI (roaming, pursuit bounds, reset)
+      updateCreatures(creatures, delta)
       const tgt = interactionState.target
       mobileHasTargetRef.current = !!tgt
       if (tgt !== previousTarget) {
