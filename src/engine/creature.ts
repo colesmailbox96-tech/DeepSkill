@@ -1,29 +1,39 @@
 /**
- * Phase 28 — Basic Creature Framework
+ * Phase 29 — Non-Aggressive Wildlife
  *
- * Implements the foundational non-player entity system:
- *   - Creature data schema (CreatureDef) — defines static properties per creature type.
- *   - Live creature instance type (Creature) — runtime state for each spawned entity.
- *   - Spawn system (buildCreatures / spawnCreature) — instantiates meshes and places
- *     them in the scene at their defined spawn positions.
- *   - Idle roaming — creatures periodically pick a random destination within their
- *     roam radius and walk toward it, then pause before choosing the next target.
- *   - Pursuit bounds — each creature has a pursuit radius beyond which it will not
- *     stray from its spawn point; this cap is used by future aggro logic (Phase 30).
- *   - Despawn / reset logic — if a creature exceeds its pursuit radius it is
- *     immediately returned to its spawn position and re-enters idle state.
+ * Extends the Phase 28 creature framework with wildlife-specific behaviour:
  *
- * Three placeholder creatures are spawned around the settlement perimeter to
- * exercise the full framework.  Phase 29 will replace these with properly
- * named wildlife (Cinderhare, Slatebeak) using the same API.
+ *   Flee state:
+ *     Non-aggressive creatures sprint away from the player when the player
+ *     enters their fleeRadius.  The flee target is the point directly opposite
+ *     the player relative to the creature's current position, clamped to
+ *     pursuitRadius from the spawn origin.  On arrival the creature enters a
+ *     brief skittish idle before resuming normal roaming.
+ *
+ *   Harvestable drops:
+ *     Creatures with a `dropItemId` expose themselves as interactables.  When
+ *     the player presses [E] within interactRadius the harvest callback fires,
+ *     which awards the drop and triggers a flee.  A `dropCooldown` timer (25 s)
+ *     prevents repeated harvesting from the same instance.
+ *
+ *   Creatures added:
+ *     - Cinderhare  — long-eared, quick; drops cinderhare_meat.
+ *     - Slatebeak   — stocky wading bird; drops slatebeak_feather.
+ *
+ *   Three placeholder creatures from Phase 28 (murkweasel, bog_lurker,
+ *   drift_moth) are retired in favour of the Phase 29 wildlife.
+ *
+ *   Phase 30 will introduce hostile Thornling and Mossback Toad using the
+ *   same schema with an aggro state instead of flee.
  */
 
 import * as THREE from 'three'
+import type { Interactable } from './interactable'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
 /** State of the creature's finite-state machine. */
-export type CreatureState = 'idle' | 'roam' | 'reset'
+export type CreatureState = 'idle' | 'roam' | 'flee' | 'reset'
 
 /**
  * Static data schema for a creature type.
@@ -31,15 +41,15 @@ export type CreatureState = 'idle' | 'roam' | 'reset'
  * Creature instances may share the same def.
  */
 export interface CreatureDef {
-  /** Unique identifier for this creature type (e.g. 'murkweasel'). */
+  /** Unique identifier for this creature type (e.g. 'cinderhare'). */
   id: string
-  /** Display name shown in future combat / inspect UI. */
+  /** Display name shown in inspect UI and notification messages. */
   name: string
   /** Default spawn X position. */
   x: number
   /** Default spawn Z position (Y is always 0 / ground). */
   z: number
-  /** Body colour as a hex integer (e.g. 0x7a5a3a). */
+  /** Body colour as a hex integer (e.g. 0xc8a87c). */
   color: number
   /** Uniform scale applied to the base capsule geometry (1 = NPC-sized). */
   scale: number
@@ -57,10 +67,30 @@ export interface CreatureDef {
   /** Movement speed while roaming (metres per second). */
   speed: number
   /**
+   * Speed multiplier applied while fleeing (relative to `speed`).
+   * Defaults to 1.8 so fleeing feels genuinely urgent.
+   */
+  fleeSpeedMult?: number
+  /**
    * Base idle pause between roams (seconds).
    * Actual wait time is randomised ±50 % of this value each cycle.
    */
   idleBase: number
+  /**
+   * Distance from the player (metres) at which this creature will enter the
+   * 'flee' state.  Set to 0 or omit for non-skittish creatures.
+   */
+  fleeRadius?: number
+  /**
+   * Item id awarded when the player harvests this creature (e.g. 'cinderhare_meat').
+   * Omit for creatures that yield no direct drop.
+   */
+  dropItemId?: string
+  /**
+   * 0–1 probability that an interaction yields the drop.
+   * Defaults to 0.75 when `dropItemId` is set.
+   */
+  dropChance?: number
 }
 
 /** A live creature instance in the world. */
@@ -71,109 +101,155 @@ export interface Creature {
   mesh: THREE.Group
   /** Immutable world-space spawn position used for roam-radius and reset math. */
   spawnPos: THREE.Vector3
-  /** Current movement destination while in 'roam' state. */
+  /** Current movement destination while in 'roam' or 'flee' state. */
   targetPos: THREE.Vector3
   /** Current FSM state. */
   state: CreatureState
   /** Seconds remaining in the current idle pause. */
   idleTimer: number
+  /**
+   * Seconds until the creature can yield another drop (0 = ready).
+   * Prevents repeated harvesting from the same instance.
+   */
+  dropCooldown: number
 }
 
-// ─── Private creature definitions ────────────────────────────────────────────
+// ─── Creature definitions ─────────────────────────────────────────────────────
 
 /**
- * Three placeholder creatures positioned just outside the Hushwood perimeter
- * to validate all three framework states (idle, roam, reset).
- *
- * Phase 29 will introduce Cinderhare and Slatebeak using this same schema;
- * Phase 30 will add hostile Thornling and Mossback Toad with aggro radii.
+ * Phase 29 wildlife: two non-aggressive species that roam the settlement
+ * surroundings, flee from approaching players, and yield optional drops.
  */
 const CREATURE_DEFS: CreatureDef[] = [
-  // 1. Murkweasel — small, quick rodent-like creature lurking north of the
-  //    settlement on the quarry approach trail (z < −19).
+  // 1. Cinderhare — swift, long-eared animal that nests near the geothermal
+  //    vents east of the settlement.  Drops raw meat when harvested.
   {
-    id: 'murkweasel',
-    name: 'Murkweasel',
-    x: 5,
-    z: -26,
-    color: 0x7a5a3a,
-    scale: 0.65,
-    roamRadius: 6,
-    pursuitRadius: 14,
-    speed: 2.8,
-    idleBase: 3,
-  },
-
-  // 2. Bog Lurker — slow, heavy creature loitering on the eastern trail toward
-  //    Gloamwater Bank (x > 19).
-  {
-    id: 'bog_lurker',
-    name: 'Bog Lurker',
-    x: 28,
-    z: 4,
-    color: 0x4a6a42,
-    scale: 1.05,
-    roamRadius: 8,
+    id: 'cinderhare',
+    name: 'Cinderhare',
+    x: 14,
+    z: -8,
+    color: 0xc8a87c,
+    scale: 0.6,
+    roamRadius: 7,
     pursuitRadius: 18,
-    speed: 1.6,
-    idleBase: 6,
+    speed: 3.2,
+    fleeSpeedMult: 2.0,
+    idleBase: 2.5,
+    fleeRadius: 4.5,
+    dropItemId: 'cinderhare_meat',
+    dropChance: 0.8,
   },
 
-  // 3. Drift Moth — small, flighty creature in the open field west of the
-  //    settlement (x < −19).
+  // 2. Slatebeak — stocky, dark-feathered wading bird common in the marsh
+  //    margins west of the shoreline.  Drops a broad flight feather.
   {
-    id: 'drift_moth',
-    name: 'Drift Moth',
-    x: -24,
-    z: 6,
-    color: 0x8a78c0,
-    scale: 0.5,
-    roamRadius: 10,
-    pursuitRadius: 20,
-    speed: 3.2,
-    idleBase: 2,
+    id: 'slatebeak',
+    name: 'Slatebeak',
+    x: -18,
+    z: -4,
+    color: 0x4a5260,
+    scale: 0.75,
+    roamRadius: 6,
+    pursuitRadius: 16,
+    speed: 2.4,
+    fleeSpeedMult: 1.7,
+    idleBase: 3.5,
+    fleeRadius: 5.0,
+    dropItemId: 'slatebeak_feather',
+    dropChance: 0.75,
   },
 ]
+
+/** Interaction radius for wildlife harvest. */
+const HARVEST_INTERACT_RADIUS = 2.2
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 /**
- * Spawn all default creatures into `scene` and return their live instances.
- * Pass the returned array to `updateCreatures()` on every animation frame.
+ * Spawn all default wildlife into `scene` and return their live instances.
+ *
+ * @param scene         The Three.js scene to add meshes to.
+ * @param interactables Shared interactable list; harvestable creatures are
+ *                      registered here so the interaction system can target them.
+ * @param onHarvest     Called when the player successfully harvests a creature.
+ *                      Receives the Creature; caller decides which item to award.
  */
-export function buildCreatures(scene: THREE.Scene): Creature[] {
-  return CREATURE_DEFS.map((def) => spawnCreature(scene, def))
+export function buildCreatures(
+  scene: THREE.Scene,
+  interactables: Interactable[],
+  onHarvest: (creature: Creature) => void,
+): Creature[] {
+  return CREATURE_DEFS.map((def) => spawnCreature(scene, def, interactables, onHarvest))
 }
 
 /**
  * Spawn a single creature defined by `def` into `scene`.
  * Can be called by later phases to add individual creature types programmatically.
  */
-export function spawnCreature(scene: THREE.Scene, def: CreatureDef): Creature {
+export function spawnCreature(
+  scene: THREE.Scene,
+  def: CreatureDef,
+  interactables?: Interactable[],
+  onHarvest?: (creature: Creature) => void,
+): Creature {
   const mesh = _buildMesh(def)
   scene.add(mesh)
 
   const spawnPos = new THREE.Vector3(def.x, 0, def.z)
 
-  return {
+  const creature: Creature = {
     def,
     mesh,
     spawnPos: spawnPos.clone(),
     targetPos: spawnPos.clone(),
     state: 'idle',
-    // Stagger the initial idle timers so creatures don't all move in sync.
     idleTimer: def.idleBase * (0.5 + Math.random()),
+    dropCooldown: 0,
   }
+
+  // Register as an interactable if it has a drop and a harvest callback.
+  if (def.dropItemId && interactables && onHarvest) {
+    interactables.push({
+      mesh,
+      label: `Harvest ${def.name}`,
+      interactRadius: HARVEST_INTERACT_RADIUS,
+      onInteract() {
+        onHarvest(creature)
+      },
+    })
+  }
+
+  return creature
 }
 
 /**
  * Advance every creature's AI one simulation step.
  * Call once per animation frame with the frame delta (seconds).
+ *
+ * @param creatures  The live creature array returned by buildCreatures().
+ * @param delta      Frame time in seconds.
+ * @param playerPos  Current player world position; used for flee detection.
  */
-export function updateCreatures(creatures: Creature[], delta: number): void {
+export function updateCreatures(
+  creatures: Creature[],
+  delta: number,
+  playerPos: THREE.Vector3,
+): void {
   for (const creature of creatures) {
-    _stepCreature(creature, delta)
+    // Tick drop cooldown regardless of AI state.
+    if (creature.dropCooldown > 0) {
+      creature.dropCooldown = Math.max(0, creature.dropCooldown - delta)
+    }
+    _stepCreature(creature, delta, playerPos)
   }
+}
+
+/**
+ * Externally trigger a flee on a creature from a given world position.
+ * Used by the harvest callback in App.tsx when the player interacts with wildlife.
+ */
+export function triggerFlee(creature: Creature, fromPos: THREE.Vector3): void {
+  _startFlee(creature, fromPos)
 }
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
@@ -182,23 +258,41 @@ export function updateCreatures(creatures: Creature[], delta: number): void {
  * Run one FSM step for a single creature.
  *
  * States:
- *   idle  → decrement timer; on expiry pick a roam target and enter 'roam'.
- *   roam  → translate toward targetPos; on arrival enter 'idle'.
- *   reset → teleport back to spawn; enter 'idle'.  Provided as an explicit
- *           state so Phase 30 pursuit logic can trigger it cleanly.
+ *   idle  → decrement timer; check flee trigger; on expiry pick a roam target.
+ *   roam  → translate toward targetPos; check flee trigger; on arrival → idle.
+ *   flee  → sprint away from player; on arrival → idle (skittish pause).
+ *   reset → teleport back to spawn; enter idle.
+ *
+ * Flee logic:
+ *   When the player is within `fleeRadius` the creature computes a flee target
+ *   directly opposite the player, clamped to pursuitRadius from spawn.  The
+ *   flee state uses fleeSpeedMult × speed to sprint.
  *
  * Pursuit / safety bounds:
  *   Before the FSM runs, if the creature is beyond pursuitRadius from its spawn
- *   position it is immediately snapped back and enters 'idle'.  This prevents
- *   runaway roaming and forms the hook for future aggro-return logic.
+ *   position it is immediately snapped back and enters idle.
  */
-function _stepCreature(c: Creature, delta: number): void {
+function _stepCreature(c: Creature, delta: number, playerPos: THREE.Vector3): void {
   const pos = c.mesh.position
 
-  // ── Pursuit / safety bounds check ───────────────────────────────────────
+  // ── Pursue-radius safety bounds ──────────────────────────────────────────
   if (pos.distanceTo(c.spawnPos) > c.def.pursuitRadius) {
     _resetToSpawn(c)
     return
+  }
+
+  // ── Flee trigger — overrides idle/roam but not an already-active flee ───
+  if (c.state !== 'flee' && c.state !== 'reset') {
+    const fr = c.def.fleeRadius ?? 0
+    if (fr > 0) {
+      const dx = pos.x - playerPos.x
+      const dz = pos.z - playerPos.z
+      const distToPlayer = Math.sqrt(dx * dx + dz * dz)
+      if (distToPlayer < fr) {
+        _startFlee(c, playerPos)
+        return
+      }
+    }
   }
 
   // ── FSM ──────────────────────────────────────────────────────────────────
@@ -206,7 +300,6 @@ function _stepCreature(c: Creature, delta: number): void {
     case 'idle': {
       c.idleTimer -= delta
       if (c.idleTimer <= 0) {
-        // Pick a random destination within roamRadius of spawn.
         const angle = Math.random() * Math.PI * 2
         const dist  = Math.random() * c.def.roamRadius
         c.targetPos.set(
@@ -225,18 +318,37 @@ function _stepCreature(c: Creature, delta: number): void {
       const distToTarget = Math.sqrt(dx * dx + dz * dz)
 
       if (distToTarget < 0.15) {
-        // Arrived — snap to target and begin idle pause.
         pos.x = c.targetPos.x
         pos.z = c.targetPos.z
         c.state = 'idle'
         c.idleTimer = c.def.idleBase * (0.5 + Math.random())
       } else {
-        // Translate toward target this frame.
         const step = Math.min(c.def.speed * delta, distToTarget)
         const invDist = 1 / distToTarget
         pos.x += dx * invDist * step
         pos.z += dz * invDist * step
-        // Rotate mesh to face movement direction.
+        c.mesh.rotation.y = Math.atan2(dx * invDist, dz * invDist)
+      }
+      break
+    }
+
+    case 'flee': {
+      const dx = c.targetPos.x - pos.x
+      const dz = c.targetPos.z - pos.z
+      const distToTarget = Math.sqrt(dx * dx + dz * dz)
+      const fleeSpeed = c.def.speed * (c.def.fleeSpeedMult ?? 1.8)
+
+      if (distToTarget < 0.2) {
+        pos.x = c.targetPos.x
+        pos.z = c.targetPos.z
+        c.state = 'idle'
+        // Skittish pause: slightly longer idle after fleeing.
+        c.idleTimer = c.def.idleBase * (1.0 + Math.random() * 0.5)
+      } else {
+        const step = Math.min(fleeSpeed * delta, distToTarget)
+        const invDist = 1 / distToTarget
+        pos.x += dx * invDist * step
+        pos.z += dz * invDist * step
         c.mesh.rotation.y = Math.atan2(dx * invDist, dz * invDist)
       }
       break
@@ -247,6 +359,38 @@ function _stepCreature(c: Creature, delta: number): void {
       break
     }
   }
+}
+
+/**
+ * Compute a flee-away target and transition the creature to the 'flee' state.
+ * The flee destination is the point directly opposite the player from the
+ * creature's position, clamped to pursuitRadius from the spawn origin.
+ */
+function _startFlee(c: Creature, playerPos: THREE.Vector3): void {
+  const pos = c.mesh.position
+
+  // Direction away from player (creature → player, then negate).
+  const awayX = pos.x - playerPos.x
+  const awayZ = pos.z - playerPos.z
+  const len = Math.sqrt(awayX * awayX + awayZ * awayZ) || 1
+
+  // Sprint a distance equal to the full pursuitRadius in that direction.
+  const sprintDist = c.def.pursuitRadius * 0.6
+  let targetX = pos.x + (awayX / len) * sprintDist
+  let targetZ = pos.z + (awayZ / len) * sprintDist
+
+  // Clamp flee target to within pursuitRadius of spawn.
+  const tdx = targetX - c.spawnPos.x
+  const tdz = targetZ - c.spawnPos.z
+  const tDist = Math.sqrt(tdx * tdx + tdz * tdz)
+  if (tDist > c.def.pursuitRadius) {
+    const scale = c.def.pursuitRadius / tDist
+    targetX = c.spawnPos.x + tdx * scale
+    targetZ = c.spawnPos.z + tdz * scale
+  }
+
+  c.targetPos.set(targetX, 0, targetZ)
+  c.state = 'flee'
 }
 
 /** Teleport the creature back to its spawn origin and restart idle. */
