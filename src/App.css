@@ -1560,7 +1560,7 @@ p {
 .respawn-overlay {
   position: absolute;
   inset: 0;
-  z-index: 900;
+  z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;

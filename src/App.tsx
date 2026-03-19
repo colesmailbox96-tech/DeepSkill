@@ -411,6 +411,15 @@ function App() {
       useCombatStore.getState().clearTarget()
       // Teleport to settlement hearth (world origin).
       player.mesh.position.set(RESPAWN_X, RESPAWN_Y, RESPAWN_Z)
+      // Clear any held movement inputs so the player doesn't slide after waking.
+      keys.clear()
+      mobileJoystickRef.current.x = 0
+      mobileJoystickRef.current.z = 0
+      // Cancel any in-progress gathering/cooking sessions (player teleported away).
+      choppingRef.current = null
+      miningRef.current = null
+      fishingRef.current = null
+      cookingRef.current = null
       // Show the blocking respawn overlay.
       useRespawnStore.getState().triggerDefeat(RESPAWN_LOCATION_LABEL)
     }
@@ -524,6 +533,14 @@ function App() {
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code)
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
+
+    // Phase 34 — track defeated state in a ref so the animation loop avoids
+    // a Zustand store read every frame.  A lightweight subscription keeps the
+    // ref in sync whenever the state actually changes.
+    let isDefeated = useRespawnStore.getState().defeated
+    const unsubscribeRespawn = useRespawnStore.subscribe(
+      (s) => { isDefeated = s.defeated },
+    )
 
     // ── Orbit drag (right mouse button) ────────────────────────────────────
     let isDragging = false
@@ -700,12 +717,20 @@ function App() {
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
       const delta = clock.getDelta()
-      updatePlayer(player, keys, delta, camState.theta, collidableBoxes, mobileJoystickRef.current)
+
+      // Phase 34 — freeze all player-input and combat systems while the
+      // respawn overlay is visible.  The camera, NPC ambient sway, and
+      // resource-node timers still advance so the world looks alive.
+
+      if (!isDefeated) {
+        updatePlayer(player, keys, delta, camState.theta, collidableBoxes, mobileJoystickRef.current)
+      }
       updateOrbitCamera(camera, player.mesh, camState, delta, collidables)
 
       // Phase 08 — advance NPC ambient idle sway
       updateNpcs(allNpcs, delta)
 
+      if (!isDefeated) {
       // Phase 15 — tick woodcutting session and respawn timers
       updateTreeNodes(treeNodes, delta)
       if (choppingRef.current) {
@@ -871,6 +896,7 @@ function App() {
           promptRef.current.classList.remove('visible')
         }
       }
+      } // end !isDefeated
 
       renderer.render(scene, camera)
     }
@@ -879,6 +905,7 @@ function App() {
     return () => {
       cancelAnimationFrame(animationFrame)
       resizeObserver.disconnect()
+      unsubscribeRespawn()
       window.removeEventListener('resize', updateViewport)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
