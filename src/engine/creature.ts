@@ -374,18 +374,18 @@ export function updateCreatures(
 /**
  * Phase 30 — Deal damage to a hostile creature.
  *
- * Reduces the creature's HP by `amount` (clamped to ≥ 0).  If HP reaches
- * zero the creature is defeated: its mesh is hidden and a respawn countdown
- * starts.
+ * Reduces the creature's HP by `amount`.  If HP reaches zero the creature is
+ * defeated: its mesh is hidden and a respawn countdown starts.
  *
  * Returns `true` when this hit kills the creature, `false` otherwise.
- * Returns `false` immediately for non-hostile creatures (no maxHp defined)
- * or creatures already in the 'dead' state.
+ * Returns `false` immediately for non-hostile creatures, creatures already in
+ * the 'dead' state, or when `amount` is not a positive number.
  *
  * Phase 31 will call this from the player-attack handler.
  */
 export function damageCreature(creature: Creature, amount: number): boolean {
-  if (creature.state === 'dead' || creature.def.maxHp == null) return false
+  if (amount <= 0) return false
+  if (creature.state === 'dead' || !_isHostile(creature.def)) return false
   creature.hp = Math.max(0, creature.hp - amount)
   if (creature.hp <= 0) {
     _killCreature(creature)
@@ -403,6 +403,16 @@ export function triggerFlee(creature: Creature, fromPos: THREE.Vector3): void {
 }
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
+
+/**
+ * Single source of truth for whether a def describes a hostile creature.
+ * A creature is hostile iff it has both an aggro radius AND a defined HP pool.
+ * This prevents partially-configured defs where a creature could aggro but
+ * never be damaged (no maxHp), or be damaged but never engage (no aggroRadius).
+ */
+function _isHostile(def: CreatureDef): boolean {
+  return (def.aggroRadius ?? 0) > 0 && def.maxHp != null
+}
 
 /**
  * Run one FSM step for a single creature.
@@ -466,8 +476,8 @@ function _stepCreature(
 
   // ── Aggro trigger — overrides idle/roam for hostile creatures ────────────
   if (c.state === 'idle' || c.state === 'roam') {
-    const ar = c.def.aggroRadius ?? 0
-    if (ar > 0) {
+    if (_isHostile(c.def)) {
+      const ar = c.def.aggroRadius!
       const dx = pos.x - playerPos.x
       const dz = pos.z - playerPos.z
       if (Math.sqrt(dx * dx + dz * dz) < ar) {
@@ -654,9 +664,8 @@ function _buildMesh(def: CreatureDef): THREE.Group {
 
   // Eye-point — a tiny emissive sphere at the front-upper face of the body.
   // Gives creatures a distinct look and hints at facing direction.
-  // Phase 30: hostile creatures (aggroRadius > 0) get a red eye to signal danger.
-  const isHostile = (def.aggroRadius ?? 0) > 0
-  const eyeColor = isHostile ? 0xff3a1a : 0xffd060
+  // Phase 30: hostile creatures get a red eye to signal danger.
+  const eyeColor = _isHostile(def) ? 0xff3a1a : 0xffd060
   const eyeMat = new THREE.MeshStandardMaterial({
     color: eyeColor,
     emissive: new THREE.Color(eyeColor),
