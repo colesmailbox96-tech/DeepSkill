@@ -78,6 +78,9 @@ import {
 } from './engine/combat'
 import { rollLoot } from './engine/loot'
 import { useCombatStore } from './store/useCombatStore'
+import { RESPAWN_X, RESPAWN_Y, RESPAWN_Z, RESPAWN_LOCATION_LABEL } from './engine/respawn'
+import { useRespawnStore } from './store/useRespawnStore'
+import { RespawnOverlay } from './ui/hud/RespawnOverlay'
 import './App.css'
 
 // ── Gather-session types (used by both woodcutting and mining loops) ───────────
@@ -394,20 +397,22 @@ function App() {
     // Phase 03 — player controller
     const player = createPlayer(scene)
 
-    // Phase 31 — player defeat fallback.
-    // Notifies the player, restores full HP, clears the combat target, and
-    // teleports back to the settlement origin.  Phase 34 will replace this
-    // with a proper respawn / penalty system.
+    // Phase 34 — Respawn / Safe Recovery Loop.
+    // Restores full HP, clears combat, teleports the player to the settlement
+    // hearth, and triggers the respawn overlay.  The player retains all items
+    // and currency (no punishing item loss).  The blocking overlay prevents
+    // any further input until the player explicitly dismisses it.
     _onPlayerDefeated = () => {
       const { playerStats, setHealth } = useGameStore.getState()
+      // Restore full health.
       setHealth(playerStats.maxHealth)
+      // Clear combat target to prevent immediate re-aggro on wake.
       setTarget(combatRef.current, null)
       useCombatStore.getState().clearTarget()
-      player.mesh.position.set(0, 0, 0)
-      useNotifications.getState().push(
-        'You have been defeated and wake back at the settlement.',
-        'warning',
-      )
+      // Teleport to settlement hearth (world origin).
+      player.mesh.position.set(RESPAWN_X, RESPAWN_Y, RESPAWN_Z)
+      // Show the blocking respawn overlay.
+      useRespawnStore.getState().triggerDefeat(RESPAWN_LOCATION_LABEL)
     }
 
     // Phase 31 — player-attack hit notification.
@@ -940,6 +945,8 @@ function App() {
           <LedgerPanel />
           {/* Phase 26 — Equipment panel */}
           <EquipmentPanel />
+          {/* Phase 34 — Respawn / Safe Recovery overlay */}
+          <RespawnOverlay />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}
