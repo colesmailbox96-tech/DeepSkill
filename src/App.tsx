@@ -68,7 +68,7 @@ import { ShopPanel } from './ui/hud/ShopPanel'
 import { LedgerPanel } from './ui/hud/LedgerPanel'
 import { EquipmentPanel } from './ui/hud/EquipmentPanel'
 import { MobileControls } from './ui/hud/MobileControls'
-import { buildCreatures, updateCreatures } from './engine/creature'
+import { buildCreatures, updateCreatures, triggerFlee } from './engine/creature'
 import type { Creature } from './engine/creature'
 import './App.css'
 
@@ -302,9 +302,56 @@ function App() {
 
     buildCookStation(scene, interactables, onCookStart)
 
-    // Phase 28 — Basic Creature Framework
-    // Spawn the starter creature set; returned instances are ticked every frame.
-    const creatures: Creature[] = buildCreatures(scene)
+    // Phase 29 — Non-Aggressive Wildlife
+    // onHarvest: award drop item, notify, then trigger a flee.
+    const onHarvest = (creature: Creature) => {
+      const { def } = creature
+      if (!def.dropItemId) return
+      // Respect cooldown — if the creature was recently harvested, do nothing.
+      if (creature.dropCooldown > 0) {
+        useNotifications.getState().push(
+          `The ${def.name} has nothing more to give right now.`,
+          'info',
+        )
+        return
+      }
+      const chance = def.dropChance ?? 0.75
+      if (Math.random() < chance) {
+        const { addItem, inventory } = useGameStore.getState()
+        const itemDef = getItem(def.dropItemId)
+        const itemName = itemDef?.name ?? def.dropItemId
+
+        // Inventory capacity check: addItem is a silent no-op when the slot is
+        // new and the inventory is full — guard here so we don't mislead the
+        // player with a success notification or consume the cooldown for nothing.
+        const alreadyStacked = inventory.slots.some((s) => s.id === def.dropItemId)
+        const inventoryFull = inventory.slots.length >= inventory.maxSlots
+        if (inventoryFull && !alreadyStacked) {
+          useNotifications.getState().push(
+            `Your inventory is full — drop something to harvest the ${def.name}.`,
+            'info',
+          )
+          return
+        }
+
+        addItem({ id: def.dropItemId, name: itemName, quantity: 1 })
+        useNotifications.getState().push(
+          `You harvest ${article(itemName)} ${itemName.toLowerCase()} from the ${def.name}.`,
+          'success',
+        )
+      } else {
+        useNotifications.getState().push(
+          `The ${def.name} slips away before you can gather anything.`,
+          'info',
+        )
+      }
+      // Start the drop cooldown and trigger flee only when the interaction
+      // completed (item awarded or the creature simply bolted without dropping).
+      creature.dropCooldown = 25
+      triggerFlee(creature, player.mesh.position)
+    }
+
+    const creatures: Creature[] = buildCreatures(scene, interactables, onHarvest)
 
     // Precompute world-space bounding boxes for static collidables once so that
     // updatePlayer() doesn't have to call setFromObject() every frame.
@@ -601,8 +648,8 @@ function App() {
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
 
-      // Phase 28 — tick creature AI (roaming, pursuit bounds, reset)
-      updateCreatures(creatures, delta)
+      // Phase 29 — tick creature AI (roaming, flee, pursuit bounds, reset)
+      updateCreatures(creatures, delta, player.mesh.position)
       const tgt = interactionState.target
       mobileHasTargetRef.current = !!tgt
       if (tgt !== previousTarget) {

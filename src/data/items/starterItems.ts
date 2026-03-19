@@ -80,6 +80,20 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     consumableMeta: { healsHp: 6, effect: 'Restores 6 HP (raw)' },
   },
 
+  // ── Wildlife drops (Phase 29) ─────────────────────────────────────────────
+
+  {
+    id: 'slatebeak_feather',
+    name: 'Slatebeak Feather',
+    type: 'material',
+    stackable: true,
+    value: 3,
+    icon: 'items/slatebeak_feather.png',
+    description:
+      'A stiff, dark-grey flight feather shed by a Slatebeak. ' +
+      'The broad quill holds its shape well — useful for fletching and light waterproofing.',
+  },
+
   // ── Materials ──────────────────────────────────────────────────────────────
 
   {
