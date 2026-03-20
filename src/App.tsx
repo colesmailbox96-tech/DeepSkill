@@ -76,6 +76,13 @@ import {
 } from './engine/carving'
 import type { CarveRecipeConfig } from './engine/carving'
 import { useCarvingStore } from './store/useCarvingStore'
+import {
+  buildTinkererBenchStation,
+  findTinkerableMaterial,
+  getTinkeringLevel,
+} from './engine/tinkering'
+import type { TinkerRecipeConfig } from './engine/tinkering'
+import { useTinkeringStore } from './store/useTinkeringStore'
 import { buildBrackroot } from './engine/brackroot'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
@@ -109,6 +116,7 @@ import { TaskTrackerHud } from './ui/hud/TaskTrackerHud'
 import { JournalPanel } from './ui/hud/JournalPanel'
 import { SmithingPanel } from './ui/hud/SmithingPanel'
 import { CarvingPanel } from './ui/hud/CarvingPanel'
+import { TinkeringPanel } from './ui/hud/TinkeringPanel'
 import { registerAllTasks } from './data/tasks/taskRegistry'
 import { useTaskStore } from './store/useTaskStore'
 import { getTask } from './engine/task'
@@ -139,6 +147,8 @@ interface SmeltSession { recipe: SmeltRecipeConfig; elapsed: number }
 interface ForgeSession  { recipe: ForgeRecipeConfig;  elapsed: number }
 /** Phase 42 — Active carve session: recipe being carved + elapsed time. */
 interface CarveSession  { recipe: CarveRecipeConfig;  elapsed: number }
+/** Phase 43 — Active tinker session: recipe being assembled + elapsed time. */
+interface TinkerSession { recipe: TinkerRecipeConfig; elapsed: number }
 
 function App() {
   const sceneRef = useRef<HTMLDivElement>(null)
@@ -251,6 +261,8 @@ function App() {
   const forgeFromPanelRef = useRef<(recipe: import('./engine/smithing').ForgeRecipeConfig) => void>(() => {})
   /** Carve callback set by the game loop, called by CarvingPanel recipe buttons. */
   const carveFromPanelRef = useRef<(recipe: import('./engine/carving').CarveRecipeConfig) => void>(() => {})
+  /** Tinker callback set by the game loop, called by TinkeringPanel recipe buttons. */
+  const tinkerFromPanelRef = useRef<(recipe: import('./engine/tinkering').TinkerRecipeConfig) => void>(() => {})
 
   useEffect(() => {
     const container = sceneRef.current
@@ -659,6 +671,58 @@ function App() {
     workbenchStation = buildWorkbenchStation(scene, interactables, () => onCarveStart())
     carveFromPanelRef.current = (recipe) => onCarveStart(recipe)
 
+    // Phase 43 — Tinkering Foundation
+    // Tinker session: tracks which recipe is being assembled and elapsed time.
+    const tinkerRef = { current: null as TinkerSession | null }
+    // Captured after buildTinkererBenchStation(); read by onTinkerStart and the tick.
+    let tinkererBenchStation: import('./engine/tinkering').TinkererBenchStation | null = null
+    const TINKERER_BENCH_INTERACT_RADIUS = 2.0
+
+    const onTinkerStart = (recipe?: TinkerRecipeConfig) => {
+      // Already assembling — do nothing.
+      if (tinkerRef.current) return
+      const { inventory } = useGameStore.getState()
+
+      if (tinkererBenchStation) {
+        const dist = player.mesh.position.distanceTo(tinkererBenchStation.mesh.position)
+        if (dist > TINKERER_BENCH_INTERACT_RADIUS) {
+          useNotifications.getState().push("You need to be at the tinkerer's bench to assemble.", 'info')
+          return
+        }
+      }
+
+      const chosen = recipe ?? findTinkerableMaterial(inventory.slots)
+      if (!chosen) {
+        useNotifications.getState().push('You have no materials ready to assemble here.', 'info')
+        useTinkeringStore.getState().openPanel()
+        return
+      }
+      if (getTinkeringLevel() < chosen.levelReq) {
+        useNotifications.getState().push(
+          `You need level ${chosen.levelReq} Tinkering to assemble this.`,
+          'info',
+        )
+        useTinkeringStore.getState().openPanel()
+        return
+      }
+      const slot = inventory.slots.find((s) => s.id === chosen.materialId)
+      if (!slot || slot.quantity < chosen.materialQty) {
+        const materialName = getItem(chosen.materialId)?.name ?? chosen.materialId
+        useNotifications.getState().push(
+          `You don't have enough ${materialName.toLowerCase()} to assemble this.`,
+          'info',
+        )
+        useTinkeringStore.getState().openPanel()
+        return
+      }
+      useTinkeringStore.getState().openPanel()
+      tinkerRef.current = { recipe: chosen, elapsed: 0 }
+      useNotifications.getState().push('You begin assembling...', 'info')
+    }
+
+    tinkererBenchStation = buildTinkererBenchStation(scene, interactables, () => onTinkerStart())
+    tinkerFromPanelRef.current = (recipe) => onTinkerStart(recipe)
+
     // Phase 29 — Non-Aggressive Wildlife
     // onHarvest: award drop item, notify, then trigger a flee.
     const onHarvest = (creature: Creature) => {
@@ -769,6 +833,7 @@ function App() {
       smeltRef.current = null
       forgeRef.current = null
       carveRef.current = null
+      tinkerRef.current = null
       // Show the blocking respawn overlay.
       useRespawnStore.getState().triggerDefeat(RESPAWN_LOCATION_LABEL)
     }
@@ -900,6 +965,18 @@ function App() {
           player.mesh.position.distanceTo(workbenchStation.mesh.position) <= WORKBENCH_INTERACT_RADIUS
         ) {
           carving.openPanel()
+        }
+      }
+      if (e.code === 'KeyT') {
+        // Toggle the tinkering panel; open only when near the tinkerer's bench.
+        const tinkering = useTinkeringStore.getState()
+        if (tinkering.isOpen) {
+          tinkering.closePanel()
+        } else if (
+          tinkererBenchStation &&
+          player.mesh.position.distanceTo(tinkererBenchStation.mesh.position) <= TINKERER_BENCH_INTERACT_RADIUS
+        ) {
+          tinkering.openPanel()
         }
       }
     }
@@ -1388,6 +1465,52 @@ function App() {
         }
       }
 
+      // Phase 43 — tick tinker session
+      if (tinkerRef.current) {
+        const sess = tinkerRef.current
+        const tooFar = tinkererBenchStation
+          ? player.mesh.position.distanceTo(tinkererBenchStation.mesh.position) > TINKERER_BENCH_INTERACT_RADIUS
+          : false
+        if (player.moveState === 'walk' || tooFar) {
+          tinkerRef.current = null
+          useNotifications.getState().push("You step away from the tinkerer's bench.", 'info')
+        } else {
+          sess.elapsed += delta
+          if (sess.elapsed >= sess.recipe.tinkerDuration) {
+            tinkerRef.current = null
+            const { inventory, addItem, removeItem, grantSkillXp } = useGameStore.getState()
+            const outputName = getItem(sess.recipe.outputId)?.name ?? sess.recipe.outputId
+            const materialName = getItem(sess.recipe.materialId)?.name ?? sess.recipe.materialId
+            // Re-validate material at completion.
+            const matSlot = inventory.slots.find((s) => s.id === sess.recipe.materialId)
+            if (!matSlot || matSlot.quantity < sess.recipe.materialQty) {
+              useNotifications.getState().push(
+                `The ${materialName.toLowerCase()} material was used up — assembly cancelled.`,
+                'info',
+              )
+              return
+            }
+            // Guard: ensure the output can be received before consuming materials.
+            const hasExistingOutput = inventory.slots.some((s) => s.id === sess.recipe.outputId)
+            const slotsAfterRemove = matSlot.quantity <= sess.recipe.materialQty
+              ? inventory.slots.length - 1
+              : inventory.slots.length
+            const canAdd = hasExistingOutput || slotsAfterRemove < inventory.maxSlots
+            if (!canAdd) {
+              useNotifications.getState().push("Your inventory is full — make room before assembling.", 'info')
+              return
+            }
+            removeItem(sess.recipe.materialId, sess.recipe.materialQty)
+            addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
+            grantSkillXp('tinkering', sess.recipe.xp)
+            useNotifications.getState().push(
+              `You assemble ${outputName}!`,
+              'success',
+            )
+          }
+        }
+      }
+
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
 
@@ -1512,7 +1635,7 @@ function App() {
         <p id="scene-description" className="app-header__desc">
           Playing as <strong>{playerName}</strong>.
           WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact · click creature to target.
-          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving.
+          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering.
         </p>
       </header>
       <div
@@ -1554,6 +1677,10 @@ function App() {
           {/* Phase 42 — Carving panel */}
           <CarvingPanel
             onCarve={(recipe) => carveFromPanelRef.current(recipe)}
+          />
+          {/* Phase 43 — Tinkering panel */}
+          <TinkeringPanel
+            onTinker={(recipe) => tinkerFromPanelRef.current(recipe)}
           />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls

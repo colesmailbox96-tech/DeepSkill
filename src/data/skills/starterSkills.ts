@@ -12,6 +12,7 @@ import { xpToNextLevel } from './xpCurve'
  * so the data layer and the XP-curve module stay in sync.
  *
  * Phase 42: carving skill added.
+ * Phase 43: tinkering skill added.
  */
 export const STARTER_SKILLS: Skill[] = [
   {
@@ -85,5 +86,15 @@ export const STARTER_SKILLS: Skill[] = [
     experienceToNextLevel: xpToNextLevel(1),
     description:
       'Shaping raw wood and bone into functional utility pieces. A skilled carver wastes less material, works faster, and unlocks finer forms that serve as components in advanced crafting.',
+  },
+
+  {
+    id: 'tinkering',
+    name: 'Tinkering',
+    level: 1,
+    experience: 0,
+    experienceToNextLevel: xpToNextLevel(1),
+    description:
+      'Assembling refined components into practical utility devices. A skilled tinkerer turns copper, iron, and worked wood into lanterns, hooks, baskets, and clamps that support every other discipline.',
   },
 ]

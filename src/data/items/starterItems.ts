@@ -478,6 +478,56 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'Harder than bone and lightweight — valued for precision fastening and as an ingredient in refined gear.',
   },
 
+  // ── Phase 43 — Tinkering Outputs ─────────────────────────────────────────
+
+  {
+    id: 'lantern_parts',
+    name: 'Lantern Parts',
+    type: 'material',
+    stackable: true,
+    value: 14,
+    icon: 'items/lantern_parts.png',
+    description:
+      'A set of pressed-copper panels and a simple oil reservoir, ready for assembly. ' +
+      'The foundation for a portable lantern — essential for venturing into darker reaches of Cinderglen.',
+  },
+
+  {
+    id: 'reinforced_hook',
+    name: 'Reinforced Hook',
+    type: 'material',
+    stackable: true,
+    value: 12,
+    icon: 'items/reinforced_hook.png',
+    description:
+      'A forged-iron fishing hook with a barbed collar and a hammered eye. ' +
+      'Far sturdier than the crude bone hooks sold at market — holds fast against larger, stronger fish.',
+  },
+
+  {
+    id: 'bait_basket',
+    name: 'Bait Basket',
+    type: 'material',
+    stackable: true,
+    value: 11,
+    icon: 'items/bait_basket.png',
+    description:
+      'A woven ashwood basket designed to keep live bait submerged near the fishing line. ' +
+      'Extends the effective range of each bait charge and draws fish from slightly deeper water.',
+  },
+
+  {
+    id: 'repair_clamp',
+    name: 'Repair Clamp',
+    type: 'material',
+    stackable: true,
+    value: 16,
+    icon: 'items/repair_clamp.png',
+    description:
+      'A solid iron clamp with a screw-tighten jaw, used to hold workpieces during field repairs. ' +
+      'An indispensable tool for mending cracked hafts, loose joints, and fractured fittings.',
+  },
+
   // ── Phase 26 / 27 — Starter Equipment ────────────────────────────────────
 
   {
