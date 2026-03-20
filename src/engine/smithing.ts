@@ -201,3 +201,107 @@ export function getForgingLevel(): number {
   const { skills } = useGameStore.getState()
   return skills.skills.find((s) => s.id === 'forging')?.level ?? 1
 }
+
+// ─── Phase 41 — Tool Forge Recipes ───────────────────────────────────────
+
+/** A single ingredient consumed when forging a tool. */
+export interface ForgeIngredient {
+  /** Registry ID of the item consumed. */
+  id: string
+  /** Human-readable name (mirrors itemRegistry, kept here for panels). */
+  label: string
+  /** Quantity consumed per forge. */
+  qty: number
+}
+
+/**
+ * Configuration for a single tool forge recipe.  Tools are crafted at the
+ * furnace — the same station used for smelting — but occupy a separate
+ * recipe tab and are completed as a single timed session.
+ */
+export interface ForgeRecipeConfig {
+  /** Human-readable name of the output tool. */
+  label: string
+  /** Registry ID of the tool produced. */
+  toolId: string
+  /** All ingredients consumed during the forge. */
+  ingredients: ForgeIngredient[]
+  /** Minimum level of the associated gathering skill required to forge. */
+  skillReq: { skill: string; level: number }
+  /** Minimum Forging level required. */
+  forgingLevelReq: number
+  /** Seconds at the furnace to complete the forge. */
+  forgeDuration: number
+  /** Forging XP awarded on completion. */
+  xp: number
+  /**
+   * Speed multiplier applied to gather actions when this tool (or better) is
+   * equipped.  1.0 = same as tier 1; 0.75 = 25 % faster.
+   */
+  tierSpeedFactor: number
+}
+
+/** All tool upgrade forge recipes, in display order. */
+export const FORGE_RECIPES: readonly ForgeRecipeConfig[] = [
+  {
+    label: 'Copper Hatchet',
+    toolId: 'copper_hatchet',
+    ingredients: [
+      { id: 'copper_bar',  label: 'Copper Bar',  qty: 2 },
+      { id: 'ashwood_log', label: 'Ashwood Log', qty: 2 },
+    ],
+    skillReq: { skill: 'woodcutting', level: 3 },
+    forgingLevelReq: 2,
+    forgeDuration: 6,
+    xp: 25,
+    tierSpeedFactor: 0.75,
+  },
+  {
+    label: 'Iron Pick',
+    toolId: 'iron_pick',
+    ingredients: [
+      { id: 'iron_bar',    label: 'Iron Bar',    qty: 2 },
+      { id: 'small_stone', label: 'Small Stone', qty: 4 },
+    ],
+    skillReq: { skill: 'mining', level: 5 },
+    forgingLevelReq: 7,
+    forgeDuration: 8,
+    xp: 40,
+    tierSpeedFactor: 0.75,
+  },
+  {
+    label: 'Reinforced Rod',
+    toolId: 'reinforced_rod',
+    ingredients: [
+      { id: 'copper_bar', label: 'Copper Bar', qty: 1 },
+      { id: 'reed_fiber', label: 'Reed Fiber', qty: 3 },
+    ],
+    skillReq: { skill: 'fishing', level: 3 },
+    forgingLevelReq: 2,
+    forgeDuration: 5,
+    xp: 20,
+    tierSpeedFactor: 0.75,
+  },
+] as const
+
+/**
+ * Return every forge recipe.  Used by SmithingPanel to render the Forge tab.
+ */
+export function getAllForgeRecipes(): ForgeRecipeConfig[] {
+  return [...FORGE_RECIPES]
+}
+
+/**
+ * Check whether the player currently has enough materials in their inventory
+ * to forge the given recipe.  Does **not** check skill or forging-level
+ * requirements — the caller is responsible for those checks.
+ */
+export function hasIngredientsFor(
+  recipe: ForgeRecipeConfig,
+  slots: ReadonlyArray<{ id: string; quantity: number }>,
+): boolean {
+  return recipe.ingredients.every((ing) => {
+    const slot = slots.find((s) => s.id === ing.id)
+    return slot != null && slot.quantity >= ing.qty
+  })
+}

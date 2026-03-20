@@ -27,8 +27,14 @@ import { useGameStore } from '../store/useGameStore'
 /** Seconds before a fished-out spot becomes active again. */
 export const FISH_RESPAWN_TIME = 20.0
 
+/** Item IDs that qualify as a valid fishing rod, mapped to their tool tier. */
+const ROD_TIERS: Readonly<Record<string, number>> = {
+  reedline_rod: 1,
+  reinforced_rod: 2,
+}
+
 /** Item IDs that qualify as a valid fishing rod (baitless starter mode). */
-const ROD_IDS = new Set(['reedline_rod'])
+const ROD_IDS = new Set(Object.keys(ROD_TIERS))
 
 // ── Variant system ────────────────────────────────────────────────────────────
 
@@ -279,6 +285,18 @@ export function depleteFishSpot(node: FishingNode): void {
   node.floatMesh.visible = false
   node.rippleMesh.visible = true
   node.interactable.label = 'Still Water'
+}
+
+/**
+ * Returns the tier of the best fishing rod currently in the player's inventory.
+ * Returns 0 when no rod is held.
+ */
+export function getRodTier(): number {
+  const { slots } = useGameStore.getState().inventory
+  return slots.reduce((best, s) => {
+    const t = s != null ? (ROD_TIERS[s.id] ?? 0) : 0
+    return t > best ? t : best
+  }, 0)
 }
 
 /**

@@ -20,8 +20,14 @@ import { useGameStore } from '../store/useGameStore'
 /** Seconds before a felled tree regrows into an interactable tree. */
 export const RESPAWN_TIME = 30.0
 
+/** Item IDs that count as a valid woodcutting hatchet, mapped to their tool tier. */
+const HATCHET_TIERS: Readonly<Record<string, number>> = {
+  rough_ash_hatchet: 1,
+  copper_hatchet: 2,
+}
+
 /** Item IDs that count as a valid woodcutting hatchet. */
-const HATCHET_IDS = new Set(['rough_ash_hatchet'])
+const HATCHET_IDS = new Set(Object.keys(HATCHET_TIERS))
 
 // ── Variant system ────────────────────────────────────────────────────────────
 
@@ -291,6 +297,18 @@ export function fellTree(node: TreeNode): void {
   node.canopy.visible = false
   node.stumpMesh.visible = true
   node.interactable.label = 'Tree Stump'
+}
+
+/**
+ * Returns the tier of the best hatchet currently in the player's inventory.
+ * Returns 0 when no hatchet is held.
+ */
+export function getHatchetTier(): number {
+  const { slots } = useGameStore.getState().inventory
+  return slots.reduce((best, s) => {
+    const t = s != null ? (HATCHET_TIERS[s.id] ?? 0) : 0
+    return t > best ? t : best
+  }, 0)
 }
 
 /**

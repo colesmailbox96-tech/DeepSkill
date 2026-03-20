@@ -322,6 +322,47 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'Soft yet surprisingly water-resistant; suitable for patching light armour or lining boots.',
   },
 
+  // ── Phase 41 — Tier 2 Gathering Tools ────────────────────────────────────
+
+  {
+    id: 'copper_hatchet',
+    name: 'Copper Hatchet',
+    type: 'tool',
+    stackable: false,
+    value: 38,
+    icon: 'items/copper_hatchet.png',
+    description:
+      'A hatchet with a copper head set into a seasoned ashwood handle. ' +
+      'Noticeably heavier than the rough starter axe; the harder edge stays keen through ironbark and aged hardwood.',
+    toolMeta: { skill: 'woodcutting', tier: 2 },
+  },
+
+  {
+    id: 'iron_pick',
+    name: 'Iron Pick',
+    type: 'tool',
+    stackable: false,
+    value: 52,
+    icon: 'items/iron_pick.png',
+    description:
+      'A pick forged from iron bar stock, weighted for deep-seam work. ' +
+      'The balanced swing drives through dense ore veins in fewer blows than any surface quarry tool.',
+    toolMeta: { skill: 'mining', tier: 2 },
+  },
+
+  {
+    id: 'reinforced_rod',
+    name: 'Reinforced Rod',
+    type: 'tool',
+    stackable: false,
+    value: 32,
+    icon: 'items/reinforced_rod.png',
+    description:
+      'A stout reed rod fitted with copper guides and a tightly woven reed-fiber line. ' +
+      'The stiffer blank handles deeper pools; bites register faster than with a plain bone hook.',
+    toolMeta: { skill: 'fishing', tier: 2 },
+  },
+
   // ── Phase 40 — Smithing bars ──────────────────────────────────────────────
 
   {
