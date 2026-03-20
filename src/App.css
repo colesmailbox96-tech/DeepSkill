@@ -2573,3 +2573,201 @@ p {
   color: rgba(180, 140, 80, 0.6);
   font-size: 0.7rem;
 }
+
+/* ── Phase 42 — Carving Panel ─────────────────────────────────────────────── */
+
+.carving-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  max-width: calc(100vw - 1.5rem);
+  max-height: 80vh;
+  background: linear-gradient(160deg, rgba(10, 12, 8, 0.97) 0%, rgba(18, 22, 12, 0.97) 100%);
+  border: 1px solid rgba(100, 150, 60, 0.35);
+  border-radius: 0.6rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(120, 180, 70, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  pointer-events: auto;
+  z-index: 600;
+  outline: none;
+  font-family: inherit;
+  color: rgba(210, 220, 185, 0.92);
+}
+
+/* Header */
+.carving-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem 0.6rem;
+  background: rgba(60, 110, 30, 0.12);
+  border-bottom: 1px solid rgba(100, 150, 60, 0.25);
+  flex-shrink: 0;
+}
+
+.carving-panel__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: rgba(165, 210, 100, 0.95);
+  flex: 1 1 auto;
+}
+
+.carving-panel__level {
+  font-size: 0.72rem;
+  color: rgba(140, 190, 80, 0.75);
+  background: rgba(60, 110, 30, 0.18);
+  border: 1px solid rgba(100, 150, 60, 0.2);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  white-space: nowrap;
+}
+
+.carving-panel__close {
+  flex-shrink: 0;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.3rem;
+  color: rgba(190, 200, 165, 0.7);
+  cursor: pointer;
+  font-size: 0.78rem;
+  line-height: 1;
+  pointer-events: auto;
+  transition: background 0.12s, color 0.12s;
+}
+
+.carving-panel__close:hover {
+  background: rgba(200, 60, 40, 0.2);
+  color: #e08070;
+}
+
+/* Recipe list */
+.carving-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+/* Recipe card */
+.carving-recipe {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(100, 150, 60, 0.2);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  transition: border-color 0.12s;
+}
+
+.carving-recipe:hover {
+  border-color: rgba(130, 180, 70, 0.4);
+}
+
+.carving-recipe--locked {
+  opacity: 0.6;
+}
+
+.carving-recipe__top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.carving-recipe__name {
+  flex: 1 1 auto;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(205, 220, 160, 0.95);
+}
+
+.carving-recipe__arrow {
+  color: rgba(130, 180, 70, 0.75);
+}
+
+.carving-recipe__lock-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(200, 80, 60, 0.85);
+  background: rgba(200, 60, 40, 0.12);
+  border: 1px solid rgba(200, 60, 40, 0.2);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  white-space: nowrap;
+}
+
+.carving-recipe__meta {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: rgba(150, 165, 120, 0.65);
+}
+
+.carving-recipe__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.carving-recipe__count {
+  font-size: 0.78rem;
+  color: rgba(170, 180, 140, 0.8);
+}
+
+.carving-recipe__count--low {
+  color: rgba(200, 90, 70, 0.85);
+}
+
+.carving-recipe__btn {
+  padding: 0.25rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  background: rgba(60, 110, 30, 0.55);
+  color: rgba(200, 235, 140, 0.95);
+  border: 1px solid rgba(100, 160, 50, 0.4);
+  pointer-events: auto;
+  transition: background 0.12s, color 0.12s;
+}
+
+.carving-recipe__btn:hover:not(:disabled) {
+  background: rgba(80, 140, 40, 0.75);
+  color: #d4f080;
+}
+
+.carving-recipe__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Hint bar */
+.carving-panel__hint {
+  flex-shrink: 0;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.62rem;
+  color: rgba(130, 140, 110, 0.4);
+  border-top: 1px solid rgba(100, 150, 60, 0.12);
+  background: rgba(10, 12, 8, 0.5);
+  text-align: right;
+  letter-spacing: 0.02em;
+}

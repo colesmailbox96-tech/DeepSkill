@@ -69,6 +69,13 @@ import {
 } from './engine/smithing'
 import type { SmeltRecipeConfig, ForgeRecipeConfig } from './engine/smithing'
 import { useSmithingStore } from './store/useSmithingStore'
+import {
+  buildWorkbenchStation,
+  findCarvableMaterial,
+  getCarvingLevel,
+} from './engine/carving'
+import type { CarveRecipeConfig } from './engine/carving'
+import { useCarvingStore } from './store/useCarvingStore'
 import { buildBrackroot } from './engine/brackroot'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
@@ -101,6 +108,7 @@ import { useDialogueStore } from './store/useDialogueStore'
 import { TaskTrackerHud } from './ui/hud/TaskTrackerHud'
 import { JournalPanel } from './ui/hud/JournalPanel'
 import { SmithingPanel } from './ui/hud/SmithingPanel'
+import { CarvingPanel } from './ui/hud/CarvingPanel'
 import { registerAllTasks } from './data/tasks/taskRegistry'
 import { useTaskStore } from './store/useTaskStore'
 import { getTask } from './engine/task'
@@ -129,6 +137,8 @@ interface CookingSession { recipe: CookRecipeConfig; elapsed: number }
 interface SmeltSession { recipe: SmeltRecipeConfig; elapsed: number }
 /** Phase 41 — Active forge session: recipe being forged + elapsed time. */
 interface ForgeSession  { recipe: ForgeRecipeConfig;  elapsed: number }
+/** Phase 42 — Active carve session: recipe being carved + elapsed time. */
+interface CarveSession  { recipe: CarveRecipeConfig;  elapsed: number }
 
 function App() {
   const sceneRef = useRef<HTMLDivElement>(null)
@@ -239,6 +249,8 @@ function App() {
   const smeltFromPanelRef = useRef<(recipe: import('./engine/smithing').SmeltRecipeConfig) => void>(() => {})
   /** Forge callback set by the game loop, called by SmithingPanel forge buttons. */
   const forgeFromPanelRef = useRef<(recipe: import('./engine/smithing').ForgeRecipeConfig) => void>(() => {})
+  /** Carve callback set by the game loop, called by CarvingPanel recipe buttons. */
+  const carveFromPanelRef = useRef<(recipe: import('./engine/carving').CarveRecipeConfig) => void>(() => {})
 
   useEffect(() => {
     const container = sceneRef.current
@@ -595,6 +607,56 @@ function App() {
 
     forgeFromPanelRef.current = (recipe) => onForgeStart(recipe)
 
+    // Phase 42 — Carving Foundation
+    // Carve session: tracks which recipe is being carved and elapsed time.
+    const carveRef = { current: null as CarveSession | null }
+    // Captured after buildWorkbenchStation(); read by onCarveStart and the tick.
+    let workbenchStation: import('./engine/carving').WorkbenchStation | null = null
+    const WORKBENCH_INTERACT_RADIUS = 2.0
+
+    const onCarveStart = (recipe?: CarveRecipeConfig) => {
+      // Already carving — do nothing.
+      if (carveRef.current) return
+      const { inventory } = useGameStore.getState()
+
+      if (workbenchStation) {
+        const dist = player.mesh.position.distanceTo(workbenchStation.mesh.position)
+        if (dist > WORKBENCH_INTERACT_RADIUS) {
+          useNotifications.getState().push('You need to be at the workbench to carve.', 'info')
+          return
+        }
+      }
+
+      const chosen = recipe ?? findCarvableMaterial(inventory.slots)
+      if (!chosen) {
+        useNotifications.getState().push('You have no materials ready to carve here.', 'info')
+        useCarvingStore.getState().openPanel()
+        return
+      }
+      if (getCarvingLevel() < chosen.levelReq) {
+        useNotifications.getState().push(
+          `You need level ${chosen.levelReq} Carving to carve this.`,
+          'info',
+        )
+        useCarvingStore.getState().openPanel()
+        return
+      }
+      const slot = inventory.slots.find((s) => s.id === chosen.materialId)
+      if (!slot || slot.quantity < chosen.materialQty) {
+        useNotifications.getState().push(
+          `You don't have enough ${chosen.label.toLowerCase()} material to carve.`,
+          'info',
+        )
+        useCarvingStore.getState().openPanel()
+        return
+      }
+      useCarvingStore.getState().openPanel()
+      carveRef.current = { recipe: chosen, elapsed: 0 }
+    }
+
+    workbenchStation = buildWorkbenchStation(scene, interactables, () => onCarveStart())
+    carveFromPanelRef.current = (recipe) => onCarveStart(recipe)
+
     // Phase 29 — Non-Aggressive Wildlife
     // onHarvest: award drop item, notify, then trigger a flee.
     const onHarvest = (creature: Creature) => {
@@ -704,6 +766,7 @@ function App() {
       cookingRef.current = null
       smeltRef.current = null
       forgeRef.current = null
+      carveRef.current = null
       // Show the blocking respawn overlay.
       useRespawnStore.getState().triggerDefeat(RESPAWN_LOCATION_LABEL)
     }
@@ -823,6 +886,18 @@ function App() {
           player.mesh.position.distanceTo(furnaceStation.mesh.position) <= FURNACE_INTERACT_RADIUS
         ) {
           smithing.openPanel()
+        }
+      }
+      if (e.code === 'KeyV') {
+        // Toggle the carving panel; open only when near the workbench.
+        const carving = useCarvingStore.getState()
+        if (carving.isOpen) {
+          carving.closePanel()
+        } else if (
+          workbenchStation &&
+          player.mesh.position.distanceTo(workbenchStation.mesh.position) <= WORKBENCH_INTERACT_RADIUS
+        ) {
+          carving.openPanel()
         }
       }
     }
@@ -1265,6 +1340,51 @@ function App() {
         }
       }
 
+      // Phase 42 — tick carve session
+      if (carveRef.current) {
+        const sess = carveRef.current
+        const tooFar = workbenchStation
+          ? player.mesh.position.distanceTo(workbenchStation.mesh.position) > WORKBENCH_INTERACT_RADIUS
+          : false
+        if (player.moveState === 'walk' || tooFar) {
+          carveRef.current = null
+          useNotifications.getState().push('You step away from the workbench.', 'info')
+        } else {
+          sess.elapsed += delta
+          if (sess.elapsed >= sess.recipe.carveDuration) {
+            carveRef.current = null
+            const { inventory, addItem, removeItem, grantSkillXp } = useGameStore.getState()
+            const outputName = getItem(sess.recipe.outputId)?.name ?? sess.recipe.outputId
+            // Re-validate material at completion.
+            const matSlot = inventory.slots.find((s) => s.id === sess.recipe.materialId)
+            if (!matSlot || matSlot.quantity < sess.recipe.materialQty) {
+              useNotifications.getState().push(
+                `The ${sess.recipe.label.toLowerCase()} material was used up — carve cancelled.`,
+                'info',
+              )
+              return
+            }
+            // Guard: ensure the output can be received before consuming materials.
+            const hasExistingOutput = inventory.slots.some((s) => s.id === sess.recipe.outputId)
+            const slotsAfterRemove = matSlot.quantity <= sess.recipe.materialQty
+              ? inventory.slots.length - 1
+              : inventory.slots.length
+            const canAdd = hasExistingOutput || slotsAfterRemove < inventory.maxSlots
+            if (!canAdd) {
+              useNotifications.getState().push('Your inventory is full — make room before carving.', 'info')
+              return
+            }
+            removeItem(sess.recipe.materialId, sess.recipe.materialQty)
+            addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
+            grantSkillXp('carving', sess.recipe.xp)
+            useNotifications.getState().push(
+              `You carve a ${outputName}!`,
+              'success',
+            )
+          }
+        }
+      }
+
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
 
@@ -1389,7 +1509,7 @@ function App() {
         <p id="scene-description" className="app-header__desc">
           Playing as <strong>{playerName}</strong>.
           WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact · click creature to target.
-          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing.
+          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving.
         </p>
       </header>
       <div
@@ -1427,6 +1547,10 @@ function App() {
           <SmithingPanel
             onSmelt={(recipe) => smeltFromPanelRef.current(recipe)}
             onForge={(recipe) => forgeFromPanelRef.current(recipe)}
+          />
+          {/* Phase 42 — Carving panel */}
+          <CarvingPanel
+            onCarve={(recipe) => carveFromPanelRef.current(recipe)}
           />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
