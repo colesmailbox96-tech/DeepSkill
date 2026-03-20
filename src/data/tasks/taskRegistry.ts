@@ -46,7 +46,7 @@ const wordFromTheElder: TaskDefinition = {
   ],
   reward: {
     coins: 5,
-    xp: [{ skill: 'Wayfaring', amount: 15 }],
+    xp: [{ skill: 'wayfaring', amount: 15 }],
   },
   journalEntry:
     'The elder flagged me down near the settlement hall. His face was drawn — more than the usual frontier weariness. He said the Veil has been shifting and that strange tracks have been found on the Brackroot Trail. He wants to brief me in person before I wander further south.',
@@ -75,7 +75,7 @@ const warmRunoff: TaskDefinition = {
   reward: {
     coins: 8,
     items: [{ itemId: 'marsh_herb', qty: 2 }],
-    xp: [{ skill: 'Foraging', amount: 20 }],
+    xp: [{ skill: 'foraging', amount: 20 }],
   },
   journalEntry:
     "Sera pulled me aside by the commons pond. She's been tracking the temperature of the runoff channels and says something deeper in the grove is leaking heat — warm enough to alter the herb growth along the trail edge. She can't leave the settlement herself and asked me to go look. I should follow the south road and see what's changed.",

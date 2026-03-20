@@ -96,15 +96,37 @@ function _grantRewards(def: TaskDefinition): void {
   }
 
   if (def.reward.items) {
+    const { inventory } = useGameStore.getState()
+    const lostItems: string[] = []
+
     for (const reward of def.reward.items) {
       // addItem auto-resolves the display name from the item registry;
       // the `name` field here is a fallback in case the id is unregistered.
       const itemDef = _getItemDef(reward.itemId)
-      gameStore.addItem({
-        id: reward.itemId,
-        name: itemDef?.name ?? reward.itemId,
-        quantity: reward.qty,
-      })
+      const displayName = itemDef?.name ?? reward.itemId
+
+      // Guard: addItem is a silent no-op when the inventory is full and the
+      // item doesn't already stack. Check capacity before calling so we can
+      // notify the player if a reward item cannot be delivered.
+      const existsInInventory = inventory.slots.some((s) => s.id === reward.itemId)
+      const inventoryFull = inventory.slots.length >= inventory.maxSlots
+
+      if (inventoryFull && !existsInInventory) {
+        lostItems.push(displayName)
+      } else {
+        gameStore.addItem({
+          id: reward.itemId,
+          name: displayName,
+          quantity: reward.qty,
+        })
+      }
+    }
+
+    if (lostItems.length > 0) {
+      useNotifications.getState().push(
+        `Inventory full — reward item(s) lost: ${lostItems.join(', ')}. Clear space before completing this task next time.`,
+        'warning',
+      )
     }
   }
 
@@ -153,6 +175,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
 
   updateObjective: (taskId, objectiveId, increment = 1) => {
+    const safeIncrement = Number(increment)
+    if (!Number.isFinite(safeIncrement) || safeIncrement <= 0) return
+
     const def = getTask(taskId)
     if (!def) return
 
@@ -165,9 +190,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     if (!obj) return
 
     const current = record.progress[objectiveId] ?? 0
-    const updated = Math.min(current + increment, obj.required)
+    const updated = Math.max(0, Math.min(current + safeIncrement, obj.required))
 
-    if (updated === current) return // already at cap, no change needed
+    if (updated === current) return // already at cap or no effective change
 
     const updatedRecord: TaskRecord = {
       ...record,

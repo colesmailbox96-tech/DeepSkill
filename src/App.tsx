@@ -766,6 +766,11 @@ function App() {
     const clock = new THREE.Clock()
     let animationFrame = 0
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+
+    // Phase 37 — Explore objective tracking.
+    // A one-shot flag per explore zone so the trigger fires exactly once per
+    // session even if the player lingers in the zone or re-enters it later.
+    const exploredZones = new Set<string>()
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
       const delta = clock.getDelta()
@@ -914,6 +919,27 @@ function App() {
       )
       // Phase 33 — tick food cooldown timer
       useFoodStore.getState().tickCooldown(delta)
+
+      // Phase 37 — Explore objective trigger: fire when the player enters a
+      // named zone for the first time.  Each zone fires at most once per
+      // session (guarded by _exploredZones).
+      if (!exploredZones.has('brackroot_trail') && player.mesh.position.z >= 19) {
+        exploredZones.add('brackroot_trail')
+        const { active, updateObjective } = useTaskStore.getState()
+        for (const record of active) {
+          const def = getTask(record.taskId)
+          if (!def) continue
+          for (const obj of def.objectives) {
+            if (
+              obj.type === 'explore' &&
+              obj.targetId === 'brackroot_trail' &&
+              (record.progress[obj.id] ?? 0) < obj.required
+            ) {
+              updateObjective(record.taskId, obj.id, 1)
+            }
+          }
+        }
+      }
       // Sync live target HP to the combat store so the React overlay stays current.
       // Cache the last values written to avoid redundant Zustand updates every frame.
       const combatTarget = combatRef.current.target
