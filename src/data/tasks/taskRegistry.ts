@@ -4,12 +4,12 @@
  * Registers all task definitions in the engine registry and exports a
  * convenience initialiser that App.tsx calls once at startup.
  *
- * Phase 37 ships with one introductory task ("Word from the Elder") that
- * demonstrates the full framework pipeline:
+ * Phase 37 ships with two introductory tasks ("Word from the Elder" and
+ * "Warm Runoff") that together demonstrate the full framework pipeline:
  *   - task acceptance (auto-accepted at game start)
- *   - objective tracking (single 'talk' objective)
- *   - reward delivery (coins + gathering XP)
- *   - journal entry body
+ *   - objective tracking (talk-type and explore-type objectives)
+ *   - reward delivery (coins, items, and skill XP)
+ *   - journal entry bodies
  *
  * Phase 38 will add the first practical task set (gather / kill / deliver).
  */
