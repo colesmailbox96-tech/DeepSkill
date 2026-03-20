@@ -64,8 +64,8 @@ import {
   buildFurnaceStation,
   findSmeltableOre,
   getForgingLevel,
-  getAllForgeRecipes,
   hasIngredientsFor,
+  getToolSpeedFactor,
 } from './engine/smithing'
 import type { SmeltRecipeConfig, ForgeRecipeConfig } from './engine/smithing'
 import { useSmithingStore } from './store/useSmithingStore'
@@ -1042,8 +1042,8 @@ function App() {
           useNotifications.getState().push('You stop chopping.', 'info')
         } else {
           sess.elapsed += delta
-          // Phase 41 — tier 2 hatchet is 25 % faster.
-          const chopSpeed = getHatchetTier() >= 2 ? 0.75 : 1.0
+          // Phase 41 — tier 2 hatchet chops faster; factor comes from forge recipe config.
+          const chopSpeed = getToolSpeedFactor(getHatchetTier())
           if (sess.elapsed >= VARIANT_CONFIG[sess.node.variant].chopDuration * chopSpeed) {
             choppingRef.current = null
             const cfg = VARIANT_CONFIG[sess.node.variant]
@@ -1073,8 +1073,8 @@ function App() {
           useNotifications.getState().push('You stop mining.', 'info')
         } else {
           sess.elapsed += delta
-          // Phase 41 — tier 2 pick is 25 % faster.
-          const mineSpeed = getPickaxeTier() >= 2 ? 0.75 : 1.0
+          // Phase 41 — tier 2 pick mines faster; factor comes from forge recipe config.
+          const mineSpeed = getToolSpeedFactor(getPickaxeTier())
           if (sess.elapsed >= ROCK_VARIANT_CONFIG[sess.node.variant].mineDuration * mineSpeed) {
             miningRef.current = null
             const cfg = ROCK_VARIANT_CONFIG[sess.node.variant]
@@ -1104,8 +1104,8 @@ function App() {
           useNotifications.getState().push('You reel in your line.', 'info')
         } else {
           sess.elapsed += delta
-          // Phase 41 — tier 2 rod is 25 % faster.
-          const castSpeed = getRodTier() >= 2 ? 0.75 : 1.0
+          // Phase 41 — tier 2 rod casts faster; factor comes from forge recipe config.
+          const castSpeed = getToolSpeedFactor(getRodTier())
           if (sess.elapsed >= FISH_SPOT_CONFIG[sess.node.variant].castDuration * castSpeed) {
             fishingRef.current = null
             const cfg = FISH_SPOT_CONFIG[sess.node.variant]
@@ -1238,14 +1238,16 @@ function App() {
               )
               return
             }
-            // Guard: the tool is non-stackable so it always needs a free slot
-            // (or the slot freed by consuming the last ingredient stack).
+            // Guard: the tool needs a free slot only if the player doesn't already
+            // have this tool id (addItem stacks by id regardless of stackable flag).
+            // Ingredient stacks that are fully consumed also free up slots.
             const slotsFreed = sess.recipe.ingredients.reduce((freed, ing) => {
               const slot = inventory.slots.find((s) => s.id === ing.id)
               return slot && slot.quantity <= ing.qty ? freed + 1 : freed
             }, 0)
             const slotsAfterRemove = inventory.slots.length - slotsFreed
-            if (slotsAfterRemove >= inventory.maxSlots) {
+            const needsNewSlot = !inventory.slots.some((s) => s.id === sess.recipe.toolId)
+            if (needsNewSlot && slotsAfterRemove >= inventory.maxSlots) {
               useNotifications.getState().push('Your inventory is full — make room before forging.', 'info')
               return
             }

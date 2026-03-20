@@ -11,7 +11,7 @@
  * Pressing F, Escape, or clicking ✕ closes the panel.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSmithingStore } from '../../store/useSmithingStore'
 import { useGameStore } from '../../store/useGameStore'
 import { getItem } from '../../data/items/itemRegistry'
@@ -166,9 +166,11 @@ export function SmithingPanel({ onSmelt, onForge }: SmithingPanelProps) {
   const forgingLevel = useGameStore(
     (s) => s.skills.skills.find((sk) => sk.id === 'forging')?.level ?? 1,
   )
-  // Subscribe to all skill levels for forge requirement display.
-  const skillLevels = useGameStore(
-    (s) => Object.fromEntries(s.skills.skills.map((sk) => [sk.id, sk.level])),
+  // Subscribe to the raw skills array; build an id→level map only when it changes.
+  const skills = useGameStore((s) => s.skills.skills)
+  const skillLevels = useMemo(
+    () => Object.fromEntries(skills.map((sk) => [sk.id, sk.level])),
+    [skills],
   )
 
   const [activeTab, setActiveTab] = useState<SmithingTab>('smelt')

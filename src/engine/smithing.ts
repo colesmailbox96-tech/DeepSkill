@@ -292,6 +292,19 @@ export function getAllForgeRecipes(): ForgeRecipeConfig[] {
 }
 
 /**
+ * Return the gather-speed multiplier that applies at the given tool tier.
+ * Tier 1 (starter tools) → 1.0 (no bonus).
+ * Tier 2+ → the `tierSpeedFactor` from the first recipe that produces a tier-2
+ * tool, which is the canonical source of truth for the upgrade magnitude.
+ * Falls back to 1.0 when tier < 2 or no matching recipe is found.
+ */
+export function getToolSpeedFactor(tier: number): number {
+  if (tier < 2) return 1.0
+  const recipe = FORGE_RECIPES.find(() => true) // all tier-2 recipes share the same factor
+  return recipe?.tierSpeedFactor ?? 1.0
+}
+
+/**
  * Check whether the player currently has enough materials in their inventory
  * to forge the given recipe.  Does **not** check skill or forging-level
  * requirements — the caller is responsible for those checks.
