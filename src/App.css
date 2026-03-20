@@ -2771,3 +2771,203 @@ p {
   text-align: right;
   letter-spacing: 0.02em;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Phase 43 — Tinkering Panel
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.tinkering-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  max-height: 70vh;
+  background: rgba(12, 14, 18, 0.96);
+  border: 1px solid rgba(80, 130, 160, 0.35);
+  border-radius: 0.55rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(80, 150, 200, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  pointer-events: auto;
+  z-index: 600;
+  outline: none;
+  font-family: inherit;
+  color: rgba(200, 215, 230, 0.92);
+}
+
+/* Header */
+.tinkering-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem 0.6rem;
+  background: rgba(30, 70, 110, 0.12);
+  border-bottom: 1px solid rgba(80, 130, 160, 0.25);
+  flex-shrink: 0;
+}
+
+.tinkering-panel__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: rgba(120, 190, 230, 0.95);
+  flex: 1 1 auto;
+}
+
+.tinkering-panel__level {
+  font-size: 0.72rem;
+  color: rgba(100, 170, 210, 0.75);
+  background: rgba(30, 70, 110, 0.18);
+  border: 1px solid rgba(80, 130, 160, 0.2);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  white-space: nowrap;
+}
+
+.tinkering-panel__close {
+  flex-shrink: 0;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.3rem;
+  color: rgba(180, 200, 215, 0.7);
+  cursor: pointer;
+  font-size: 0.78rem;
+  line-height: 1;
+  pointer-events: auto;
+  transition: background 0.12s, color 0.12s;
+}
+
+.tinkering-panel__close:hover {
+  background: rgba(200, 60, 40, 0.2);
+  color: #e08070;
+}
+
+/* Recipe list */
+.tinkering-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+/* Recipe card */
+.tinkering-recipe {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(80, 130, 160, 0.2);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  transition: border-color 0.12s;
+}
+
+.tinkering-recipe:hover {
+  border-color: rgba(100, 160, 200, 0.4);
+}
+
+.tinkering-recipe--locked {
+  opacity: 0.6;
+}
+
+.tinkering-recipe__top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tinkering-recipe__name {
+  flex: 1 1 auto;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(190, 215, 235, 0.95);
+}
+
+.tinkering-recipe__arrow {
+  color: rgba(100, 160, 200, 0.75);
+}
+
+.tinkering-recipe__lock-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(200, 80, 60, 0.85);
+  background: rgba(200, 60, 40, 0.12);
+  border: 1px solid rgba(200, 60, 40, 0.2);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  white-space: nowrap;
+}
+
+.tinkering-recipe__meta {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: rgba(130, 155, 175, 0.65);
+}
+
+.tinkering-recipe__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.tinkering-recipe__count {
+  font-size: 0.78rem;
+  color: rgba(160, 180, 200, 0.8);
+}
+
+.tinkering-recipe__count--low {
+  color: rgba(200, 90, 70, 0.85);
+}
+
+.tinkering-recipe__btn {
+  padding: 0.25rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  background: rgba(30, 80, 130, 0.55);
+  color: rgba(170, 215, 245, 0.95);
+  border: 1px solid rgba(80, 140, 190, 0.4);
+  pointer-events: auto;
+  transition: background 0.12s, color 0.12s;
+}
+
+.tinkering-recipe__btn:hover:not(:disabled) {
+  background: rgba(40, 100, 160, 0.75);
+  color: #b0dcff;
+}
+
+.tinkering-recipe__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Hint bar */
+.tinkering-panel__hint {
+  flex-shrink: 0;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.62rem;
+  color: rgba(110, 130, 150, 0.4);
+  border-top: 1px solid rgba(80, 130, 160, 0.12);
+  background: rgba(8, 10, 14, 0.5);
+  text-align: right;
+  letter-spacing: 0.02em;
+}
+
