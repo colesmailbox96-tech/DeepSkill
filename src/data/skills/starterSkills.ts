@@ -97,4 +97,14 @@ export const STARTER_SKILLS: Skill[] = [
     description:
       'Assembling refined components into practical utility devices. A skilled tinkerer turns copper, iron, and worked wood into lanterns, hooks, baskets, and clamps that support every other discipline.',
   },
+
+  {
+    id: 'surveying',
+    name: 'Surveying',
+    level: 1,
+    experience: 0,
+    experienceToNextLevel: xpToNextLevel(1),
+    description:
+      'Reading subtle disturbances in soil, stone, and root that betray buried caches left by travellers long gone. A trained surveyor detects richer deposits and rarer fragments missed by untrained eyes.',
+  },
 ]

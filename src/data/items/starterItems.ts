@@ -528,6 +528,56 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'An indispensable tool for mending cracked hafts, loose joints, and fractured fittings.',
   },
 
+  // ── Phase 44 — Surveying Salvage Outputs ─────────────────────────────────
+
+  {
+    id: 'ore_chip',
+    name: 'Ore Chip',
+    type: 'material',
+    stackable: true,
+    value: 4,
+    icon: 'items/ore_chip.png',
+    description:
+      'A palm-sized fragment of mineral-bearing rock pried from a shallow buried pocket. ' +
+      'Not worth smelting alone, but a handful of chips can be traded or ground into flux.',
+  },
+
+  {
+    id: 'raw_resin',
+    name: 'Raw Resin',
+    type: 'material',
+    stackable: true,
+    value: 6,
+    icon: 'items/raw_resin.png',
+    description:
+      'Thick amber sap harvested from a buried root cache, preserved by the cold ground. ' +
+      'Used as a binder in leatherwork, a wood sealant, and a slow-burn fuel in lanterns.',
+  },
+
+  {
+    id: 'flint_shard',
+    name: 'Flint Shard',
+    type: 'material',
+    stackable: true,
+    value: 7,
+    icon: 'items/flint_shard.png',
+    description:
+      'A razor-edged fragment of dark flint uncovered beneath the topsoil. ' +
+      'Valued by arrowsmiths and carvers for its natural edge — sharper than most rough-ground iron.',
+  },
+
+  {
+    id: 'rare_fragment',
+    name: 'Rare Fragment',
+    type: 'material',
+    stackable: true,
+    value: 28,
+    icon: 'items/rare_fragment.png',
+    description:
+      'A shard of unidentified mineral with a faint inner luminescence. ' +
+      'Found only in the deepest buried caches far from settlement — its eventual use is unknown, but traders pay well for it.',
+  },
+
   // ── Phase 26 / 27 — Starter Equipment ────────────────────────────────────
 
   {
