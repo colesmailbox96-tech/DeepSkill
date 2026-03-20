@@ -57,6 +57,13 @@ import {
   getCookingLevel,
 } from './engine/cooking'
 import type { CookRecipeConfig } from './engine/cooking'
+import {
+  buildFurnaceStation,
+  findSmeltableOre,
+  getForgingLevel,
+} from './engine/smithing'
+import type { SmeltRecipeConfig } from './engine/smithing'
+import { useSmithingStore } from './store/useSmithingStore'
 import { buildBrackroot } from './engine/brackroot'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
@@ -88,6 +95,7 @@ import { registerAllDialogues } from './data/dialogue/npcDialogues'
 import { useDialogueStore } from './store/useDialogueStore'
 import { TaskTrackerHud } from './ui/hud/TaskTrackerHud'
 import { JournalPanel } from './ui/hud/JournalPanel'
+import { SmithingPanel } from './ui/hud/SmithingPanel'
 import { registerAllTasks } from './data/tasks/taskRegistry'
 import { useTaskStore } from './store/useTaskStore'
 import { getTask } from './engine/task'
@@ -112,6 +120,8 @@ interface FishingSession { node: FishingNode; elapsed: number }
 
 /** Tracks an active hearthcraft cook: which recipe and elapsed cook time. */
 interface CookingSession { recipe: CookRecipeConfig; elapsed: number }
+/** Phase 40 — Active smelt session: recipe being smelted + elapsed time. */
+interface SmeltSession { recipe: SmeltRecipeConfig; elapsed: number }
 
 function App() {
   const sceneRef = useRef<HTMLDivElement>(null)
@@ -218,6 +228,8 @@ function App() {
   const mobileInteractRef = useRef<() => void>(() => {})
   /** True when the player is in range of an interactable – drives the interact button pulse. */
   const mobileHasTargetRef = useRef(false)
+  /** Smelt callback set by the game loop, called by SmithingPanel recipe buttons. */
+  const smeltFromPanelRef = useRef<(recipe: import('./engine/smithing').SmeltRecipeConfig) => void>(() => {})
 
   useEffect(() => {
     const container = sceneRef.current
@@ -457,6 +469,67 @@ function App() {
 
     buildCookStation(scene, interactables, onCookStart)
 
+    // Phase 40 — Smithing Foundation
+    // Smelt session: tracks which recipe is being smelted and elapsed time.
+    const smeltRef = { current: null as SmeltSession | null }
+    // Captured after buildFurnaceStation(); read by onSmeltStart and the tick.
+    let furnaceStation: import('./engine/smithing').FurnaceStation | null = null
+    const FURNACE_INTERACT_RADIUS = 2.0
+
+    const onSmeltStart = (recipe?: SmeltRecipeConfig) => {
+      // Already smelting — do nothing.
+      if (smeltRef.current) return
+
+      // Proximity check — player must be standing at the furnace.
+      if (furnaceStation) {
+        const dist = player.mesh.position.distanceTo(furnaceStation.mesh.position)
+        if (dist > FURNACE_INTERACT_RADIUS) {
+          useNotifications.getState().push('You need to be at the furnace to smelt.', 'info')
+          return
+        }
+      }
+
+      const { inventory } = useGameStore.getState()
+      // If called from the panel button a specific recipe is supplied; otherwise
+      // auto-select the best available ore (interaction-key path).
+      const chosen = recipe ?? findSmeltableOre(inventory.slots)
+
+      if (!chosen) {
+        useNotifications.getState().push('You have no ore ready to smelt here.', 'info')
+        useSmithingStore.getState().openPanel()
+        return
+      }
+      if (getForgingLevel() < chosen.levelReq) {
+        useNotifications.getState().push(
+          `You need level ${chosen.levelReq} Forging to smelt this.`,
+          'info',
+        )
+        useSmithingStore.getState().openPanel()
+        return
+      }
+
+      // Re-validate ore quantity — panel state may have been stale.
+      const oreSlot = inventory.slots.find((s) => s.id === chosen.oreId)
+      if (!oreSlot || oreSlot.quantity < chosen.oreQty) {
+        useNotifications.getState().push(
+          `You don't have enough ${chosen.label.toLowerCase()} to smelt.`,
+          'info',
+        )
+        return
+      }
+
+      // Open the panel so the player can track progress.
+      useSmithingStore.getState().openPanel()
+      smeltRef.current = { recipe: chosen, elapsed: 0 }
+      useNotifications.getState().push(
+        `You place the ${chosen.label.toLowerCase()} into the furnace…`,
+        'info',
+      )
+    }
+
+    furnaceStation = buildFurnaceStation(scene, interactables, () => onSmeltStart())
+    smeltFromPanelRef.current = (recipe) => onSmeltStart(recipe)
+
     // Phase 29 — Non-Aggressive Wildlife
     // onHarvest: award drop item, notify, then trigger a flee.
     const onHarvest = (creature: Creature) => {
@@ -559,11 +632,12 @@ function App() {
       keys.clear()
       mobileJoystickRef.current.x = 0
       mobileJoystickRef.current.z = 0
-      // Cancel any in-progress gathering/cooking sessions (player teleported away).
+      // Cancel any in-progress gathering/cooking/smelting sessions (player teleported away).
       choppingRef.current = null
       miningRef.current = null
       fishingRef.current = null
       cookingRef.current = null
+      smeltRef.current = null
       // Show the blocking respawn overlay.
       useRespawnStore.getState().triggerDefeat(RESPAWN_LOCATION_LABEL)
     }
@@ -672,6 +746,18 @@ function App() {
       keys.add(e.code)
       if (e.code === 'KeyE' && interactionState.target) {
         interactionState.target.onInteract()
+      }
+      if (e.code === 'KeyF') {
+        // Toggle the smithing panel; open only when near the furnace.
+        const smithing = useSmithingStore.getState()
+        if (smithing.isOpen) {
+          smithing.closePanel()
+        } else if (
+          furnaceStation &&
+          player.mesh.position.distanceTo(furnaceStation.mesh.position) <= FURNACE_INTERACT_RADIUS
+        ) {
+          smithing.openPanel()
+        }
       }
     }
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code)
@@ -1009,6 +1095,54 @@ function App() {
         }
       }
 
+      // Phase 40 — tick smelt session
+      if (smeltRef.current) {
+        const sess = smeltRef.current
+        const tooFar = furnaceStation
+          ? player.mesh.position.distanceTo(furnaceStation.mesh.position) > FURNACE_INTERACT_RADIUS
+          : false
+        if (player.moveState === 'walk' || tooFar) {
+          // Moving away from or out of range of the furnace cancels the smelt.
+          smeltRef.current = null
+          useNotifications.getState().push('You step away from the furnace.', 'info')
+        } else {
+          sess.elapsed += delta
+          if (sess.elapsed >= sess.recipe.smeltDuration) {
+            smeltRef.current = null
+            const { inventory, addItem, removeItem, grantSkillXp } = useGameStore.getState()
+            const barName = getItem(sess.recipe.barId)?.name ?? sess.recipe.barId
+            // Re-validate ore at completion — inventory may have changed during the smelt.
+            const oreSlot = inventory.slots.find((s) => s.id === sess.recipe.oreId)
+            if (!oreSlot || oreSlot.quantity < sess.recipe.oreQty) {
+              useNotifications.getState().push(
+                `The ${sess.recipe.label.toLowerCase()} was used up — smelt cancelled.`,
+                'info',
+              )
+              return
+            }
+            // Guard: ensure the bar can be received before consuming the ore.
+            // The bar slot will either stack or occupy a new slot.  After removing
+            // oreQty units the slot may vacate if the stack empties.
+            const hasExistingBar = inventory.slots.some((s) => s.id === sess.recipe.barId)
+            const slotsAfterRemove = oreSlot.quantity <= sess.recipe.oreQty
+              ? inventory.slots.length - 1   // ore stack will vacate
+              : inventory.slots.length
+            const canAdd = hasExistingBar || slotsAfterRemove < inventory.maxSlots
+            if (!canAdd) {
+              useNotifications.getState().push('Your inventory is full — make room before smelting.', 'info')
+              return
+            }
+            removeItem(sess.recipe.oreId, sess.recipe.oreQty)
+            addItem({ id: sess.recipe.barId, name: barName, quantity: 1 })
+            grantSkillXp('forging', sess.recipe.xp)
+            useNotifications.getState().push(
+              `You smelt the ${sess.recipe.label.toLowerCase()}. ${barName} ready!`,
+              'success',
+            )
+          }
+        }
+      }
+
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
 
@@ -1133,7 +1267,7 @@ function App() {
         <p id="scene-description" className="app-header__desc">
           Playing as <strong>{playerName}</strong>.
           WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact · click creature to target.
-          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment.
+          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing.
         </p>
       </header>
       <div
@@ -1167,6 +1301,8 @@ function App() {
           <TaskTrackerHud />
           {/* Phase 39 — Journal panel */}
           <JournalPanel />
+          {/* Phase 40 — Smithing panel */}
+          <SmithingPanel onSmelt={(recipe) => smeltFromPanelRef.current(recipe)} />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}

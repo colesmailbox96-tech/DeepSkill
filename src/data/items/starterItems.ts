@@ -322,6 +322,32 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'Soft yet surprisingly water-resistant; suitable for patching light armour or lining boots.',
   },
 
+  // ── Phase 40 — Smithing bars ──────────────────────────────────────────────
+
+  {
+    id: 'copper_bar',
+    name: 'Copper Bar',
+    type: 'material',
+    stackable: true,
+    value: 14,
+    icon: 'items/copper_bar.png',
+    description:
+      'A smooth ingot of smelted copper, still warm from the furnace. ' +
+      'Soft enough to shape by hand but sturdy in finished fittings; the foundation of beginner-tier metalwork.',
+  },
+
+  {
+    id: 'iron_bar',
+    name: 'Iron Bar',
+    type: 'material',
+    stackable: true,
+    value: 24,
+    icon: 'items/iron_bar.png',
+    description:
+      'A dense, dark ingot drawn from iron ore at high heat. ' +
+      'Heavier and harder than copper — the preferred stock for reliable tools, clasps, and reinforced fittings.',
+  },
+
   // ── Phase 35 — Brackroot Trail drops & cache ──────────────────────────────
 
   {
