@@ -388,7 +388,14 @@ function App() {
       }
       const { addItem, grantSkillXp } = useGameStore.getState()
       const itemName = getItem(cfg.itemId)?.name ?? cfg.itemId
-      addItem({ id: cfg.itemId, name: itemName, quantity: 1 })
+      const added = addItem({ id: cfg.itemId, name: itemName, quantity: 1 })
+      if (!added) {
+        useNotifications.getState().push(
+          `Your inventory is too full to gather ${itemName.toLowerCase()}.`,
+          'info',
+        )
+        return
+      }
       grantSkillXp('foraging', cfg.xp)
       advanceGatherObjectives(cfg.itemId)
       useNotifications.getState().push(
