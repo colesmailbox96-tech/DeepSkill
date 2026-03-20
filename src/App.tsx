@@ -83,7 +83,12 @@ import { useCombatStore } from './store/useCombatStore'
 import { RESPAWN_X, RESPAWN_Y, RESPAWN_Z, RESPAWN_LOCATION_LABEL } from './engine/respawn'
 import { useRespawnStore } from './store/useRespawnStore'
 import { RespawnOverlay } from './ui/hud/RespawnOverlay'
+import { DialoguePanel } from './ui/hud/DialoguePanel'
+import { registerAllDialogues } from './data/dialogue/npcDialogues'
 import './App.css'
+
+// Register NPC dialogue trees once at module load time.
+registerAllDialogues()
 
 // ── Gather-session types (used by both woodcutting and mining loops) ───────────
 
@@ -984,6 +989,8 @@ function App() {
           <EquipmentPanel />
           {/* Phase 34 — Respawn / Safe Recovery overlay */}
           <RespawnOverlay />
+          {/* Phase 36 — Dialogue panel */}
+          <DialoguePanel />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}
