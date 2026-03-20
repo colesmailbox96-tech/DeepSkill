@@ -1668,3 +1668,126 @@ p {
   outline: none;
 }
 
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Phase 36 — Dialogue Panel
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.dialogue-panel {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(480px, calc(100vw - 1.5rem));
+  background: rgba(12, 16, 20, 0.97);
+  border: 1px solid rgba(160, 130, 80, 0.35);
+  border-radius: 0.55rem;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.8);
+  outline: none;
+  animation: dialogue-in 0.18s ease forwards;
+}
+
+@keyframes dialogue-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.dialogue-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(160, 130, 80, 0.2);
+  flex-shrink: 0;
+}
+
+.dialogue-panel__npc-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #e8d090;
+  letter-spacing: 0.03em;
+}
+
+.dialogue-panel__close {
+  background: none;
+  border: none;
+  color: #6e7880;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.1rem 0.25rem;
+  border-radius: 0.2rem;
+  line-height: 1;
+  transition: color 0.12s;
+}
+
+.dialogue-panel__close:hover {
+  color: #f0e8c0;
+}
+
+/* ── NPC speech ──────────────────────────────────────────────────────────── */
+
+.dialogue-panel__speech {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  font-size: 0.88rem;
+  color: rgba(225, 215, 195, 0.95);
+  line-height: 1.6;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Player choices ──────────────────────────────────────────────────────── */
+
+.dialogue-panel__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0.35rem 0.6rem 0.55rem;
+}
+
+.dialogue-choice {
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #a8c4a0;
+  font-size: 0.82rem;
+  font-family: inherit;
+  text-align: left;
+  padding: 0.45rem 0.4rem;
+  cursor: pointer;
+  border-radius: 0.2rem;
+  transition: color 0.1s, background 0.1s;
+  line-height: 1.45;
+}
+
+.dialogue-choice:last-child {
+  border-bottom: none;
+}
+
+.dialogue-choice:hover,
+.dialogue-choice:focus-visible {
+  color: #e8f0d0;
+  background: rgba(255, 255, 255, 0.05);
+  outline: none;
+}
+
+.dialogue-choice:before {
+  content: '▸ ';
+  opacity: 0.55;
+  font-size: 0.7rem;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .dialogue-panel {
+    bottom: 0;
+    border-radius: 0.55rem 0.55rem 0 0;
+    width: 100%;
+  }
+}
