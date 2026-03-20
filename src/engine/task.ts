@@ -42,10 +42,12 @@ export interface TaskObjective {
   /**
    * The entity this objective relates to.
    * Semantics depend on type:
-   *   gather/deliver → ItemDefinition.id
-   *   kill           → Creature def.id
-   *   explore        → zone id / landmark label
-   *   talk           → NPC display name (matches DialogueTree.npcName)
+   *   gather  → ItemDefinition.id
+   *   kill    → Creature def.id
+   *   explore → zone id / landmark label
+   *   talk    → NPC display name (matches DialogueTree.npcName)
+   *   deliver → NPC display name to hand items to; the items consumed are
+   *             inferred from companion 'gather' objectives on the same task.
    */
   targetId?: string
   /** How many units are needed to fulfil this objective (default 1). */
