@@ -129,9 +129,14 @@ function App() {
   useEffect(() => {
     useTaskStore.getState().acceptTask('word_from_the_elder')
     useTaskStore.getState().acceptTask('warm_runoff')
+    // Phase 38 — practical starter tasks
+    useTaskStore.getState().acceptTask('haul_for_the_hearth')
+    useTaskStore.getState().acceptTask('stock_the_camp_stores')
+    useTaskStore.getState().acceptTask('stone_from_the_quarry')
   }, [])
 
-  // Advance any 'talk' objective whose targetId matches the NPC just spoken to.
+  // Advance 'talk' objectives and handle 'deliver' objectives when the player
+  // opens dialogue with an NPC.
   useEffect(() => {
     if (!openDialogueNpcName) return
     const { active, updateObjective } = useTaskStore.getState()
@@ -139,12 +144,67 @@ function App() {
       const def = getTask(record.taskId)
       if (!def) continue
       for (const obj of def.objectives) {
+        // ── Talk objectives ──────────────────────────────────────────────
         if (
           obj.type === 'talk' &&
           obj.targetId === openDialogueNpcName &&
           (record.progress[obj.id] ?? 0) < obj.required
         ) {
           updateObjective(record.taskId, obj.id, 1)
+        }
+
+        // ── Deliver objectives ───────────────────────────────────────────
+        // A deliver objective completes when:
+        //   1. The player is speaking to the target NPC.
+        //   2. All companion gather objectives on this task are satisfied.
+        //   3. The player's inventory contains the required items.
+        // Items from the companion gather objectives are consumed on delivery.
+        if (
+          obj.type === 'deliver' &&
+          obj.targetId === openDialogueNpcName &&
+          (record.progress[obj.id] ?? 0) < obj.required
+        ) {
+          const gatherObjs = def.objectives.filter((o) => o.type === 'gather')
+          const allGathered =
+            gatherObjs.length > 0 &&
+            gatherObjs.every(
+              (o) => (record.progress[o.id] ?? 0) >= o.required,
+            )
+
+          if (allGathered) {
+            // Verify the player still has all the required items before
+            // consuming them (they may have manually dropped some since
+            // the gather objective completed).
+            const { inventory, removeItem } = useGameStore.getState()
+            const canDeliver = gatherObjs.every((o) => {
+              if (!o.targetId) return true
+              const slot = inventory.slots.find((s) => s.id === o.targetId)
+              return slot !== undefined && slot.quantity >= o.required
+            })
+
+            if (canDeliver) {
+              for (const gatherObj of gatherObjs) {
+                if (gatherObj.targetId) {
+                  removeItem(gatherObj.targetId, gatherObj.required)
+                }
+              }
+              updateObjective(record.taskId, obj.id, 1)
+            } else {
+              useNotifications
+                .getState()
+                .push(
+                  `You no longer have all the required items to deliver to ${openDialogueNpcName}.`,
+                  'warning',
+                )
+            }
+          } else {
+            useNotifications
+              .getState()
+              .push(
+                `Gather the required items before delivering them to ${openDialogueNpcName}.`,
+                'info',
+              )
+          }
         }
       }
     }
@@ -296,6 +356,29 @@ function App() {
     // Phase 21 — Foraging System Base
     // Foraging is instant (no session timer) — level is checked, reward granted,
     // and the node depleted all within this single callback.
+
+    /**
+     * Phase 38 — Advance any active 'gather' objectives that match `itemId`.
+     * Called after every successful resource collection (woodcutting, mining,
+     * fishing, foraging) so that gather-type task objectives track in real time.
+     */
+    function advanceGatherObjectives(itemId: string): void {
+      const { active, updateObjective } = useTaskStore.getState()
+      for (const record of active) {
+        const def = getTask(record.taskId)
+        if (!def) continue
+        for (const obj of def.objectives) {
+          if (
+            obj.type === 'gather' &&
+            obj.targetId === itemId &&
+            (record.progress[obj.id] ?? 0) < obj.required
+          ) {
+            updateObjective(record.taskId, obj.id, 1)
+          }
+        }
+      }
+    }
+
     const onForageStart = (node: ForageNode) => {
       const cfg = FORAGE_VARIANT_CONFIG[node.variant]
       if (getForagingLevel() < cfg.levelReq) {
@@ -307,8 +390,16 @@ function App() {
       }
       const { addItem, grantSkillXp } = useGameStore.getState()
       const itemName = getItem(cfg.itemId)?.name ?? cfg.itemId
-      addItem({ id: cfg.itemId, name: itemName, quantity: 1 })
+      const added = addItem({ id: cfg.itemId, name: itemName, quantity: 1 })
+      if (!added) {
+        useNotifications.getState().push(
+          `Your inventory is too full to gather ${itemName.toLowerCase()}.`,
+          'info',
+        )
+        return
+      }
       grantSkillXp('foraging', cfg.xp)
+      advanceGatherObjectives(cfg.itemId)
       useNotifications.getState().push(
         `You gather ${article(itemName)} ${itemName.toLowerCase()}.`,
         'success',
@@ -804,10 +895,15 @@ function App() {
             const { addItem, grantSkillXp } = useGameStore.getState()
             // Resolve display name from registry (single source of truth); id is the fallback.
             const logName = getItem(cfg.logId)?.name ?? cfg.logId
-            addItem({ id: cfg.logId, name: logName, quantity: 1 })
-            grantSkillXp('woodcutting', cfg.xp)
-            useNotifications.getState().push(`You cut ${article(logName)} ${logName.toLowerCase()}.`, 'success')
-            fellTree(sess.node)
+            const added = addItem({ id: cfg.logId, name: logName, quantity: 1 })
+            if (added) {
+              grantSkillXp('woodcutting', cfg.xp)
+              advanceGatherObjectives(cfg.logId)
+              useNotifications.getState().push(`You cut ${article(logName)} ${logName.toLowerCase()}.`, 'success')
+              fellTree(sess.node)
+            } else {
+              useNotifications.getState().push('Your inventory is full — you cannot carry any more logs.', 'warning')
+            }
           }
         }
       }
@@ -828,10 +924,15 @@ function App() {
             const { addItem, grantSkillXp } = useGameStore.getState()
             // Resolve display name from registry (single source of truth); id is the fallback.
             const oreName = getItem(cfg.oreId)?.name ?? cfg.oreId
-            addItem({ id: cfg.oreId, name: oreName, quantity: 1 })
-            grantSkillXp('mining', cfg.xp)
-            useNotifications.getState().push(`You mine ${article(oreName)} ${oreName.toLowerCase()}.`, 'success')
-            depleteRock(sess.node)
+            const added = addItem({ id: cfg.oreId, name: oreName, quantity: 1 })
+            if (added) {
+              grantSkillXp('mining', cfg.xp)
+              advanceGatherObjectives(cfg.oreId)
+              useNotifications.getState().push(`You mine ${article(oreName)} ${oreName.toLowerCase()}.`, 'success')
+              depleteRock(sess.node)
+            } else {
+              useNotifications.getState().push('Your inventory is full — you cannot carry any more ore.', 'warning')
+            }
           }
         }
       }
@@ -852,10 +953,15 @@ function App() {
             const { addItem, grantSkillXp } = useGameStore.getState()
             // Resolve display name from registry (single source of truth); id is the fallback.
             const fishName = getItem(cfg.fishId)?.name ?? cfg.fishId
-            addItem({ id: cfg.fishId, name: fishName, quantity: 1 })
-            grantSkillXp('fishing', cfg.xp)
-            useNotifications.getState().push(`You catch ${article(fishName)} ${fishName.toLowerCase()}!`, 'success')
-            depleteFishSpot(sess.node)
+            const added = addItem({ id: cfg.fishId, name: fishName, quantity: 1 })
+            if (added) {
+              grantSkillXp('fishing', cfg.xp)
+              advanceGatherObjectives(cfg.fishId)
+              useNotifications.getState().push(`You catch ${article(fishName)} ${fishName.toLowerCase()}!`, 'success')
+              depleteFishSpot(sess.node)
+            } else {
+              useNotifications.getState().push('Your inventory is full — you cannot carry any more fish.', 'warning')
+            }
           }
         }
       }

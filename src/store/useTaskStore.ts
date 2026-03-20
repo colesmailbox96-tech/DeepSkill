@@ -105,8 +105,8 @@ function _grantRewards(def: TaskDefinition): void {
       const itemDef = _getItemDef(reward.itemId)
       const displayName = itemDef?.name ?? reward.itemId
 
-      // Guard: addItem is a silent no-op when the inventory is full and the
-      // item doesn't already stack. Check capacity before calling so we can
+      // Guard: addItem returns false when the inventory is full and the
+      // item doesn't already stack. Check the return value so we can
       // notify the player if a reward item cannot be delivered.
       const existsInInventory = inventory.slots.some((s) => s.id === reward.itemId)
       const inventoryFull = inventory.slots.length >= inventory.maxSlots

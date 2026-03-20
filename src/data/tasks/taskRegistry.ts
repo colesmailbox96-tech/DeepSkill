@@ -1,17 +1,17 @@
 /**
- * Phase 37 — Task Registry
+ * Phase 38 — Task Registry (extended from Phase 37)
  *
  * Registers all task definitions in the engine registry and exports a
  * convenience initialiser that App.tsx calls once at startup.
  *
- * Phase 37 ships with two introductory tasks ("Word from the Elder" and
- * "Warm Runoff") that together demonstrate the full framework pipeline:
- *   - task acceptance (auto-accepted at game start)
- *   - objective tracking (talk-type and explore-type objectives)
- *   - reward delivery (coins, items, and skill XP)
- *   - journal entry bodies
+ * Phase 37 shipped with two introductory tasks ("Word from the Elder" and
+ * "Warm Runoff") that demonstrate the full framework pipeline.
  *
- * Phase 38 will add the first practical task set (gather / kill / deliver).
+ * Phase 38 adds the first practical task set — gather and deliver tasks that
+ * make use of every gathering skill in the starter zone:
+ *   "Haul for the Hearth"     – cut ashwood logs and deliver them to Bron
+ *   "Stock the Camp Stores"   – catch perch and deliver them to Mira
+ *   "Stone from the Quarry"   – mine copper ore for the settlement
  */
 
 import { registerTasks } from '../../engine/task'
@@ -83,8 +83,115 @@ const warmRunoff: TaskDefinition = {
 
 // ─── ALL_TASKS ────────────────────────────────────────────────────────────────
 
-/** Complete list of Phase 37 task definitions. */
-export const ALL_TASKS: TaskDefinition[] = [wordFromTheElder, warmRunoff]
+// ── Phase 38 — Practical starter tasks ────────────────────────────────────
+
+/**
+ * "Haul for the Hearth"
+ * Bron the Blacksmith needs ashwood logs to keep the forge fire going.
+ * Demonstrates a gather → deliver two-objective chain.
+ */
+const haulForTheHearth: TaskDefinition = {
+  id: 'haul_for_the_hearth',
+  title: 'Haul for the Hearth',
+  description:
+    "Bron's forge fire is running low. He needs five ashwood logs cut and delivered before nightfall.",
+  giverName: 'Bron (Blacksmith)',
+  objectives: [
+    {
+      id: 'cut_ashwood_logs',
+      description: 'Cut 5 Ashwood Logs',
+      type: 'gather',
+      targetId: 'ashwood_log',
+      required: 5,
+    },
+    {
+      id: 'deliver_logs_to_bron',
+      description: 'Deliver the logs to Bron (Blacksmith)',
+      type: 'deliver',
+      targetId: 'Bron (Blacksmith)',
+      required: 1,
+    },
+  ],
+  reward: {
+    coins: 15,
+    xp: [{ skill: 'woodcutting', amount: 35 }],
+  },
+  journalEntry:
+    "Bron stopped me outside the smithy — the forge fire is running low and he's too busy mending tools to head out himself. He needs ashwood logs, five of them, to keep the heat through the night. I should head to the roadside trees, cut what he needs, and bring them back.",
+}
+
+/**
+ * "Stock the Camp Stores"
+ * Mira the Innkeeper needs fresh perch for the settlement kitchen.
+ * Demonstrates a gather → deliver two-objective chain.
+ */
+const stockTheCampStores: TaskDefinition = {
+  id: 'stock_the_camp_stores',
+  title: 'Stock the Camp Stores',
+  description:
+    'Mira is running low on fresh fish. She needs three perch delivered to the inn kitchen.',
+  giverName: 'Mira (Innkeeper)',
+  objectives: [
+    {
+      id: 'catch_perch',
+      description: 'Catch 3 Perch',
+      type: 'gather',
+      targetId: 'perch',
+      required: 3,
+    },
+    {
+      id: 'deliver_fish_to_mira',
+      description: 'Deliver the fish to Mira (Innkeeper)',
+      type: 'deliver',
+      targetId: 'Mira (Innkeeper)',
+      required: 1,
+    },
+  ],
+  reward: {
+    coins: 10,
+    items: [{ itemId: 'cooked_perch', qty: 1 }],
+    xp: [{ skill: 'fishing', amount: 30 }],
+  },
+  journalEntry:
+    "Mira is running low on fresh protein. She said the usual supply traders haven't come through and the settlement is eating dry rations again. She's asked me to fish the nearby pond for perch — three should be enough to feed the kitchen tonight. In return she'll cook one up for me to take.",
+}
+
+/**
+ * "Stone from the Quarry"
+ * Aldric needs copper ore from the quarry face for settlement repairs.
+ * Demonstrates a standalone gather objective — no delivery step required.
+ */
+const stoneFromTheQuarry: TaskDefinition = {
+  id: 'stone_from_the_quarry',
+  title: 'Stone from the Quarry',
+  description:
+    'Aldric needs copper ore from the quarry face for hearth-wall repairs. Mine four chunks from the exposed rock.',
+  giverName: 'Aldric (Village Elder)',
+  objectives: [
+    {
+      id: 'mine_copper_ore',
+      description: 'Mine 4 Copper Ore',
+      type: 'gather',
+      targetId: 'copper_ore',
+      required: 4,
+    },
+  ],
+  reward: {
+    coins: 12,
+    xp: [{ skill: 'mining', amount: 30 }],
+  },
+  journalEntry:
+    "Aldric pulled me aside near the settlement hall. The hearth wall is crumbling and the last of the cut stone was used up in last season's repairs. He says there's copper-bearing rock along the old quarry face east of the settlement — four chunks should give the masons enough to work with.",
+}
+
+/** Complete list of all task definitions (Phase 37 + Phase 38). */
+export const ALL_TASKS: TaskDefinition[] = [
+  wordFromTheElder,
+  warmRunoff,
+  haulForTheHearth,
+  stockTheCampStores,
+  stoneFromTheQuarry,
+]
 
 // ─── Initialiser ─────────────────────────────────────────────────────────────
 
