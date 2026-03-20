@@ -428,6 +428,56 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'This fragment was broken from a buried marker — someone has been through this trail before.',
   },
 
+  // ── Phase 42 — Carving Outputs ────────────────────────────────────────────
+
+  {
+    id: 'whittled_peg',
+    name: 'Whittled Peg',
+    type: 'material',
+    stackable: true,
+    value: 3,
+    icon: 'items/whittled_peg.png',
+    description:
+      'A smooth tapered peg whittled from ashwood. ' +
+      'Simple to make and widely used in camp construction, furniture repair, and basic assembly.',
+  },
+
+  {
+    id: 'carved_bowl',
+    name: 'Carved Bowl',
+    type: 'material',
+    stackable: true,
+    value: 7,
+    icon: 'items/carved_bowl.png',
+    description:
+      'A shallow bowl hollowed from a dense ashwood block. ' +
+      'Useful as a camp utensil or as a component in more complex hearthcraft recipes.',
+  },
+
+  {
+    id: 'ashwood_shaft',
+    name: 'Ashwood Shaft',
+    type: 'material',
+    stackable: true,
+    value: 10,
+    icon: 'items/ashwood_shaft.png',
+    description:
+      'A straight, sanded length of ashwood trimmed to shaft dimensions. ' +
+      'A versatile component — tinkerers prize it as the basis for tool handles, poles, and frames.',
+  },
+
+  {
+    id: 'chitin_pin',
+    name: 'Chitin Pin',
+    type: 'material',
+    stackable: true,
+    value: 8,
+    icon: 'items/chitin_pin.png',
+    description:
+      'A slender pin ground from Brackroot Crawler chitin. ' +
+      'Harder than bone and lightweight — valued for precision fastening and as an ingredient in refined gear.',
+  },
+
   // ── Phase 26 / 27 — Starter Equipment ────────────────────────────────────
 
   {

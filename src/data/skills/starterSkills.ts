@@ -10,6 +10,8 @@ import { xpToNextLevel } from './xpCurve'
  *
  * Phase 14: experienceToNextLevel is now derived from xpToNextLevel()
  * so the data layer and the XP-curve module stay in sync.
+ *
+ * Phase 42: carving skill added.
  */
 export const STARTER_SKILLS: Skill[] = [
   {
@@ -74,5 +76,14 @@ export const STARTER_SKILLS: Skill[] = [
     experienceToNextLevel: xpToNextLevel(1),
     description:
       'Reading terrain, managing load, and moving through rough country. Seasoned wayfinders tire more slowly, discover hidden paths, and shrug off rough ground.',
+  },
+  {
+    id: 'carving',
+    name: 'Carving',
+    level: 1,
+    experience: 0,
+    experienceToNextLevel: xpToNextLevel(1),
+    description:
+      'Shaping raw wood and bone into functional utility pieces. A skilled carver wastes less material, works faster, and unlocks finer forms that serve as components in advanced crafting.',
   },
 ]
