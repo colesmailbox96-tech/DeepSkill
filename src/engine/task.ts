@@ -64,7 +64,7 @@ export interface TaskItemReward {
 
 /** Skill XP awarded on completion. */
 export interface TaskXpReward {
-  /** Skill name (matches Skill.name in skillSchema). */
+  /** Skill id (matches Skill.id in skillSchema, e.g. "wayfaring"). */
   skill: string
   /** Amount of XP to grant. */
   amount: number
