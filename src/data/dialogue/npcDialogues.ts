@@ -36,7 +36,7 @@ const aldricTree = {
     },
     veil: {
       key: 'veil',
-      text: "The Veil is an ancient boundary — A boundary between what we know and what should remain unknown. Lately it flickers, and where it falters, creatures cross. Take heed.",
+      text: "The Veil is an ancient boundary between what we know and what should remain unknown. Lately it flickers, and where it falters, creatures cross. Take heed.",
       choices: [
         { label: 'What lies south of here?', nextNode: 'south' },
         { label: 'Farewell, elder.', nextNode: null },

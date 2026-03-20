@@ -1673,11 +1673,28 @@ p {
    Phase 36 — Dialogue Panel
    ══════════════════════════════════════════════════════════════════════════════ */
 
-.dialogue-panel {
+/* ── Backdrop ────────────────────────────────────────────────────────────── */
+
+.dialogue-backdrop {
   position: absolute;
-  bottom: 0.75rem;
-  left: 50%;
-  transform: translateX(-50%);
+  inset: 0;
+  /* No visual backdrop — the panel floats at the bottom — but pointer-events
+     are set to all so background game elements cannot be clicked while the
+     dialogue is open. */
+  pointer-events: all;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 0.75rem;
+  animation: dialogue-backdrop-in 0.18s ease forwards;
+}
+
+@keyframes dialogue-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.dialogue-panel {
   width: min(480px, calc(100vw - 1.5rem));
   background: rgba(12, 16, 20, 0.97);
   border: 1px solid rgba(160, 130, 80, 0.35);
@@ -1688,12 +1705,6 @@ p {
   gap: 0;
   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.8);
   outline: none;
-  animation: dialogue-in 0.18s ease forwards;
-}
-
-@keyframes dialogue-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
@@ -1785,8 +1796,11 @@ p {
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 480px) {
+  .dialogue-backdrop {
+    padding-bottom: 0;
+  }
+
   .dialogue-panel {
-    bottom: 0;
     border-radius: 0.55rem 0.55rem 0 0;
     width: 100%;
   }

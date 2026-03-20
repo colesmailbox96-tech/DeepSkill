@@ -15,6 +15,10 @@
  *
  * Behaviour
  * ─────────
+ *  - Full modal: backdrop blocks pointer-events; focus is trapped within the
+ *    panel while it is open so keyboard users cannot tab into game HUD behind it.
+ *  - Focus trap re-queries the panel on every node advance so newly rendered
+ *    choice buttons are always included.
  *  - Closes on Escape or ✕.
  *  - Selecting a choice with nextNode navigates to that node.
  *  - Selecting a choice with nextNode === null closes the panel.
@@ -22,8 +26,8 @@
  *    the shop) run immediately.
  *  - A synthesised "Farewell." choice is appended when a node has no choices
  *    defined, ensuring the player always has a way to close the panel.
- *  - Focus is set to the panel container on open so keyboard users can
- *    immediately tab to the first choice button.
+ *  - Choice buttons use stable keys (label+nextNode) so React never reuses the
+ *    wrong DOM node when the choice set changes between nodes.
  */
 
 import { useCallback, useEffect, useRef } from 'react'
@@ -55,10 +59,46 @@ export function DialoguePanel() {
     return () => window.removeEventListener('keydown', onKey)
   }, [isOpen, closeDialogue])
 
-  // Focus panel container on open so keyboard users can tab to choices.
+  // Focus trap: re-run whenever the active node changes (choice buttons are
+  // replaced between nodes so the live focusable list must be refreshed).
   useEffect(() => {
-    if (isOpen) panelRef.current?.focus()
-  }, [isOpen])
+    if (!isOpen) return
+
+    const panel = panelRef.current
+    if (!panel) return
+
+    // Focus the first button in the panel each time a new node loads.
+    const firstBtn = panel.querySelector<HTMLElement>('button')
+    firstBtn?.focus()
+
+    // Trap Tab / Shift-Tab inside the panel.
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+      // Re-query on every Tab press so late-rendered elements are included.
+      const focusable = Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute('disabled'))
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, currentNode])
 
   const handleChoice = useCallback(
     (choice: DialogueChoice) => {
@@ -81,41 +121,41 @@ export function DialoguePanel() {
 
   return (
     <div
-      className="dialogue-panel"
+      className="dialogue-backdrop"
       role="dialog"
       aria-modal="true"
       aria-label={`Talking with ${npcName}`}
-      ref={panelRef}
-      tabIndex={-1}
     >
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="dialogue-panel__header">
-        <span className="dialogue-panel__npc-name">{npcName}</span>
-        <button
-          className="dialogue-panel__close"
-          onClick={closeDialogue}
-          aria-label="End conversation"
-        >
-          ✕
-        </button>
-      </div>
-
-      {/* ── NPC speech ─────────────────────────────────────────────────────── */}
-      <p className="dialogue-panel__speech" aria-live="polite">
-        {currentNode!.text}
-      </p>
-
-      {/* ── Player choices ─────────────────────────────────────────────────── */}
-      <div className="dialogue-panel__choices" role="group" aria-label="Your responses">
-        {choices.map((choice, i) => (
+      <div className="dialogue-panel" ref={panelRef} tabIndex={-1}>
+        {/* ── Header ─────────────────────────────────────────────────────────── */}
+        <div className="dialogue-panel__header">
+          <span className="dialogue-panel__npc-name">{npcName}</span>
           <button
-            key={i}
-            className="dialogue-choice"
-            onClick={() => handleChoice(choice)}
+            className="dialogue-panel__close"
+            onClick={closeDialogue}
+            aria-label="End conversation"
           >
-            {choice.label}
+            ✕
           </button>
-        ))}
+        </div>
+
+        {/* ── NPC speech ─────────────────────────────────────────────────────── */}
+        <p className="dialogue-panel__speech" aria-live="polite">
+          {currentNode!.text}
+        </p>
+
+        {/* ── Player choices ─────────────────────────────────────────────────── */}
+        <div className="dialogue-panel__choices" role="group" aria-label="Your responses">
+          {choices.map((choice) => (
+            <button
+              key={`${choice.label}|${choice.nextNode}`}
+              className="dialogue-choice"
+              onClick={() => handleChoice(choice)}
+            >
+              {choice.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
