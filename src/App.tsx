@@ -83,6 +83,21 @@ import {
 } from './engine/tinkering'
 import type { TinkerRecipeConfig } from './engine/tinkering'
 import { useTinkeringStore } from './store/useTinkeringStore'
+import {
+  buildSurveyStoneStation,
+  buildSurveyCaches,
+  revealNearbyCaches,
+  animateCacheMarkers,
+  tickCacheCooldowns,
+  hideAllCaches,
+  getSurveyingLevel,
+  SURVEY_MODE_DURATION,
+  SURVEY_CLAIM_RADIUS,
+  SURVEY_STONE_INTERACT_RADIUS,
+} from './engine/surveying'
+import type { SurveyCache } from './engine/surveying'
+import { useSurveyingStore } from './store/useSurveyingStore'
+import { SurveyingPanel } from './ui/hud/SurveyingPanel'
 import { buildBrackroot } from './engine/brackroot'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
@@ -263,6 +278,8 @@ function App() {
   const carveFromPanelRef = useRef<(recipe: import('./engine/carving').CarveRecipeConfig) => void>(() => {})
   /** Tinker callback set by the game loop, called by TinkeringPanel recipe buttons. */
   const tinkerFromPanelRef = useRef<(recipe: import('./engine/tinkering').TinkerRecipeConfig) => void>(() => {})
+  /** Survey callback set by the game loop, called by SurveyingPanel sweep button. */
+  const startSurveyFromPanelRef = useRef<() => void>(() => {})
 
   useEffect(() => {
     const container = sceneRef.current
@@ -723,7 +740,86 @@ function App() {
     tinkererBenchStation = buildTinkererBenchStation(scene, interactables, () => onTinkerStart())
     tinkerFromPanelRef.current = (recipe) => onTinkerStart(recipe)
 
-    // Phase 29 — Non-Aggressive Wildlife
+    // Phase 44 — Surveying Foundation
+    let surveyStoneStation: import('./engine/surveying').SurveyStoneStation | null = null
+    // Declared before onStartSurvey so the closure captures the variable without TDZ risk.
+    let surveyCaches: SurveyCache[] = []
+
+    const onSurveyOpen = () => {
+      if (surveyStoneStation) {
+        const dist = player.mesh.position.distanceTo(surveyStoneStation.mesh.position)
+        if (dist > SURVEY_STONE_INTERACT_RADIUS) {
+          useNotifications.getState().push('You need to be at the survey stone to survey.', 'info')
+          return
+        }
+      }
+      useSurveyingStore.getState().openPanel()
+    }
+
+    const onStartSurvey = () => {
+      if (surveyStoneStation) {
+        const dist = player.mesh.position.distanceTo(surveyStoneStation.mesh.position)
+        if (dist > SURVEY_STONE_INTERACT_RADIUS) {
+          useNotifications.getState().push('You need to be at the survey stone to begin a sweep.', 'info')
+          return
+        }
+      }
+      const { surveyActive } = useSurveyingStore.getState()
+      if (surveyActive) {
+        useNotifications.getState().push('A survey sweep is already active.', 'info')
+        return
+      }
+      useSurveyingStore.getState().startSurvey(SURVEY_MODE_DURATION)
+      useNotifications.getState().push('You begin a survey sweep — golden caches will glow nearby.', 'info')
+      // Immediately check for nearby caches on sweep start.
+      const found = revealNearbyCaches(surveyCaches, player.mesh.position)
+      if (found > 0) {
+        useNotifications.getState().push(
+          `${found} hidden cache${found > 1 ? 's' : ''} revealed nearby!`,
+          'success',
+        )
+      }
+    }
+
+    const onClaimCache = (cache: SurveyCache) => {
+      if (!cache.revealed || cache.cooldownRemaining > 0) return
+      const dist = player.mesh.position.distanceTo(cache.markerMesh.position)
+      if (dist > SURVEY_CLAIM_RADIUS) {
+        useNotifications.getState().push('Move closer to the cache to claim it.', 'info')
+        return
+      }
+      const surveyLvl = getSurveyingLevel()
+      if (surveyLvl < cache.config.levelReq) {
+        useNotifications.getState().push(
+          `You need level ${cache.config.levelReq} Surveying to claim this cache.`,
+          'info',
+        )
+        return
+      }
+      const { inventory, addItem, grantSkillXp } = useGameStore.getState()
+      const rewardName = getItem(cache.config.rewardId)?.name ?? cache.config.rewardId
+      const hasExisting = inventory.slots.some((s) => s.id === cache.config.rewardId)
+      const slotsUsed = inventory.slots.length
+      const canAdd = hasExisting || slotsUsed < inventory.maxSlots
+      if (!canAdd) {
+        useNotifications.getState().push('Your inventory is full — make room before claiming.', 'info')
+        return
+      }
+      addItem({ id: cache.config.rewardId, name: rewardName, quantity: cache.config.rewardQty })
+      grantSkillXp('surveying', cache.config.xp)
+      cache.revealed = false
+      cache.markerMesh.visible = false
+      cache.interactable.interactRadius = 0
+      cache.cooldownRemaining = cache.config.cooldown
+      useNotifications.getState().push(
+        `You unearth ${rewardName} ×${cache.config.rewardQty}!`,
+        'success',
+      )
+    }
+
+    surveyStoneStation = buildSurveyStoneStation(scene, interactables, () => onSurveyOpen())
+    surveyCaches = buildSurveyCaches(scene, interactables, onClaimCache)
+    startSurveyFromPanelRef.current = () => onStartSurvey()
     // onHarvest: award drop item, notify, then trigger a flee.
     const onHarvest = (creature: Creature) => {
       const { def } = creature
@@ -977,6 +1073,18 @@ function App() {
           player.mesh.position.distanceTo(tinkererBenchStation.mesh.position) <= TINKERER_BENCH_INTERACT_RADIUS
         ) {
           tinkering.openPanel()
+        }
+      }
+      if (e.code === 'KeyY') {
+        // Toggle the surveying panel; open only when near the survey stone.
+        const surveying = useSurveyingStore.getState()
+        if (surveying.isOpen) {
+          surveying.closePanel()
+        } else if (
+          surveyStoneStation &&
+          player.mesh.position.distanceTo(surveyStoneStation.mesh.position) <= SURVEY_STONE_INTERACT_RADIUS
+        ) {
+          surveying.openPanel()
         }
       }
     }
@@ -1511,6 +1619,21 @@ function App() {
         }
       }
 
+      // Phase 44 — tick surveying: sweep timer, cache reveal, animate, and cooldowns
+      tickCacheCooldowns(surveyCaches, delta)
+      animateCacheMarkers(surveyCaches, delta)
+      const { surveyActive } = useSurveyingStore.getState()
+      if (surveyActive) {
+        useSurveyingStore.getState().tickSurvey(delta)
+        // Re-check for newly detectable caches each frame while sweep is active.
+        revealNearbyCaches(surveyCaches, player.mesh.position)
+        // If sweep just expired after tickSurvey, hide any un-claimed markers.
+        if (!useSurveyingStore.getState().surveyActive) {
+          hideAllCaches(surveyCaches)
+          useNotifications.getState().push('Survey sweep ended.', 'info')
+        }
+      }
+
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
 
@@ -1635,7 +1758,7 @@ function App() {
         <p id="scene-description" className="app-header__desc">
           Playing as <strong>{playerName}</strong>.
           WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact · click creature to target.
-          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering.
+          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering, Y = surveying.
         </p>
       </header>
       <div
@@ -1681,6 +1804,10 @@ function App() {
           {/* Phase 43 — Tinkering panel */}
           <TinkeringPanel
             onTinker={(recipe) => tinkerFromPanelRef.current(recipe)}
+          />
+          {/* Phase 44 — Surveying panel */}
+          <SurveyingPanel
+            onStartSurvey={() => startSurveyFromPanelRef.current()}
           />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
