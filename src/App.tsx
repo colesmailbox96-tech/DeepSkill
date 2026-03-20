@@ -87,6 +87,7 @@ import { DialoguePanel } from './ui/hud/DialoguePanel'
 import { registerAllDialogues } from './data/dialogue/npcDialogues'
 import { useDialogueStore } from './store/useDialogueStore'
 import { TaskTrackerHud } from './ui/hud/TaskTrackerHud'
+import { JournalPanel } from './ui/hud/JournalPanel'
 import { registerAllTasks } from './data/tasks/taskRegistry'
 import { useTaskStore } from './store/useTaskStore'
 import { getTask } from './engine/task'
@@ -1164,6 +1165,8 @@ function App() {
           <DialoguePanel />
           {/* Phase 37 — Task tracker HUD */}
           <TaskTrackerHud />
+          {/* Phase 39 — Journal panel */}
+          <JournalPanel />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}
