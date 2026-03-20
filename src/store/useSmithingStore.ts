@@ -2,8 +2,8 @@
  * Phase 40 — Smithing Store
  *
  * Minimal Zustand store for the SmithingPanel open/close state.
- * The panel is toggled by pressing F (near a furnace) or by interacting
- * with the furnace directly.
+ * The panel is toggled via the E interaction key (near a furnace) or the
+ * F key (near a furnace) or by clicking the furnace directly.
  */
 
 import { create } from 'zustand'

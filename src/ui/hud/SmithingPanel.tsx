@@ -31,7 +31,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useSmithingStore } from '../../store/useSmithingStore'
 import { useGameStore } from '../../store/useGameStore'
 import { getItem } from '../../data/items/itemRegistry'
-import { getAllSmeltRecipes, getForgingLevel } from '../../engine/smithing'
+import { getAllSmeltRecipes } from '../../engine/smithing'
 import type { SmeltRecipeConfig } from '../../engine/smithing'
 
 // ─── Sub-component ────────────────────────────────────────────────────────
@@ -99,6 +99,10 @@ export function SmithingPanel({ onSmelt }: SmithingPanelProps) {
   const isOpen     = useSmithingStore((s) => s.isOpen)
   const closePanel = useSmithingStore((s) => s.closePanel)
   const slots      = useGameStore((s) => s.inventory.slots)
+  // Subscribe to forging skill so the panel re-renders when level changes.
+  const forgingLevel = useGameStore(
+    (s) => s.skills.skills.find((sk) => sk.id === 'forging')?.level ?? 1,
+  )
 
   const isOpenRef = useRef(false)
   isOpenRef.current = isOpen
@@ -106,7 +110,7 @@ export function SmithingPanel({ onSmelt }: SmithingPanelProps) {
 
   const handleClose = useCallback(() => closePanel(), [closePanel])
 
-  // F key or Escape to close; F also handled by App.tsx to open.
+  // F key or Escape closes the panel; F opening is handled in App.tsx.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return
@@ -125,7 +129,6 @@ export function SmithingPanel({ onSmelt }: SmithingPanelProps) {
 
   if (!isOpen) return null
 
-  const forgingLevel = getForgingLevel()
   const recipes = getAllSmeltRecipes()
 
   const getOreQty = (oreId: string): number =>

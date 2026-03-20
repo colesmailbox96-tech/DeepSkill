@@ -472,10 +472,22 @@ function App() {
     // Phase 40 — Smithing Foundation
     // Smelt session: tracks which recipe is being smelted and elapsed time.
     const smeltRef = { current: null as SmeltSession | null }
+    // Captured after buildFurnaceStation(); read by onSmeltStart and the tick.
+    let furnaceStation: import('./engine/smithing').FurnaceStation | null = null
+    const FURNACE_INTERACT_RADIUS = 2.0
 
     const onSmeltStart = (recipe?: SmeltRecipeConfig) => {
       // Already smelting — do nothing.
       if (smeltRef.current) return
+
+      // Proximity check — player must be standing at the furnace.
+      if (furnaceStation) {
+        const dist = player.mesh.position.distanceTo(furnaceStation.mesh.position)
+        if (dist > FURNACE_INTERACT_RADIUS) {
+          useNotifications.getState().push('You need to be at the furnace to smelt.', 'info')
+          return
+        }
+      }
 
       const { inventory } = useGameStore.getState()
       // If called from the panel button a specific recipe is supplied; otherwise
@@ -496,6 +508,16 @@ function App() {
         return
       }
 
+      // Re-validate ore quantity — panel state may have been stale.
+      const oreSlot = inventory.slots.find((s) => s.id === chosen.oreId)
+      if (!oreSlot || oreSlot.quantity < chosen.oreQty) {
+        useNotifications.getState().push(
+          `You don't have enough ${chosen.label.toLowerCase()} to smelt.`,
+          'info',
+        )
+        return
+      }
+
       // Open the panel so the player can track progress.
       useSmithingStore.getState().openPanel()
       smeltRef.current = { recipe: chosen, elapsed: 0 }
@@ -505,7 +527,7 @@ function App() {
       )
     }
 
-    buildFurnaceStation(scene, interactables, () => onSmeltStart())
+    furnaceStation = buildFurnaceStation(scene, interactables, () => onSmeltStart())
     smeltFromPanelRef.current = (recipe) => onSmeltStart(recipe)
 
     // Phase 29 — Non-Aggressive Wildlife
@@ -724,6 +746,18 @@ function App() {
       keys.add(e.code)
       if (e.code === 'KeyE' && interactionState.target) {
         interactionState.target.onInteract()
+      }
+      if (e.code === 'KeyF') {
+        // Toggle the smithing panel; open only when near the furnace.
+        const smithing = useSmithingStore.getState()
+        if (smithing.isOpen) {
+          smithing.closePanel()
+        } else if (
+          furnaceStation &&
+          player.mesh.position.distanceTo(furnaceStation.mesh.position) <= FURNACE_INTERACT_RADIUS
+        ) {
+          smithing.openPanel()
+        }
       }
     }
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code)
@@ -1064,8 +1098,11 @@ function App() {
       // Phase 40 — tick smelt session
       if (smeltRef.current) {
         const sess = smeltRef.current
-        if (player.moveState === 'walk') {
-          // Moving away from the furnace cancels the smelt.
+        const tooFar = furnaceStation
+          ? player.mesh.position.distanceTo(furnaceStation.mesh.position) > FURNACE_INTERACT_RADIUS
+          : false
+        if (player.moveState === 'walk' || tooFar) {
+          // Moving away from or out of range of the furnace cancels the smelt.
           smeltRef.current = null
           useNotifications.getState().push('You step away from the furnace.', 'info')
         } else {
@@ -1074,12 +1111,20 @@ function App() {
             smeltRef.current = null
             const { inventory, addItem, removeItem, grantSkillXp } = useGameStore.getState()
             const barName = getItem(sess.recipe.barId)?.name ?? sess.recipe.barId
+            // Re-validate ore at completion — inventory may have changed during the smelt.
+            const oreSlot = inventory.slots.find((s) => s.id === sess.recipe.oreId)
+            if (!oreSlot || oreSlot.quantity < sess.recipe.oreQty) {
+              useNotifications.getState().push(
+                `The ${sess.recipe.label.toLowerCase()} was used up — smelt cancelled.`,
+                'info',
+              )
+              return
+            }
             // Guard: ensure the bar can be received before consuming the ore.
             // The bar slot will either stack or occupy a new slot.  After removing
             // oreQty units the slot may vacate if the stack empties.
             const hasExistingBar = inventory.slots.some((s) => s.id === sess.recipe.barId)
-            const oreStackSize = inventory.slots.find((s) => s.id === sess.recipe.oreId)?.quantity ?? 0
-            const slotsAfterRemove = oreStackSize <= sess.recipe.oreQty
+            const slotsAfterRemove = oreSlot.quantity <= sess.recipe.oreQty
               ? inventory.slots.length - 1   // ore stack will vacate
               : inventory.slots.length
             const canAdd = hasExistingBar || slotsAfterRemove < inventory.maxSlots
