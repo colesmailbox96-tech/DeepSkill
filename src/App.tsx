@@ -85,10 +85,18 @@ import { useRespawnStore } from './store/useRespawnStore'
 import { RespawnOverlay } from './ui/hud/RespawnOverlay'
 import { DialoguePanel } from './ui/hud/DialoguePanel'
 import { registerAllDialogues } from './data/dialogue/npcDialogues'
+import { useDialogueStore } from './store/useDialogueStore'
+import { TaskTrackerHud } from './ui/hud/TaskTrackerHud'
+import { registerAllTasks } from './data/tasks/taskRegistry'
+import { useTaskStore } from './store/useTaskStore'
+import { getTask } from './engine/task'
 import './App.css'
 
 // Register NPC dialogue trees once at module load time.
 registerAllDialogues()
+
+// Register task definitions once at module load time.
+registerAllTasks()
 
 // ── Gather-session types (used by both woodcutting and mining loops) ───────────
 
@@ -110,6 +118,37 @@ function App() {
 
   // Phase 06 — subscribe to player name from the global store
   const playerName = useGameStore((s) => s.playerStats.name)
+
+  // ── Phase 37 — Task Framework ────────────────────────────────────────────
+  // Subscribe to the currently open dialogue NPC so talk-type objectives can
+  // be marked as complete when the player speaks to the target NPC.
+  const openDialogueNpcName = useDialogueStore((s) => s.activeTree?.npcName ?? null)
+
+  // Auto-accept the introductory task once at game start (runs once because
+  // the dependency array is empty; acceptTask is idempotent for known tasks).
+  useEffect(() => {
+    useTaskStore.getState().acceptTask('word_from_the_elder')
+    useTaskStore.getState().acceptTask('warm_runoff')
+  }, [])
+
+  // Advance any 'talk' objective whose targetId matches the NPC just spoken to.
+  useEffect(() => {
+    if (!openDialogueNpcName) return
+    const { active, updateObjective } = useTaskStore.getState()
+    for (const record of active) {
+      const def = getTask(record.taskId)
+      if (!def) continue
+      for (const obj of def.objectives) {
+        if (
+          obj.type === 'talk' &&
+          obj.targetId === openDialogueNpcName &&
+          (record.progress[obj.id] ?? 0) < obj.required
+        ) {
+          updateObjective(record.taskId, obj.id, 1)
+        }
+      }
+    }
+  }, [openDialogueNpcName])
 
   // ── Mobile controls shared state ────────────────────────────────────────
   /** Joystick direction written by MobileControls, read by the game loop. */
@@ -727,6 +766,11 @@ function App() {
     const clock = new THREE.Clock()
     let animationFrame = 0
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+
+    // Phase 37 — Explore objective tracking.
+    // A one-shot flag per explore zone so the trigger fires exactly once per
+    // session even if the player lingers in the zone or re-enters it later.
+    const exploredZones = new Set<string>()
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
       const delta = clock.getDelta()
@@ -875,6 +919,27 @@ function App() {
       )
       // Phase 33 — tick food cooldown timer
       useFoodStore.getState().tickCooldown(delta)
+
+      // Phase 37 — Explore objective trigger: fire when the player enters a
+      // named zone for the first time.  Each zone fires at most once per
+      // session (guarded by _exploredZones).
+      if (!exploredZones.has('brackroot_trail') && player.mesh.position.z >= 19) {
+        exploredZones.add('brackroot_trail')
+        const { active, updateObjective } = useTaskStore.getState()
+        for (const record of active) {
+          const def = getTask(record.taskId)
+          if (!def) continue
+          for (const obj of def.objectives) {
+            if (
+              obj.type === 'explore' &&
+              obj.targetId === 'brackroot_trail' &&
+              (record.progress[obj.id] ?? 0) < obj.required
+            ) {
+              updateObjective(record.taskId, obj.id, 1)
+            }
+          }
+        }
+      }
       // Sync live target HP to the combat store so the React overlay stays current.
       // Cache the last values written to avoid redundant Zustand updates every frame.
       const combatTarget = combatRef.current.target
@@ -991,6 +1056,8 @@ function App() {
           <RespawnOverlay />
           {/* Phase 36 — Dialogue panel */}
           <DialoguePanel />
+          {/* Phase 37 — Task tracker HUD */}
+          <TaskTrackerHud />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}
