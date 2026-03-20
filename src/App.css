@@ -2782,9 +2782,8 @@ p {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 380px;
+  max-width: calc(100vw - 1.5rem);
   max-height: 70vh;
-  background: rgba(12, 14, 18, 0.96);
-  border: 1px solid rgba(80, 130, 160, 0.35);
   border-radius: 0.55rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(80, 150, 200, 0.1);
   display: flex;

@@ -90,11 +90,11 @@ export function TinkeringPanel({ onTinker }: TinkeringPanelProps) {
 
   const handleClose = useCallback(() => closePanel(), [closePanel])
 
-  // T key or Escape closes the panel; T opening is handled in App.tsx.
+  // Escape closes the panel; T toggle is handled exclusively in App.tsx.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return
-      if ((e.code === 'KeyT' || e.code === 'Escape') && isOpenRef.current) {
+      if (e.code === 'Escape' && isOpenRef.current) {
         handleClose()
       }
     }
