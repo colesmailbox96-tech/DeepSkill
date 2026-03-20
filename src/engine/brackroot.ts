@@ -26,7 +26,7 @@
 import * as THREE from 'three'
 import type { Interactable } from './interactable'
 import { buildTreeNodesAt } from './woodcutting'
-import type { TreeNode } from './woodcutting'
+import type { TreeNode, TreeVariant } from './woodcutting'
 import { useNotifications } from '../store/useNotifications'
 import { useGameStore } from '../store/useGameStore'
 import { getItem } from '../data/items/itemRegistry'
@@ -68,7 +68,7 @@ export interface BrackrootResult {
  */
 const BRACKROOT_TREE_PLACEMENTS: ReadonlyArray<{
   pos: [number, number]
-  variant: 'sapling' | 'ashwood' | 'ironbark'
+  variant: TreeVariant
 }> = [
   { pos: [ -6, 50], variant: 'sapling'  },  // trail-left sapling
   { pos: [  7, 52], variant: 'sapling'  },  // trail-right sapling
@@ -226,13 +226,26 @@ export function buildBrackroot(
         useNotifications.getState().push('The cache has already been looted.', 'info')
         return
       }
+
+      // Inventory capacity check — addItem is a silent no-op when the slot is
+      // new and the inventory is full.  Guard here so the cache isn't consumed
+      // without delivering the reward.
+      const { addItem, inventory } = useGameStore.getState()
+      const itemDef = getItem('waystone_fragment')
+      const itemName = itemDef?.name ?? 'Waystone Fragment'
+      const alreadyStacked = inventory.slots.some((s) => s != null && s.id === 'waystone_fragment')
+      const inventoryFull  = inventory.slots.length >= inventory.maxSlots
+      if (inventoryFull && !alreadyStacked) {
+        useNotifications
+          .getState()
+          .push('Your inventory is full — make space before looting the cache.', 'info')
+        return
+      }
+
       cacheOpened = true
       cacheInteractable.label = 'Looted Cache'
 
       // Award the Waystone Fragment
-      const { addItem } = useGameStore.getState()
-      const itemDef = getItem('waystone_fragment')
-      const itemName = itemDef?.name ?? 'Waystone Fragment'
       addItem({ id: 'waystone_fragment', name: itemName, quantity: 1 })
 
       // Visually open the chest: tilt lid and swap colour
