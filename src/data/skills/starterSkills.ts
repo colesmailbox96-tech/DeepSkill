@@ -105,6 +105,6 @@ export const STARTER_SKILLS: Skill[] = [
     experience: 0,
     experienceToNextLevel: xpToNextLevel(1),
     description:
-      'Reading subtle disturbances in soil, stone, and root that betray buried caches left by travellers long gone. A trained surveyor detects richer deposits and rarer fragments missed by untrained eyes.',
+      'Reading subtle disturbances in soil, stone, and roots that betray buried caches left by travellers long gone. A trained surveyor detects richer deposits and rarer fragments missed by untrained eyes.',
   },
 ]

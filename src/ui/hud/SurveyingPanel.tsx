@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useSurveyingStore } from '../../store/useSurveyingStore'
 import { useGameStore } from '../../store/useGameStore'
-import { SURVEY_MODE_DURATION } from '../../engine/surveying'
+import { SURVEY_MODE_DURATION, SURVEY_DETECT_RADIUS } from '../../engine/surveying'
 
 // ─── Main panel ───────────────────────────────────────────────────────────
 
@@ -112,7 +112,7 @@ export function SurveyingPanel({ onStartSurvey }: SurveyingPanelProps) {
 
         <div className="surveying-panel__cache-info">
           <span className="surveying-panel__cache-hint">
-            Cache detection radius: {12} m · Sweep duration: {SURVEY_MODE_DURATION} s
+            Cache detection radius: {SURVEY_DETECT_RADIUS} m · Sweep duration: {SURVEY_MODE_DURATION} s
           </span>
           <ul className="surveying-panel__reward-list">
             <li>Lvl 1 — <em>Ore Chip</em>, <em>Raw Resin</em></li>

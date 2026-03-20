@@ -249,14 +249,16 @@ export function buildSurveyCaches(
     markerMesh.position.set(cfg.position[0], cfg.position[1], cfg.position[2])
     scene.add(markerMesh)
 
+    // Declare a mutable reference so the interactable's onInteract closure
+    // can forward to the cache object without needing null! or circular init.
+    let resolvedCache: SurveyCache
+
     const interactable: Interactable = {
       mesh: markerMesh,
       label: 'Revealed Cache',
-      interactRadius: SURVEY_CLAIM_RADIUS,
-      onInteract: () => onClaimCache(cache),
+      interactRadius: 0,
+      onInteract: () => onClaimCache(resolvedCache),
     }
-    // Cache interactables are only registered while revealed; we register them
-    // up-front but the reveal/hide logic gates visibility and interaction.
     interactables.push(interactable)
 
     const cache: SurveyCache = {
@@ -266,15 +268,17 @@ export function buildSurveyCaches(
       cooldownRemaining: 0,
       interactable,
     }
+    resolvedCache = cache
     return cache
   })
 }
 
-/** Hide all cache markers and remove them from active interaction. */
+/** Hide all cache markers and disable their interaction radius. */
 export function hideAllCaches(caches: SurveyCache[]): void {
   for (const cache of caches) {
     cache.revealed = false
     cache.markerMesh.visible = false
+    cache.interactable.interactRadius = 0
   }
 }
 
@@ -300,6 +304,7 @@ export function revealNearbyCaches(
     if (dist <= SURVEY_DETECT_RADIUS) {
       cache.revealed = true
       cache.markerMesh.visible = true
+      cache.interactable.interactRadius = SURVEY_CLAIM_RADIUS
       count++
     }
   }

@@ -742,6 +742,8 @@ function App() {
 
     // Phase 44 — Surveying Foundation
     let surveyStoneStation: import('./engine/surveying').SurveyStoneStation | null = null
+    // Declared before onStartSurvey so the closure captures the variable without TDZ risk.
+    let surveyCaches: SurveyCache[] = []
 
     const onSurveyOpen = () => {
       if (surveyStoneStation) {
@@ -807,6 +809,7 @@ function App() {
       grantSkillXp('surveying', cache.config.xp)
       cache.revealed = false
       cache.markerMesh.visible = false
+      cache.interactable.interactRadius = 0
       cache.cooldownRemaining = cache.config.cooldown
       useNotifications.getState().push(
         `You unearth ${rewardName} ×${cache.config.rewardQty}!`,
@@ -815,7 +818,7 @@ function App() {
     }
 
     surveyStoneStation = buildSurveyStoneStation(scene, interactables, () => onSurveyOpen())
-    const surveyCaches = buildSurveyCaches(scene, interactables, onClaimCache)
+    surveyCaches = buildSurveyCaches(scene, interactables, onClaimCache)
     startSurveyFromPanelRef.current = () => onStartSurvey()
     // onHarvest: award drop item, notify, then trigger a flee.
     const onHarvest = (creature: Creature) => {
