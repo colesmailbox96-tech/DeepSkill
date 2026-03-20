@@ -151,7 +151,12 @@ export interface GameState {
   spendCoins: (amount: number) => boolean
 
   // Inventory mutators
-  addItem: (item: InventoryItem) => void
+  /**
+   * Add an item (or stack quantity) to the player's inventory.
+   * Returns `true` when the item was successfully added or stacked,
+   * `false` when the inventory is full and the item cannot be received.
+   */
+  addItem: (item: InventoryItem) => boolean
   removeItem: (id: string, quantity?: number) => void
 
   // Skills mutators
@@ -238,40 +243,45 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   // ── Inventory mutators ───────────────────────────────────────────────────
-  addItem: (item) =>
-    set((state) => {
-      // Guard: quantity must be a positive integer.
-      const qty = Math.floor(item.quantity)
-      if (qty <= 0) return state
+  addItem: (item): boolean => {
+    // Guard: quantity must be a positive integer.
+    const qty = Math.floor(item.quantity)
+    if (qty <= 0) return false
 
-      // Phase 11: auto-populate name from registry when available so callers
-      // don't have to duplicate display strings.
-      const def = getItem(item.id)
-      const resolvedName = def?.name ?? item.name
+    // Phase 11: auto-populate name from registry when available so callers
+    // don't have to duplicate display strings.
+    const def = getItem(item.id)
+    const resolvedName = def?.name ?? item.name
 
-      const existing = state.inventory.slots.find((s) => s.id === item.id)
-      if (existing) {
-        return {
-          inventory: {
-            ...state.inventory,
-            slots: state.inventory.slots.map((s) =>
-              s.id === item.id
-                ? { ...s, quantity: s.quantity + qty }
-                : s,
-            ),
-          },
-        }
-      }
-      if (state.inventory.slots.length >= state.inventory.maxSlots) {
-        return state
-      }
-      return {
+    const state = get()
+    const existing = state.inventory.slots.find((s) => s.id === item.id)
+
+    if (existing) {
+      // Stack onto existing slot — always succeeds.
+      set((s) => ({
         inventory: {
-          ...state.inventory,
-          slots: [...state.inventory.slots, { ...item, name: resolvedName, quantity: qty }],
+          ...s.inventory,
+          slots: s.inventory.slots.map((slot) =>
+            slot.id === item.id ? { ...slot, quantity: slot.quantity + qty } : slot,
+          ),
         },
-      }
-    }),
+      }))
+      return true
+    }
+
+    if (state.inventory.slots.length >= state.inventory.maxSlots) {
+      // Inventory is full; item cannot be received.
+      return false
+    }
+
+    set((s) => ({
+      inventory: {
+        ...s.inventory,
+        slots: [...s.inventory.slots, { ...item, name: resolvedName, quantity: qty }],
+      },
+    }))
+    return true
+  },
 
   removeItem: (id, quantity = 1) =>
     set((state) => {

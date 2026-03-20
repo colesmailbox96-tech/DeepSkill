@@ -165,9 +165,11 @@ function App() {
           (record.progress[obj.id] ?? 0) < obj.required
         ) {
           const gatherObjs = def.objectives.filter((o) => o.type === 'gather')
-          const allGathered = gatherObjs.every(
-            (o) => (record.progress[o.id] ?? 0) >= o.required,
-          )
+          const allGathered =
+            gatherObjs.length > 0 &&
+            gatherObjs.every(
+              (o) => (record.progress[o.id] ?? 0) >= o.required,
+            )
 
           if (allGathered) {
             // Verify the player still has all the required items before
@@ -893,11 +895,15 @@ function App() {
             const { addItem, grantSkillXp } = useGameStore.getState()
             // Resolve display name from registry (single source of truth); id is the fallback.
             const logName = getItem(cfg.logId)?.name ?? cfg.logId
-            addItem({ id: cfg.logId, name: logName, quantity: 1 })
-            grantSkillXp('woodcutting', cfg.xp)
-            advanceGatherObjectives(cfg.logId)
-            useNotifications.getState().push(`You cut ${article(logName)} ${logName.toLowerCase()}.`, 'success')
-            fellTree(sess.node)
+            const added = addItem({ id: cfg.logId, name: logName, quantity: 1 })
+            if (added) {
+              grantSkillXp('woodcutting', cfg.xp)
+              advanceGatherObjectives(cfg.logId)
+              useNotifications.getState().push(`You cut ${article(logName)} ${logName.toLowerCase()}.`, 'success')
+              fellTree(sess.node)
+            } else {
+              useNotifications.getState().push('Your inventory is full — you cannot carry any more logs.', 'warning')
+            }
           }
         }
       }
@@ -918,11 +924,15 @@ function App() {
             const { addItem, grantSkillXp } = useGameStore.getState()
             // Resolve display name from registry (single source of truth); id is the fallback.
             const oreName = getItem(cfg.oreId)?.name ?? cfg.oreId
-            addItem({ id: cfg.oreId, name: oreName, quantity: 1 })
-            grantSkillXp('mining', cfg.xp)
-            advanceGatherObjectives(cfg.oreId)
-            useNotifications.getState().push(`You mine ${article(oreName)} ${oreName.toLowerCase()}.`, 'success')
-            depleteRock(sess.node)
+            const added = addItem({ id: cfg.oreId, name: oreName, quantity: 1 })
+            if (added) {
+              grantSkillXp('mining', cfg.xp)
+              advanceGatherObjectives(cfg.oreId)
+              useNotifications.getState().push(`You mine ${article(oreName)} ${oreName.toLowerCase()}.`, 'success')
+              depleteRock(sess.node)
+            } else {
+              useNotifications.getState().push('Your inventory is full — you cannot carry any more ore.', 'warning')
+            }
           }
         }
       }
@@ -943,11 +953,15 @@ function App() {
             const { addItem, grantSkillXp } = useGameStore.getState()
             // Resolve display name from registry (single source of truth); id is the fallback.
             const fishName = getItem(cfg.fishId)?.name ?? cfg.fishId
-            addItem({ id: cfg.fishId, name: fishName, quantity: 1 })
-            grantSkillXp('fishing', cfg.xp)
-            advanceGatherObjectives(cfg.fishId)
-            useNotifications.getState().push(`You catch ${article(fishName)} ${fishName.toLowerCase()}!`, 'success')
-            depleteFishSpot(sess.node)
+            const added = addItem({ id: cfg.fishId, name: fishName, quantity: 1 })
+            if (added) {
+              grantSkillXp('fishing', cfg.xp)
+              advanceGatherObjectives(cfg.fishId)
+              useNotifications.getState().push(`You catch ${article(fishName)} ${fishName.toLowerCase()}!`, 'success')
+              depleteFishSpot(sess.node)
+            } else {
+              useNotifications.getState().push('Your inventory is full — you cannot carry any more fish.', 'warning')
+            }
           }
         }
       }

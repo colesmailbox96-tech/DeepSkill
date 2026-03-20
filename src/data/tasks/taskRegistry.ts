@@ -165,7 +165,7 @@ const stoneFromTheQuarry: TaskDefinition = {
   id: 'stone_from_the_quarry',
   title: 'Stone from the Quarry',
   description:
-    'Aldric needs copper ore from the quarry face for hearth-wall repairs. Bring back four chunks.',
+    'Aldric needs copper ore from the quarry face for hearth-wall repairs. Mine four chunks from the exposed rock.',
   giverName: 'Aldric (Village Elder)',
   objectives: [
     {

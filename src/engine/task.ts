@@ -18,7 +18,8 @@
  * ───────────────
  *  'gather'  – collect N of a specified item (itemId).
  *  'kill'    – defeat N of a specified creature (creatureId).
- *  'deliver' – hand N items to a specified NPC (npcName) or drop-point.
+ *  'deliver' – hand gathered items to a specified NPC (npcName); items consumed
+ *              are inferred from companion 'gather' objectives on the same task.
  *  'explore' – reach a specified zone or landmark (zoneId).
  *  'talk'    – open dialogue with a specified NPC (npcName).
  *
