@@ -1355,11 +1355,12 @@ function App() {
             carveRef.current = null
             const { inventory, addItem, removeItem, grantSkillXp } = useGameStore.getState()
             const outputName = getItem(sess.recipe.outputId)?.name ?? sess.recipe.outputId
+            const materialName = getItem(sess.recipe.materialId)?.name ?? sess.recipe.materialId
             // Re-validate material at completion.
             const matSlot = inventory.slots.find((s) => s.id === sess.recipe.materialId)
             if (!matSlot || matSlot.quantity < sess.recipe.materialQty) {
               useNotifications.getState().push(
-                `The ${sess.recipe.label.toLowerCase()} material was used up — carve cancelled.`,
+                `The ${materialName.toLowerCase()} material was used up — carve cancelled.`,
                 'info',
               )
               return
