@@ -20,8 +20,14 @@ import { useGameStore } from '../store/useGameStore'
 /** Seconds before a depleted rock respawns as an interactable node. */
 export const ROCK_RESPAWN_TIME = 30.0
 
+/** Item IDs that count as a valid mining pickaxe, mapped to their tool tier. */
+const PICKAXE_TIERS: Readonly<Record<string, number>> = {
+  quarry_pick: 1,
+  iron_pick: 2,
+}
+
 /** Item IDs that count as a valid mining pickaxe. */
-const PICKAXE_IDS = new Set(['quarry_pick'])
+const PICKAXE_IDS = new Set(Object.keys(PICKAXE_TIERS))
 
 // ── Variant system ────────────────────────────────────────────────────────────
 
@@ -292,6 +298,18 @@ export function depleteRock(node: RockNode): void {
   node.oreMesh.visible = false
   node.rubbleMesh.visible = true
   node.interactable.label = 'Depleted Rock'
+}
+
+/**
+ * Returns the tier of the best pickaxe currently in the player's inventory.
+ * Returns 0 when no pickaxe is held.
+ */
+export function getPickaxeTier(): number {
+  const { slots } = useGameStore.getState().inventory
+  return slots.reduce((best, s) => {
+    const t = s != null ? (PICKAXE_TIERS[s.id] ?? 0) : 0
+    return t > best ? t : best
+  }, 0)
 }
 
 /**

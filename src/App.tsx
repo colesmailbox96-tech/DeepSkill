@@ -17,6 +17,7 @@ import {
   updateTreeNodes,
   fellTree,
   hasHatchet,
+  getHatchetTier,
   getWoodcuttingLevel,
   VARIANT_CONFIG,
 } from './engine/woodcutting'
@@ -26,6 +27,7 @@ import {
   updateRockNodes,
   depleteRock,
   hasPickaxe,
+  getPickaxeTier,
   getMiningLevel,
   ROCK_VARIANT_CONFIG,
 } from './engine/mining'
@@ -36,6 +38,7 @@ import {
   updateFishingNodes,
   depleteFishSpot,
   hasRod,
+  getRodTier,
   getFishingLevel,
   FISH_SPOT_CONFIG,
 } from './engine/fishing'
@@ -61,8 +64,10 @@ import {
   buildFurnaceStation,
   findSmeltableOre,
   getForgingLevel,
+  hasIngredientsFor,
+  getToolSpeedFactor,
 } from './engine/smithing'
-import type { SmeltRecipeConfig } from './engine/smithing'
+import type { SmeltRecipeConfig, ForgeRecipeConfig } from './engine/smithing'
 import { useSmithingStore } from './store/useSmithingStore'
 import { buildBrackroot } from './engine/brackroot'
 import { useGameStore } from './store/useGameStore'
@@ -122,6 +127,8 @@ interface FishingSession { node: FishingNode; elapsed: number }
 interface CookingSession { recipe: CookRecipeConfig; elapsed: number }
 /** Phase 40 — Active smelt session: recipe being smelted + elapsed time. */
 interface SmeltSession { recipe: SmeltRecipeConfig; elapsed: number }
+/** Phase 41 — Active forge session: recipe being forged + elapsed time. */
+interface ForgeSession  { recipe: ForgeRecipeConfig;  elapsed: number }
 
 function App() {
   const sceneRef = useRef<HTMLDivElement>(null)
@@ -230,6 +237,8 @@ function App() {
   const mobileHasTargetRef = useRef(false)
   /** Smelt callback set by the game loop, called by SmithingPanel recipe buttons. */
   const smeltFromPanelRef = useRef<(recipe: import('./engine/smithing').SmeltRecipeConfig) => void>(() => {})
+  /** Forge callback set by the game loop, called by SmithingPanel forge buttons. */
+  const forgeFromPanelRef = useRef<(recipe: import('./engine/smithing').ForgeRecipeConfig) => void>(() => {})
 
   useEffect(() => {
     const container = sceneRef.current
@@ -530,6 +539,62 @@ function App() {
     furnaceStation = buildFurnaceStation(scene, interactables, () => onSmeltStart())
     smeltFromPanelRef.current = (recipe) => onSmeltStart(recipe)
 
+    // Phase 41 — Forge session: forge tool upgrade at the furnace.
+    const forgeRef = { current: null as ForgeSession | null }
+
+    const onForgeStart = (recipe: ForgeRecipeConfig) => {
+      // Already forging or smelting — do nothing.
+      if (forgeRef.current || smeltRef.current) return
+
+      // Proximity check — must be at the furnace.
+      if (furnaceStation) {
+        const dist = player.mesh.position.distanceTo(furnaceStation.mesh.position)
+        if (dist > FURNACE_INTERACT_RADIUS) {
+          useNotifications.getState().push('You need to be at the furnace to forge.', 'info')
+          return
+        }
+      }
+
+      const { inventory } = useGameStore.getState()
+      // Forging level check.
+      if (getForgingLevel() < recipe.forgingLevelReq) {
+        useNotifications.getState().push(
+          `You need level ${recipe.forgingLevelReq} Forging to forge this.`,
+          'info',
+        )
+        return
+      }
+      // Gathering skill level check.
+      const gatherLevel = useGameStore.getState().skills.skills.find(
+        (s) => s.id === recipe.skillReq.skill,
+      )?.level ?? 1
+      if (gatherLevel < recipe.skillReq.level) {
+        const skillLabel = recipe.skillReq.skill.charAt(0).toUpperCase() + recipe.skillReq.skill.slice(1)
+        useNotifications.getState().push(
+          `You need level ${recipe.skillReq.level} ${skillLabel} to forge this.`,
+          'info',
+        )
+        return
+      }
+      // Ingredient check.
+      if (!hasIngredientsFor(recipe, inventory.slots)) {
+        useNotifications.getState().push(
+          `You don't have the materials to forge a ${recipe.label}.`,
+          'info',
+        )
+        return
+      }
+
+      useSmithingStore.getState().openPanel()
+      forgeRef.current = { recipe, elapsed: 0 }
+      useNotifications.getState().push(
+        `You begin forging a ${recipe.label}…`,
+        'info',
+      )
+    }
+
+    forgeFromPanelRef.current = (recipe) => onForgeStart(recipe)
+
     // Phase 29 — Non-Aggressive Wildlife
     // onHarvest: award drop item, notify, then trigger a flee.
     const onHarvest = (creature: Creature) => {
@@ -632,12 +697,13 @@ function App() {
       keys.clear()
       mobileJoystickRef.current.x = 0
       mobileJoystickRef.current.z = 0
-      // Cancel any in-progress gathering/cooking/smelting sessions (player teleported away).
+      // Cancel any in-progress gathering/cooking/smelting/forging sessions (player teleported away).
       choppingRef.current = null
       miningRef.current = null
       fishingRef.current = null
       cookingRef.current = null
       smeltRef.current = null
+      forgeRef.current = null
       // Show the blocking respawn overlay.
       useRespawnStore.getState().triggerDefeat(RESPAWN_LOCATION_LABEL)
     }
@@ -976,7 +1042,9 @@ function App() {
           useNotifications.getState().push('You stop chopping.', 'info')
         } else {
           sess.elapsed += delta
-          if (sess.elapsed >= VARIANT_CONFIG[sess.node.variant].chopDuration) {
+          // Phase 41 — tier 2 hatchet chops faster; factor comes from forge recipe config.
+          const chopSpeed = getToolSpeedFactor(getHatchetTier())
+          if (sess.elapsed >= VARIANT_CONFIG[sess.node.variant].chopDuration * chopSpeed) {
             choppingRef.current = null
             const cfg = VARIANT_CONFIG[sess.node.variant]
             const { addItem, grantSkillXp } = useGameStore.getState()
@@ -1005,7 +1073,9 @@ function App() {
           useNotifications.getState().push('You stop mining.', 'info')
         } else {
           sess.elapsed += delta
-          if (sess.elapsed >= ROCK_VARIANT_CONFIG[sess.node.variant].mineDuration) {
+          // Phase 41 — tier 2 pick mines faster; factor comes from forge recipe config.
+          const mineSpeed = getToolSpeedFactor(getPickaxeTier())
+          if (sess.elapsed >= ROCK_VARIANT_CONFIG[sess.node.variant].mineDuration * mineSpeed) {
             miningRef.current = null
             const cfg = ROCK_VARIANT_CONFIG[sess.node.variant]
             const { addItem, grantSkillXp } = useGameStore.getState()
@@ -1034,7 +1104,9 @@ function App() {
           useNotifications.getState().push('You reel in your line.', 'info')
         } else {
           sess.elapsed += delta
-          if (sess.elapsed >= FISH_SPOT_CONFIG[sess.node.variant].castDuration) {
+          // Phase 41 — tier 2 rod casts faster; factor comes from forge recipe config.
+          const castSpeed = getToolSpeedFactor(getRodTier())
+          if (sess.elapsed >= FISH_SPOT_CONFIG[sess.node.variant].castDuration * castSpeed) {
             fishingRef.current = null
             const cfg = FISH_SPOT_CONFIG[sess.node.variant]
             const { addItem, grantSkillXp } = useGameStore.getState()
@@ -1137,6 +1209,56 @@ function App() {
             grantSkillXp('forging', sess.recipe.xp)
             useNotifications.getState().push(
               `You smelt the ${sess.recipe.label.toLowerCase()}. ${barName} ready!`,
+              'success',
+            )
+          }
+        }
+      }
+
+      // Phase 41 — tick forge session
+      if (forgeRef.current) {
+        const sess = forgeRef.current
+        const tooFar = furnaceStation
+          ? player.mesh.position.distanceTo(furnaceStation.mesh.position) > FURNACE_INTERACT_RADIUS
+          : false
+        if (player.moveState === 'walk' || tooFar) {
+          forgeRef.current = null
+          useNotifications.getState().push('You step away from the furnace.', 'info')
+        } else {
+          sess.elapsed += delta
+          if (sess.elapsed >= sess.recipe.forgeDuration) {
+            forgeRef.current = null
+            const { inventory, addItem, removeItem, grantSkillXp } = useGameStore.getState()
+            const toolName = getItem(sess.recipe.toolId)?.name ?? sess.recipe.toolId
+            // Re-validate ingredients at completion.
+            if (!hasIngredientsFor(sess.recipe, inventory.slots)) {
+              useNotifications.getState().push(
+                `Materials were used up — forge cancelled.`,
+                'info',
+              )
+              return
+            }
+            // Guard: the tool needs a free slot only if the player doesn't already
+            // have this tool id (addItem stacks by id regardless of stackable flag).
+            // Ingredient stacks that are fully consumed also free up slots.
+            const slotsFreed = sess.recipe.ingredients.reduce((freed, ing) => {
+              const slot = inventory.slots.find((s) => s.id === ing.id)
+              return slot && slot.quantity <= ing.qty ? freed + 1 : freed
+            }, 0)
+            const slotsAfterRemove = inventory.slots.length - slotsFreed
+            const needsNewSlot = !inventory.slots.some((s) => s.id === sess.recipe.toolId)
+            if (needsNewSlot && slotsAfterRemove >= inventory.maxSlots) {
+              useNotifications.getState().push('Your inventory is full — make room before forging.', 'info')
+              return
+            }
+            // Consume all ingredients then award the tool.
+            for (const ing of sess.recipe.ingredients) {
+              removeItem(ing.id, ing.qty)
+            }
+            addItem({ id: sess.recipe.toolId, name: toolName, quantity: 1 })
+            grantSkillXp('forging', sess.recipe.xp)
+            useNotifications.getState().push(
+              `You forge a ${toolName}!`,
               'success',
             )
           }
@@ -1302,7 +1424,10 @@ function App() {
           {/* Phase 39 — Journal panel */}
           <JournalPanel />
           {/* Phase 40 — Smithing panel */}
-          <SmithingPanel onSmelt={(recipe) => smeltFromPanelRef.current(recipe)} />
+          <SmithingPanel
+            onSmelt={(recipe) => smeltFromPanelRef.current(recipe)}
+            onForge={(recipe) => forgeFromPanelRef.current(recipe)}
+          />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}
