@@ -57,6 +57,7 @@ import {
   getCookingLevel,
 } from './engine/cooking'
 import type { CookRecipeConfig } from './engine/cooking'
+import { buildBrackroot } from './engine/brackroot'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
 import { useFoodStore } from './store/useFoodStore'
@@ -281,6 +282,12 @@ function App() {
     const allFishingNodes = [...fishingNodes, ...shoreline.fishingNodes]
     const allNpcs         = [...npcs, ...quarry.npcs, ...shoreline.npcs]
     const allForageNodes  = [...forageNodes, ...shoreline.forageNodes]
+
+    // Phase 35 — Brackroot Trail Zone
+    // Build the southern combat-adjacent route and merge its results.
+    const brackroot = buildBrackroot(scene, interactables, onChopStart)
+    collidables.push(...brackroot.collidables)
+    const allTreeNodes = [...treeNodes, ...brackroot.treeNodes]
 
     // Phase 22 — Cooking System Foundation
     // Cooking session: tracks which recipe is being cooked and elapsed cook time.
@@ -733,7 +740,7 @@ function App() {
 
       if (!isDefeated) {
       // Phase 15 — tick woodcutting session and respawn timers
-      updateTreeNodes(treeNodes, delta)
+      updateTreeNodes(allTreeNodes, delta)
       if (choppingRef.current) {
         const sess = choppingRef.current
         if (player.moveState === 'walk') {

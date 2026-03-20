@@ -278,6 +278,48 @@ const CREATURE_DEFS: CreatureDef[] = [
     attackCooldown: 1.5,
     respawnDelay: 30,
   },
+
+  // 5. Snarl Whelp — Phase 35 Brackroot Trail creature.  A small, feral
+  //    four-legged creature with mottled rust-brown fur.  Territorial but
+  //    fragile — the weakest hostile in the trail zone.
+  {
+    id: 'snarl_whelp',
+    name: 'Snarl Whelp',
+    x: 6,
+    z: 62,
+    color: 0x8b4513,
+    scale: 0.55,
+    roamRadius: 5,
+    pursuitRadius: 14,
+    speed: 2.8,
+    idleBase: 3.0,
+    aggroRadius: 5,
+    maxHp: 8,
+    attackDamage: 2,
+    attackCooldown: 1.2,
+    respawnDelay: 20,
+  },
+
+  // 6. Brackroot Crawler — Phase 35 Brackroot Trail creature.  A heavily
+  //    chitinous insect-like creature that lurks in the undergrowth.
+  //    Slower than the Snarl Whelp but tougher, with a moderate bite.
+  {
+    id: 'brackroot_crawler',
+    name: 'Brackroot Crawler',
+    x: -8,
+    z: 67,
+    color: 0x3b5323,
+    scale: 0.7,
+    roamRadius: 5,
+    pursuitRadius: 16,
+    speed: 1.9,
+    idleBase: 4.0,
+    aggroRadius: 6,
+    maxHp: 14,
+    attackDamage: 3,
+    attackCooldown: 2.0,
+    respawnDelay: 30,
+  },
 ]
 
 /** Interaction radius for wildlife harvest. */

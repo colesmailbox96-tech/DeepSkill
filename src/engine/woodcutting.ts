@@ -238,6 +238,30 @@ export function buildTreeNodes(
 }
 
 /**
+ * Spawn tree nodes at arbitrary world positions and register their interactables.
+ * Used by secondary zones (e.g. Brackroot Trail) that define their own placement data.
+ *
+ * @param scene         Three.js scene to add meshes to.
+ * @param interactables Mutable array; each tree's interactable is appended.
+ * @param placements    Custom (x, z) + variant pairs.
+ * @param onChopStart   Callback invoked when the player presses E on a ready tree.
+ * @param idPrefix      Prefix for node IDs so they don't collide with other sets.
+ */
+export function buildTreeNodesAt(
+  scene: THREE.Scene,
+  interactables: Interactable[],
+  placements: ReadonlyArray<{ pos: [number, number]; variant: TreeVariant }>,
+  onChopStart: (node: TreeNode) => void,
+  idPrefix: string,
+): TreeNode[] {
+  return placements.map(({ pos: [x, z], variant }, idx) => {
+    const node = buildOneTree(scene, `${idPrefix}_${idx}`, x, z, variant, onChopStart)
+    interactables.push(node.interactable)
+    return node
+  })
+}
+
+/**
  * Per-frame update: tick respawn timers and restore tree visuals when ready.
  * Call once per animation frame after `updatePlayer`.
  */

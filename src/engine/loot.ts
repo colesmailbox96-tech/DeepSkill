@@ -118,6 +118,50 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
     currencyMin: 0,
     currencyMax: 2,
   },
+
+  // Snarl Whelp — scrappy trail creature; drops rough fur pelt.
+  snarl_whelp: {
+    entries: [
+      {
+        itemId: 'snarl_pelt',
+        chance: 0.65,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'common',
+      },
+      {
+        itemId: 'small_stone',
+        chance: 0.35,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'common',
+      },
+    ],
+    currencyMin: 0,
+    currencyMax: 2,
+  },
+
+  // Brackroot Crawler — chitinous insect; drops shell segments.
+  brackroot_crawler: {
+    entries: [
+      {
+        itemId: 'crawler_chitin',
+        chance: 0.70,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'common',
+      },
+      {
+        itemId: 'resin_glob',
+        chance: 0.25,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'uncommon',
+      },
+    ],
+    currencyMin: 0,
+    currencyMax: 3,
+  },
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
