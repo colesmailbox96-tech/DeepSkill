@@ -1805,3 +1805,142 @@ p {
     width: 100%;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Phase 37 — Task Tracker HUD
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Outer container — anchored to bottom-right, above the canvas */
+.task-tracker {
+  position: fixed;
+  bottom: 5.5rem;
+  right: 0.9rem;
+  width: 230px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  pointer-events: auto;
+  z-index: 200;
+}
+
+/* Section heading */
+.task-tracker__heading {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(220, 200, 140, 0.55);
+  text-align: right;
+  padding-right: 0.1rem;
+  margin-bottom: 0.1rem;
+}
+
+/* Individual task card */
+.task-tracker__task {
+  background: rgba(12, 16, 20, 0.82);
+  border: 1px solid rgba(160, 130, 80, 0.22);
+  border-radius: 0.35rem;
+  padding: 0.45rem 0.6rem 0.5rem;
+  backdrop-filter: blur(4px);
+}
+
+/* Task header row */
+.task-tracker__task-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+}
+
+.task-tracker__task-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #e8d090;
+  line-height: 1.25;
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-tracker__task-giver {
+  font-size: 0.62rem;
+  color: rgba(180, 160, 110, 0.55);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Objective list */
+.task-tracker__objectives {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.task-tracker__obj {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  font-size: 0.73rem;
+  color: rgba(200, 195, 180, 0.9);
+  line-height: 1.4;
+}
+
+.task-tracker__obj::before {
+  content: '▸';
+  font-size: 0.6rem;
+  opacity: 0.5;
+  flex-shrink: 0;
+  position: relative;
+  top: -0.05em;
+}
+
+/* Completed objective */
+.task-tracker__obj--done {
+  color: rgba(140, 180, 120, 0.7);
+}
+
+.task-tracker__obj--done .task-tracker__obj-text {
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+
+.task-tracker__obj-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.task-tracker__obj-count {
+  font-size: 0.68rem;
+  color: rgba(180, 175, 155, 0.65);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.task-tracker__obj-check {
+  font-size: 0.68rem;
+  color: #80c870;
+  flex-shrink: 0;
+}
+
+/* Overflow indicator */
+.task-tracker__overflow {
+  font-size: 0.65rem;
+  color: rgba(180, 165, 120, 0.5);
+  text-align: right;
+  padding-right: 0.2rem;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .task-tracker {
+    bottom: 7rem;
+    right: 0.5rem;
+    width: 200px;
+  }
+}
