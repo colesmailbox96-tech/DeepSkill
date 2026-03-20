@@ -24,6 +24,9 @@ import { useGameStore } from '../store/useGameStore'
 /** All carvable material IDs. */
 export type CarvableId = 'ashwood_log' | 'crawler_chitin'
 
+/** Union of every carving output ID — mirrors `SmeltableId` in smithing.ts. */
+export type CarveOutputId = 'whittled_peg' | 'carved_bowl' | 'ashwood_shaft' | 'chitin_pin'
+
 export interface CarveRecipeConfig {
   /** Human-readable label for notifications. */
   label: string
@@ -32,7 +35,7 @@ export interface CarveRecipeConfig {
   /** How many material units are consumed per carve. */
   materialQty: number
   /** Registry ID of the output item produced. */
-  outputId: string
+  outputId: CarveOutputId
   /** Minimum Carving level required. */
   levelReq: number
   /** Seconds the player must stand at the workbench to complete the carve. */
@@ -41,7 +44,7 @@ export interface CarveRecipeConfig {
   xp: number
 }
 
-export const CARVE_RECIPE_CONFIG: Readonly<Record<string, CarveRecipeConfig>> = {
+export const CARVE_RECIPE_CONFIG: Readonly<Record<CarveOutputId, CarveRecipeConfig>> = {
   whittled_peg: {
     label: 'Whittled Peg',
     materialId: 'ashwood_log',
@@ -80,8 +83,12 @@ export const CARVE_RECIPE_CONFIG: Readonly<Record<string, CarveRecipeConfig>> = 
   },
 } as const
 
-/** Display order for the recipe list. */
-const CARVE_DISPLAY_ORDER: string[] = [
+/**
+ * Priority order used by findCarvableMaterial() and getAllCarveRecipes().
+ * Typed as `CarveOutputId[]` so the compiler catches any key mismatch with
+ * `CARVE_RECIPE_CONFIG`.
+ */
+const CARVE_DISPLAY_ORDER: CarveOutputId[] = [
   'whittled_peg',
   'carved_bowl',
   'ashwood_shaft',

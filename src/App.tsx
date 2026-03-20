@@ -643,8 +643,9 @@ function App() {
       }
       const slot = inventory.slots.find((s) => s.id === chosen.materialId)
       if (!slot || slot.quantity < chosen.materialQty) {
+        const materialName = getItem(chosen.materialId)?.name ?? chosen.materialId
         useNotifications.getState().push(
-          `You don't have enough ${chosen.label.toLowerCase()} material to carve.`,
+          `You don't have enough ${materialName.toLowerCase()} to carve.`,
           'info',
         )
         useCarvingStore.getState().openPanel()
@@ -652,6 +653,7 @@ function App() {
       }
       useCarvingStore.getState().openPanel()
       carveRef.current = { recipe: chosen, elapsed: 0 }
+      useNotifications.getState().push('You begin carving...', 'info')
     }
 
     workbenchStation = buildWorkbenchStation(scene, interactables, () => onCarveStart())
