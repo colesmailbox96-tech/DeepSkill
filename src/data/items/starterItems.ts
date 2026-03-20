@@ -322,6 +322,45 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'Soft yet surprisingly water-resistant; suitable for patching light armour or lining boots.',
   },
 
+  // ── Phase 35 — Brackroot Trail drops & cache ──────────────────────────────
+
+  {
+    id: 'snarl_pelt',
+    name: 'Snarl Pelt',
+    type: 'material',
+    stackable: true,
+    value: 3,
+    icon: 'items/snarl_pelt.png',
+    description:
+      'A rough, mottled pelt stripped from a Snarl Whelp. ' +
+      'The coarse fur is too patchy for fine leatherwork, but serviceable as crude insulation or padding.',
+  },
+
+  {
+    id: 'crawler_chitin',
+    name: 'Crawler Chitin',
+    type: 'material',
+    stackable: true,
+    value: 5,
+    icon: 'items/crawler_chitin.png',
+    description:
+      'A segment of hardened shell plating from a Brackroot Crawler. ' +
+      'Surprisingly rigid for its weight — prized by tinkerers for lightweight reinforcement projects.',
+  },
+
+  {
+    id: 'waystone_fragment',
+    name: 'Waystone Fragment',
+    type: 'material',
+    stackable: true,
+    value: 12,
+    icon: 'items/waystone_fragment.png',
+    description:
+      'A chipped piece of engraved grey stone etched with concentric survey marks. ' +
+      'Waystones were placed by Veilmarch surveyors to mark territorial boundaries and deep-route intersections. ' +
+      'This fragment was broken from a buried marker — someone has been through this trail before.',
+  },
+
   // ── Phase 26 / 27 — Starter Equipment ────────────────────────────────────
 
   {

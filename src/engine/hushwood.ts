@@ -205,7 +205,10 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
     _addWall(scene, 17, 6, 0.4, -11.5, 3, -BOUND, matBound),
     // North wall — right half (x = +3 → +20)
     _addWall(scene, 17, 6, 0.4,  11.5, 3, -BOUND, matBound),
-    _addWall(scene, 40, 6, 0.4,  0,      3,  BOUND, matBound), // south
+    // South wall — left half (x = −20 → −3): 6-unit gap at x = 0 for Brackroot trail
+    _addWall(scene, 17, 6, 0.4, -11.5, 3,  BOUND, matBound),
+    // South wall — right half (x = +3 → +20)
+    _addWall(scene, 17, 6, 0.4,  11.5, 3,  BOUND, matBound),
     // East wall — north half (z = −20 → −3)
     _addWall(scene, 0.4, 6, 17,  BOUND, 3, -11.5, matBound),
     // East wall — south half (z = +3 → +20)
