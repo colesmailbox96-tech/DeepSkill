@@ -6,6 +6,7 @@ import {
   updateOrbitCamera,
   applyOrbitDrag,
   applyZoom,
+  TOUCH_ORBIT_SENSITIVITY,
 } from './engine/followCamera'
 import type { Interactable } from './engine/interactable'
 import { createInteractionState } from './engine/interactable'
@@ -303,7 +304,17 @@ function App() {
     camera.position.set(0, 3.8, 7)
     camera.lookAt(0, 0, 0)
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true })
+    // Detect coarse-pointer (touch) devices once for renderer / prompt tuning.
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+
+    const renderer = new THREE.WebGLRenderer({
+      // Disable antialias on mobile for a meaningful performance gain;
+      // on desktop the extra quality is worth the cost.
+      antialias: !isTouchDevice,
+      powerPreference: 'high-performance',
+    })
+    // Cap pixel ratio at 2 – going above that wastes GPU time on high-DPI
+    // phones with no visible quality benefit at normal viewing distance.
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     container.appendChild(renderer.domElement)
 
@@ -1181,7 +1192,7 @@ function App() {
       if (touchPhase === 'orbit' && e.touches.length === 1) {
         const touch = Array.from(e.touches).find((t) => t.identifier === orbitTouchId)
         if (!touch) return
-        applyOrbitDrag(camState, touch.clientX - orbitLastX, touch.clientY - orbitLastY)
+        applyOrbitDrag(camState, touch.clientX - orbitLastX, touch.clientY - orbitLastY, TOUCH_ORBIT_SENSITIVITY)
         orbitLastX = touch.clientX
         orbitLastY = touch.clientY
       } else if (e.touches.length >= 2) {
@@ -1277,7 +1288,6 @@ function App() {
 
     const clock = new THREE.Clock()
     let animationFrame = 0
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
 
     // Phase 37 — Explore objective tracking.
     // A one-shot flag per explore zone so the trigger fires exactly once per

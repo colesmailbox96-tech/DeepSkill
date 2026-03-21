@@ -184,6 +184,7 @@ export function JournalPanel() {
     if (!isOpen) return
     const allRecords = [...active, ...completed]
     if (allRecords.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedTaskId(null)
       return
     }

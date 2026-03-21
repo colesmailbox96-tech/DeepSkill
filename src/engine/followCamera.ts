@@ -12,6 +12,10 @@ export const RADIUS_MIN = 2
 export const RADIUS_MAX = 18
 /** Angle sensitivity for pointer-drag orbit (radians per pixel). */
 const ORBIT_SENSITIVITY = 0.005
+/** Angle sensitivity for touch-drag orbit on mobile (radians per pixel).
+ *  Intentionally lower than mouse sensitivity – finger swipes cover more
+ *  screen distance so the same pixel-delta formula feels too fast. */
+export const TOUCH_ORBIT_SENSITIVITY = 0.003
 /** Zoom speed (radius units per normalised scroll notch). */
 const ZOOM_SPEED = 1.0
 /** Smoothing factor – higher = snappier camera. */
@@ -105,11 +109,18 @@ export function updateOrbitCamera(
 /**
  * Apply a pointer-drag delta to the camera state.
  * `dx` and `dy` are raw pixel deltas from a pointermove event.
+ * Pass an explicit `sensitivity` to override the default (e.g. use
+ * `TOUCH_ORBIT_SENSITIVITY` for touch-based orbit on mobile).
  */
-export function applyOrbitDrag(state: CameraState, dx: number, dy: number): void {
-  state.thetaTarget -= dx * ORBIT_SENSITIVITY
+export function applyOrbitDrag(
+  state: CameraState,
+  dx: number,
+  dy: number,
+  sensitivity: number = ORBIT_SENSITIVITY,
+): void {
+  state.thetaTarget -= dx * sensitivity
   state.phiTarget = THREE.MathUtils.clamp(
-    state.phiTarget + dy * ORBIT_SENSITIVITY,
+    state.phiTarget + dy * sensitivity,
     PHI_MIN,
     PHI_MAX,
   )

@@ -45,7 +45,7 @@ export function ShopPanel() {
 
   // Ref mirrors isOpen so the key handler reads current state.
   const isOpenRef = useRef(false)
-  isOpenRef.current = isOpen
+  useEffect(() => { isOpenRef.current = isOpen }, [isOpen])
 
   const panelRef = useRef<HTMLDivElement>(null)
 
