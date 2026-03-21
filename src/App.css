@@ -3442,3 +3442,77 @@ p {
   text-align: right;
   letter-spacing: 0.02em;
 }
+
+/* ── Phase 48 — Environmental Hazard Warning HUD ─────────────────────────── */
+
+/**
+ * Persistent banner displayed at the bottom-centre of the screen while the
+ * player is inside an environmental hazard zone.  Uses a CSS custom property
+ * --hazard-color injected by the React component so each hazard type has a
+ * distinct accent colour.
+ */
+.hazard-warning {
+  position: absolute;
+  bottom: 5.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 1.2rem;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid var(--hazard-color, #888);
+  box-shadow: 0 0 10px 0 color-mix(in srgb, var(--hazard-color, #888) 35%, transparent);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.hazard-warning--danger {
+  animation: hazard-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes hazard-pulse {
+  0%, 100% { box-shadow: 0 0 6px 0 color-mix(in srgb, var(--hazard-color, #888) 30%, transparent); }
+  50%       { box-shadow: 0 0 18px 4px color-mix(in srgb, var(--hazard-color, #888) 65%, transparent); }
+}
+
+.hazard-warning__icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.hazard-warning__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--hazard-color, #ccc);
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+.hazard-warning__badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.08rem 0.4rem;
+  border-radius: 0.7rem;
+}
+
+.hazard-warning__badge--danger {
+  background: rgba(180, 30, 20, 0.7);
+  color: #ffa0a0;
+  border: 1px solid rgba(220, 60, 50, 0.55);
+}
+
+.hazard-warning__badge--safe {
+  background: rgba(20, 100, 40, 0.7);
+  color: #80e090;
+  border: 1px solid rgba(50, 160, 80, 0.55);
+}
+
+@media (pointer: coarse) {
+  .hazard-warning {
+    bottom: 7rem;
+  }
+}
