@@ -110,16 +110,12 @@ import {
 import type { WardRecipeConfig } from './engine/warding'
 import { useWardingStore } from './store/useWardingStore'
 import { buildBrackroot } from './engine/brackroot'
+import { buildTidemarkChapel } from './engine/tidemark_chapel'
 import {
-  buildTidemarkChapel,
-  MIST_ZONE_MIN_X,
-  MIST_ZONE_MAX_X,
-  MIST_ZONE_MIN_Z,
-  MIST_ZONE_MAX_Z,
-  MIST_TICK_INTERVAL,
-  MIST_TICK_DAMAGE,
-  MIST_WARD_ITEM_ID,
-} from './engine/tidemark_chapel'
+  getHazardAtPosition,
+  isProtectedFromHazard,
+} from './engine/hazard'
+import { useHazardStore } from './store/useHazardStore'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
 import { useFoodStore } from './store/useFoodStore'
@@ -154,6 +150,7 @@ import { SmithingPanel } from './ui/hud/SmithingPanel'
 import { CarvingPanel } from './ui/hud/CarvingPanel'
 import { TinkeringPanel } from './ui/hud/TinkeringPanel'
 import { WardingPanel } from './ui/hud/WardingPanel'
+import { HazardWarningHud } from './ui/hud/HazardWarningHud'
 import { registerAllTasks } from './data/tasks/taskRegistry'
 import { useTaskStore } from './store/useTaskStore'
 import { getTask } from './engine/task'
@@ -1407,12 +1404,9 @@ function App() {
       }
     }
 
-    // Phase 47 — Mist hazard tick accumulator.
-    let mistTickAccum = 0
-
-    // Track whether the player was already in the mist zone to avoid
-    // repeated entry notifications on every frame.
-    let playerInMist = false
+    // Phase 48 — Environmental Hazard System tick accumulator and prior-zone tracker.
+    let hazardTickAccum = 0
+    let prevHazardId: string | null = null
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
       const delta = clock.getDelta()
@@ -1825,48 +1819,74 @@ function App() {
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
 
-      // Phase 47 — Tidemark Chapel mist hazard tick.
-      // While the player is inside the mist zone they take periodic damage
-      // unless they carry an Ashwillow Ward in their inventory.
+      // Phase 48 — Environmental Hazard System tick.
+      // Check which hazard volume (if any) contains the player, update the
+      // hazard warning store, fire entry notifications, and apply per-tick
+      // effects (damage or stamina drain) when unprotected.
       {
         const pos = player.mesh.position
-        const inMist =
-          pos.x >= MIST_ZONE_MIN_X && pos.x <= MIST_ZONE_MAX_X &&
-          pos.z >= MIST_ZONE_MIN_Z && pos.z <= MIST_ZONE_MAX_Z
+        const hazardDef = getHazardAtPosition(pos.x, pos.z)
+        const hazardId = hazardDef ? hazardDef.id : null
 
-        if (inMist && !playerInMist) {
-          // Entry notification
-          const { inventory } = useGameStore.getState()
-          const hasWard = inventory.slots.some((s) => s.id === MIST_WARD_ITEM_ID)
-          if (hasWard) {
-            useNotifications.getState().push('Your Ashwillow Ward hums — the mist cannot take hold.', 'info')
+        if (hazardId !== prevHazardId) {
+          // Player crossed a hazard boundary.
+          if (hazardDef) {
+            const { inventory } = useGameStore.getState()
+            const isProtected = isProtectedFromHazard(hazardDef, inventory)
+            useHazardStore.getState().setActiveHazard(hazardDef.id, isProtected)
+            if (isProtected) {
+              useNotifications.getState().push(hazardDef.entryProtectedMessage, 'info')
+            } else {
+              useNotifications.getState().push(hazardDef.entryMessage, 'warning')
+            }
           } else {
-            useNotifications.getState().push('A cold mist seeps from the shaft. Your skin prickles.', 'warning')
+            useHazardStore.getState().clearHazard()
           }
-          mistTickAccum = 0
+          hazardTickAccum = 0
         }
-        playerInMist = inMist
 
-        if (inMist) {
-          mistTickAccum += delta
-          while (mistTickAccum >= MIST_TICK_INTERVAL) {
-            mistTickAccum -= MIST_TICK_INTERVAL
-            const { inventory, playerStats, setHealth } = useGameStore.getState()
-            const hasWard = inventory.slots.some((s) => s.id === MIST_WARD_ITEM_ID)
-            if (!hasWard) {
-              const newHp = Math.max(0, playerStats.health - MIST_TICK_DAMAGE)
-              setHealth(newHp)
-              useNotifications.getState().push(
-                `The mist seep drains you. (−${MIST_TICK_DAMAGE} HP)`,
-                'warning',
-              )
-              if (newHp <= 0) {
-                _onPlayerDefeated()
+        prevHazardId = hazardId
+
+        if (hazardDef) {
+          // Refresh protection status each tick (player may pick up/drop ward).
+          const { inventory } = useGameStore.getState()
+          const isProtected = isProtectedFromHazard(hazardDef, inventory)
+          // Update store only when state changes to avoid redundant HUD re-renders.
+          const hazardState = useHazardStore.getState()
+          if (
+            hazardState.activeHazardId !== hazardDef.id ||
+            hazardState.isProtected !== isProtected
+          ) {
+            hazardState.setActiveHazard(hazardDef.id, isProtected)
+          }
+
+          hazardTickAccum += delta
+          while (hazardTickAccum >= hazardDef.tickInterval) {
+            hazardTickAccum -= hazardDef.tickInterval
+            if (!isProtected) {
+              const { playerStats, setHealth, setStamina } = useGameStore.getState()
+              if (hazardDef.effect === 'damage') {
+                const newHp = Math.max(0, playerStats.health - hazardDef.tickAmount)
+                setHealth(newHp)
+                useNotifications.getState().push(
+                  `${hazardDef.tickMessage} (−${hazardDef.tickAmount} HP)`,
+                  'warning',
+                )
+                if (newHp <= 0) {
+                  _onPlayerDefeated()
+                }
+              } else if (hazardDef.effect === 'stamina_drain') {
+                const newStamina = Math.max(0, playerStats.stamina - hazardDef.tickAmount)
+                setStamina(newStamina)
+                useNotifications.getState().push(
+                  `${hazardDef.tickMessage} (−${hazardDef.tickAmount} stamina)`,
+                  'warning',
+                )
               }
             }
           }
         } else {
-          mistTickAccum = 0
+          hazardTickAccum = 0
         }
       }
 
@@ -2036,6 +2056,8 @@ function App() {
           <WardingPanel
             onWard={(recipe) => wardFromPanelRef.current(recipe)}
           />
+          {/* Phase 48 — Environmental hazard warning banner */}
+          <HazardWarningHud />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}
