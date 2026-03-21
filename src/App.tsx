@@ -300,15 +300,14 @@ function App() {
   const loadGame = useLoadGame()
 
   // Restore progress on mount (runs once; load is a no-op when no save exists).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadGame() }, [])
+  useEffect(() => { loadGame() }, [loadGame])
 
   // Auto-save every 60 seconds — separate effect so it does not couple to the
   // main game-loop useEffect.  saveGame is stable (memoised with useCallback).
   useEffect(() => {
     const interval = setInterval(() => {
-      saveGame()
-      useSaveLoadStore.getState().notifySaved()
+      const saved = saveGame()
+      if (saved) useSaveLoadStore.getState().notifySaved()
     }, 60_000)
     return () => clearInterval(interval)
   }, [saveGame])

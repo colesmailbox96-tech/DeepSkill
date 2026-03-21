@@ -41,8 +41,8 @@ export function SaveLoadPanel() {
   const handleClose = useCallback(() => closePanel(), [closePanel])
 
   const handleSave = useCallback(() => {
-    saveGame()
-    notifySaved()
+    const saved = saveGame()
+    if (saved) notifySaved()
   }, [saveGame, notifySaved])
 
   const handleLoad = useCallback(() => {
@@ -53,7 +53,7 @@ export function SaveLoadPanel() {
   const handleClear = useCallback(() => {
     clearSaveData()
     notifyCleared()
-  }, [notifyCleared])
+  }, [notifyCleared, clearSaveData])
 
   // Escape closes the panel; P toggle is handled in App.tsx.
   useEffect(() => {
