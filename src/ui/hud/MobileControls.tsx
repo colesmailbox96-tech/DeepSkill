@@ -147,6 +147,7 @@ export function MobileControls({ joystickRef, hasTargetRef, dispatchAction }: Mo
   const onSkillsTouch    = makeTouchHandler('toggle-skills')
   const onJournalTouch   = makeTouchHandler('toggle-journal')
   const onLedgerTouch    = makeTouchHandler('toggle-ledger')
+  const onMapTouch       = makeTouchHandler('toggle-map')
 
   return (
     <div className="mobile-controls">
@@ -193,6 +194,13 @@ export function MobileControls({ joystickRef, hasTargetRef, dispatchAction }: Mo
             aria-label="Open ledger"
           >
             🏛️
+          </button>
+          <button
+            className="mobile-btn mobile-btn--secondary"
+            onTouchStart={onMapTouch}
+            aria-label="Open map"
+          >
+            🗺️
           </button>
         </div>
         <button

@@ -166,6 +166,9 @@ import type { InputAction } from './engine/inputActions'
 import { registerAllTasks } from './data/tasks/taskRegistry'
 import { useTaskStore } from './store/useTaskStore'
 import { getTask } from './engine/task'
+import { useMinimapStore } from './store/useMinimapStore'
+import { getRegionLabel } from './engine/minimap'
+import { MinimapHud } from './ui/hud/MinimapHud'
 import './App.css'
 
 // Register NPC dialogue trees once at module load time.
@@ -1284,6 +1287,10 @@ function App() {
         useSaveLoadStore.getState().togglePanel()
         return
       }
+      if (action === 'toggle-map') {
+        useMinimapStore.getState().toggleExpanded()
+        return
+      }
     }
 
     // Wire the action dispatcher into the ref so MobileControls can call it.
@@ -2092,6 +2099,14 @@ function App() {
         audioManager.setMusicMode(inCombat ? 'combat' : 'peaceful')
       }
 
+      // Phase 54 — Update minimap store with current player position and facing.
+      {
+        const pos = player.mesh.position
+        const angle = player.mesh.rotation.y
+        const regionLabel = getRegionLabel(pos.x, pos.z)
+        useMinimapStore.getState().setPlayerState(pos.x, pos.z, angle, regionLabel)
+      }
+
       // Phase 37 — Explore objective trigger: fire when the player enters a
       // named zone for the first time.  Each zone fires at most once per
       // session (guarded by exploredZones via triggerZoneExplore).
@@ -2191,7 +2206,7 @@ function App() {
         <p id="scene-description" className="app-header__desc">
           Playing as <strong>{playerName}</strong>.
           WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact · tap or click creature to target.
-          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering, Y = surveying, G = warding, M = audio, P = save.
+          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering, Y = surveying, G = warding, M = audio, P = save, N = map.
         </p>
       </header>
       <div
@@ -2252,6 +2267,8 @@ function App() {
           <AudioSettingsPanel />
           {/* Phase 50 — Save / Load panel */}
           <SaveLoadPanel />
+          {/* Phase 54 — Minimap / Region Map */}
+          <MinimapHud />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}
