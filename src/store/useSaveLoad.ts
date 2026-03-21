@@ -24,6 +24,11 @@ interface SaveSnapshot {
   settings: Settings
 }
 
+/** Runtime guard: verify that `v` is a finite, non-NaN number. */
+function isValidNumber(v: unknown): v is number {
+  return typeof v === 'number' && Number.isFinite(v)
+}
+
 /** Serialise the relevant slice of game state to localStorage. */
 export function useSaveGame(): () => void {
   return useCallback(() => {
@@ -62,10 +67,26 @@ export function useLoadGame(): () => void {
 
       const store = useGameStore.getState()
 
+      // Restore full playerStats with field-level validation so a corrupt
+      // or partial save cannot introduce NaN or wrong-type values into the
+      // store.  Each field falls back to the current store value when
+      // invalid so partial saves still apply the valid subset.
       if (snapshot.playerStats) {
-        store.setPlayerName(snapshot.playerStats.name)
-        store.setHealth(snapshot.playerStats.health)
-        store.setStamina(snapshot.playerStats.stamina)
+        const sp = snapshot.playerStats
+        const current = store.playerStats
+        useGameStore.setState({
+          playerStats: {
+            name: typeof sp.name === 'string' && sp.name.trim() !== '' ? sp.name : current.name,
+            level: isValidNumber(sp.level) ? sp.level : current.level,
+            experience: isValidNumber(sp.experience) ? sp.experience : current.experience,
+            experienceToNextLevel: isValidNumber(sp.experienceToNextLevel) ? sp.experienceToNextLevel : current.experienceToNextLevel,
+            health: isValidNumber(sp.health) ? sp.health : current.health,
+            maxHealth: isValidNumber(sp.maxHealth) ? sp.maxHealth : current.maxHealth,
+            stamina: isValidNumber(sp.stamina) ? sp.stamina : current.stamina,
+            maxStamina: isValidNumber(sp.maxStamina) ? sp.maxStamina : current.maxStamina,
+            coins: isValidNumber(sp.coins) ? sp.coins : current.coins,
+          },
+        })
       }
 
       if (snapshot.inventory?.slots) {
@@ -83,9 +104,9 @@ export function useLoadGame(): () => void {
       }
 
       if (snapshot.skills?.skills) {
-        for (const saved of snapshot.skills.skills) {
-          store.updateSkillExperience(saved.id, saved.experience)
-        }
+        // Replace the entire skills slice so level / experience /
+        // experienceToNextLevel all stay in sync with the saved state.
+        useGameStore.setState({ skills: snapshot.skills })
       }
 
       if (snapshot.equipment) {

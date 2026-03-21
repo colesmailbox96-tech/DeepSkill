@@ -5,7 +5,9 @@ html {
   overflow: hidden;
   /* Prevent iOS Safari elastic overscroll on the root. */
   overscroll-behavior: none;
-  touch-action: none;
+  /* Do NOT set touch-action here — it would cascade to all descendants and
+     disable scrolling inside HUD panels.  touch-action is set on the game
+     canvas and virtual joystick in App.css where it is actually needed. */
 }
 
 body {
@@ -14,7 +16,6 @@ body {
   overflow: hidden;
   /* Belt-and-suspenders: also block overscroll on body. */
   overscroll-behavior: none;
-  touch-action: none;
   width: 100%;
   font-family:
     Inter,
