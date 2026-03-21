@@ -578,6 +578,32 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'Found only in the deepest buried caches far from settlement — its eventual use is unknown, but traders pay well for it.',
   },
 
+  // ── Phase 46 — Ward Marks ─────────────────────────────────────────────────
+
+  {
+    id: 'ashwillow_ward',
+    name: 'Ashwillow Ward',
+    type: 'consumable',
+    stackable: true,
+    value: 12,
+    icon: 'items/ashwillow_ward.png',
+    description:
+      'A flat disc of ashwood scored with interlocking willow-braid glyphs and sealed with resin smoke. ' +
+      'When pressed into the earth it forms a low barrier against environmental hazards — mist seep, cold creep, and seeping vapours — for a short duration.',
+  },
+
+  {
+    id: 'thornward_mark',
+    name: 'Thornward Mark',
+    type: 'consumable',
+    stackable: true,
+    value: 16,
+    icon: 'items/thornward_mark.png',
+    description:
+      'A bundle of dried reed wrapped with three knotted thornwire loops, bound with marsh-tar. ' +
+      'Its acrid scent and latent ward pattern unsettles most creatures of the Reach, causing them to avoid the marked ground.',
+  },
+
   // ── Phase 26 / 27 — Starter Equipment ────────────────────────────────────
 
   {

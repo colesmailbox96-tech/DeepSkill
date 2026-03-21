@@ -13,6 +13,7 @@ import { xpToNextLevel } from './xpCurve'
  *
  * Phase 42: carving skill added.
  * Phase 43: tinkering skill added.
+ * Phase 46: warding skill added.
  */
 export const STARTER_SKILLS: Skill[] = [
   {
@@ -106,5 +107,15 @@ export const STARTER_SKILLS: Skill[] = [
     experienceToNextLevel: xpToNextLevel(1),
     description:
       'Reading subtle disturbances in soil, stone, and roots that betray buried caches left by travellers long gone. A trained surveyor detects richer deposits and rarer fragments missed by untrained eyes.',
+  },
+
+  {
+    id: 'warding',
+    name: 'Warding',
+    level: 1,
+    experience: 0,
+    experienceToNextLevel: xpToNextLevel(1),
+    description:
+      'Inscribing protective marks drawn from deep-root lore and hedge-ritual. A skilled warden crafts stronger ward patterns, extends their duration, and unlocks signs that guard against harsher threats.',
   },
 ]

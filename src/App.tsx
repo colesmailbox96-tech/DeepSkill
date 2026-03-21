@@ -101,6 +101,14 @@ import {
 import type { SurveyCache } from './engine/surveying'
 import { useSurveyingStore } from './store/useSurveyingStore'
 import { SurveyingPanel } from './ui/hud/SurveyingPanel'
+import {
+  buildWardingAltarStation,
+  findWardableMaterial,
+  getWardingLevel,
+  WARDING_ALTAR_INTERACT_RADIUS,
+} from './engine/warding'
+import type { WardRecipeConfig } from './engine/warding'
+import { useWardingStore } from './store/useWardingStore'
 import { buildBrackroot } from './engine/brackroot'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
@@ -135,6 +143,7 @@ import { JournalPanel } from './ui/hud/JournalPanel'
 import { SmithingPanel } from './ui/hud/SmithingPanel'
 import { CarvingPanel } from './ui/hud/CarvingPanel'
 import { TinkeringPanel } from './ui/hud/TinkeringPanel'
+import { WardingPanel } from './ui/hud/WardingPanel'
 import { registerAllTasks } from './data/tasks/taskRegistry'
 import { useTaskStore } from './store/useTaskStore'
 import { getTask } from './engine/task'
@@ -167,6 +176,8 @@ interface ForgeSession  { recipe: ForgeRecipeConfig;  elapsed: number }
 interface CarveSession  { recipe: CarveRecipeConfig;  elapsed: number }
 /** Phase 43 — Active tinker session: recipe being assembled + elapsed time. */
 interface TinkerSession { recipe: TinkerRecipeConfig; elapsed: number }
+/** Phase 46 — Active ward session: recipe being inscribed + elapsed time. */
+interface WardSession   { recipe: WardRecipeConfig;   elapsed: number }
 
 function App() {
   const sceneRef = useRef<HTMLDivElement>(null)
@@ -283,6 +294,8 @@ function App() {
   const tinkerFromPanelRef = useRef<(recipe: import('./engine/tinkering').TinkerRecipeConfig) => void>(() => {})
   /** Survey callback set by the game loop, called by SurveyingPanel sweep button. */
   const startSurveyFromPanelRef = useRef<() => void>(() => {})
+  /** Ward callback set by the game loop, called by WardingPanel recipe buttons. */
+  const wardFromPanelRef = useRef<(recipe: WardRecipeConfig) => void>(() => {})
   /** Accumulator for throttling cache-status updates to ~1 Hz (Phase 45). */
   const surveyStatusAccumRef = useRef(0)
 
@@ -837,6 +850,55 @@ function App() {
     surveyStoneStation = buildSurveyStoneStation(scene, interactables, () => onSurveyOpen())
     surveyCaches = buildSurveyCaches(scene, interactables, onClaimCache)
     startSurveyFromPanelRef.current = () => onStartSurvey()
+
+    // Phase 46 — Warding Foundation
+    const wardRef = { current: null as WardSession | null }
+    let wardingAltarStation: import('./engine/warding').WardingAltarStation | null = null
+
+    const onWardStart = (recipe?: WardRecipeConfig) => {
+      // Already inscribing — do nothing.
+      if (wardRef.current) return
+      const { inventory } = useGameStore.getState()
+
+      if (wardingAltarStation) {
+        const dist = player.mesh.position.distanceTo(wardingAltarStation.mesh.position)
+        if (dist > WARDING_ALTAR_INTERACT_RADIUS) {
+          useNotifications.getState().push('You need to be at the warding altar to inscribe.', 'info')
+          return
+        }
+      }
+
+      const chosen = recipe ?? findWardableMaterial(inventory.slots)
+      if (!chosen) {
+        useNotifications.getState().push('You have no materials ready to inscribe here.', 'info')
+        useWardingStore.getState().openPanel()
+        return
+      }
+      if (getWardingLevel() < chosen.levelReq) {
+        useNotifications.getState().push(
+          `You need level ${chosen.levelReq} Warding to inscribe this.`,
+          'info',
+        )
+        useWardingStore.getState().openPanel()
+        return
+      }
+      const slot = inventory.slots.find((s) => s.id === chosen.materialId)
+      if (!slot || slot.quantity < chosen.materialQty) {
+        const materialName = getItem(chosen.materialId)?.name ?? chosen.materialId
+        useNotifications.getState().push(
+          `You don't have enough ${materialName.toLowerCase()} to inscribe this.`,
+          'info',
+        )
+        useWardingStore.getState().openPanel()
+        return
+      }
+      useWardingStore.getState().openPanel()
+      wardRef.current = { recipe: chosen, elapsed: 0 }
+      useNotifications.getState().push('You begin inscribing a ward mark...', 'info')
+    }
+
+    wardingAltarStation = buildWardingAltarStation(scene, interactables, () => onWardStart())
+    wardFromPanelRef.current = (recipe) => onWardStart(recipe)
     // onHarvest: award drop item, notify, then trigger a flee.
     const onHarvest = (creature: Creature) => {
       const { def } = creature
@@ -1102,6 +1164,18 @@ function App() {
           player.mesh.position.distanceTo(surveyStoneStation.mesh.position) <= SURVEY_STONE_INTERACT_RADIUS
         ) {
           surveying.openPanel()
+        }
+      }
+      if (e.code === 'KeyG') {
+        // Toggle the warding panel; open only when near the warding altar.
+        const warding = useWardingStore.getState()
+        if (warding.isOpen) {
+          warding.closePanel()
+        } else if (
+          wardingAltarStation &&
+          player.mesh.position.distanceTo(wardingAltarStation.mesh.position) <= WARDING_ALTAR_INTERACT_RADIUS
+        ) {
+          warding.openPanel()
         }
       }
     }
@@ -1657,6 +1731,39 @@ function App() {
         useSurveyingStore.getState().updateCacheStatus(buildCacheStatusList(surveyCaches))
       }
 
+      // Phase 46 — tick ward inscription session
+      if (wardRef.current) {
+        const sess = wardRef.current
+        const tooFar = wardingAltarStation
+          ? player.mesh.position.distanceTo(wardingAltarStation.mesh.position) > WARDING_ALTAR_INTERACT_RADIUS
+          : false
+        if (tooFar) {
+          wardRef.current = null
+          useNotifications.getState().push('You step away from the warding altar.', 'info')
+        } else {
+          sess.elapsed += delta
+          if (sess.elapsed >= sess.recipe.wardDuration) {
+            wardRef.current = null
+            const { inventory, addItem, removeItem, grantSkillXp } = useGameStore.getState()
+            const outputName = getItem(sess.recipe.outputId)?.name ?? sess.recipe.outputId
+            const hasExisting = inventory.slots.some((s) => s.id === sess.recipe.outputId)
+            const slotsUsed = inventory.slots.length
+            const canAdd = hasExisting || slotsUsed < inventory.maxSlots
+            if (!canAdd) {
+              useNotifications.getState().push('Your inventory is full — ward mark lost.', 'info')
+            } else {
+              removeItem(sess.recipe.materialId, sess.recipe.materialQty)
+              addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
+              grantSkillXp('warding', sess.recipe.xp)
+              useNotifications.getState().push(
+                `Ward mark inscribed: ${outputName}! (+${sess.recipe.xp} warding xp)`,
+                'success',
+              )
+            }
+          }
+        }
+      }
+
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
 
@@ -1781,7 +1888,7 @@ function App() {
         <p id="scene-description" className="app-header__desc">
           Playing as <strong>{playerName}</strong>.
           WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact · click creature to target.
-          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering, Y = surveying.
+          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering, Y = surveying, G = warding.
         </p>
       </header>
       <div
@@ -1831,6 +1938,10 @@ function App() {
           {/* Phase 44 — Surveying panel */}
           <SurveyingPanel
             onStartSurvey={() => startSurveyFromPanelRef.current()}
+          />
+          {/* Phase 46 — Warding panel */}
+          <WardingPanel
+            onWard={(recipe) => wardFromPanelRef.current(recipe)}
           />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
