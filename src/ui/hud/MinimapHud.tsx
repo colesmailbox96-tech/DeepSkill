@@ -7,9 +7,11 @@
  *
  * Architecture:
  *  • A single <canvas> element is used for both the small and expanded views.
+ *  • The static region-band background is rasterised once per size into an
+ *    offscreen canvas and cached; only the dynamic layers (markers + player)
+ *    are redrawn each frame.
  *  • The minimap subscribes directly to useMinimapStore via .subscribe() and
- *    redraws the canvas imperatively each time position/angle changes — this
- *    avoids triggering React reconciliation on every game frame.
+ *    redraws the canvas imperatively — no React reconciliation on every frame.
  *  • isExpanded triggers a React re-render (size change + legend visibility).
  */
 
@@ -43,35 +45,35 @@ const MARKER_R_SMALL = 2.5
 /** Radius of a regular marker dot on the large map. */
 const MARKER_R_LARGE = 4
 
-// ─── Canvas drawing ───────────────────────────────────────────────────────────
+// ─── Static background cache ──────────────────────────────────────────────────
 
-function drawMinimap(
-  ctx: CanvasRenderingContext2D,
-  size: number,
-  playerX: number,
-  playerZ: number,
-  playerAngle: number,
-): void {
-  const W = size
-  const H = size
+/**
+ * Offscreen canvas cache keyed by pixel size.  The static region bands and
+ * optional grid lines are rasterised once per size; subsequent frames blit
+ * the cached image instead of re-running the per-pixel region test.
+ */
+const bgCache = new Map<number, HTMLCanvasElement>()
 
-  // Clear
-  ctx.clearRect(0, 0, W, H)
+function buildBackground(size: number): HTMLCanvasElement {
+  const cached = bgCache.get(size)
+  if (cached) return cached
 
+  const offscreen = document.createElement('canvas')
+  offscreen.width  = size
+  offscreen.height = size
+  const ctx = offscreen.getContext('2d')!
   const isLarge = size >= LARGE_SIZE
 
-  // ── Background ────────────────────────────────────────────────────────────
+  // Fill base colour.
   ctx.fillStyle = '#1a2010'
-  ctx.fillRect(0, 0, W, H)
+  ctx.fillRect(0, 0, size, size)
 
-  // ── Region bands ──────────────────────────────────────────────────────────
-  // Rasterise region colour by sampling every N pixels (cheap per-pixel test).
+  // Region colour bands — rasterise by sampling every N pixels.
   const step = isLarge ? 2 : 4
-  for (let py = 0; py < H; py += step) {
-    for (let px = 0; px < W; px += step) {
-      // Convert normalised canvas position back to world coordinates.
-      const worldX = (px / W) * (WORLD_MAX_X - WORLD_MIN_X) + WORLD_MIN_X
-      const worldZ = (py / H) * (WORLD_MAX_Z - WORLD_MIN_Z) + WORLD_MIN_Z
+  for (let py = 0; py < size; py += step) {
+    for (let px = 0; px < size; px += step) {
+      const worldX = (px / size) * (WORLD_MAX_X - WORLD_MIN_X) + WORLD_MIN_X
+      const worldZ = (py / size) * (WORLD_MAX_Z - WORLD_MIN_Z) + WORLD_MIN_Z
 
       let color = '#1a2010'
       for (const region of MINIMAP_REGIONS) {
@@ -85,30 +87,44 @@ function drawMinimap(
     }
   }
 
-  // ── Grid lines (large view only) ──────────────────────────────────────────
+  // Grid lines (large view only).
   if (isLarge) {
     ctx.strokeStyle = 'rgba(255,255,255,0.06)'
     ctx.lineWidth = 0.5
-    for (let wx = -60; wx <= 24; wx += 10) {
-      const cx = worldToCanvasX(wx, W)
-      ctx.beginPath()
-      ctx.moveTo(cx, 0)
-      ctx.lineTo(cx, H)
-      ctx.stroke()
+    for (let wx = -60; wx <= 80; wx += 10) {
+      const cx = worldToCanvasX(wx, size)
+      ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, size); ctx.stroke()
     }
-    for (let wz = -25; wz <= 40; wz += 10) {
-      const cy = worldToCanvasY(wz, H)
-      ctx.beginPath()
-      ctx.moveTo(0, cy)
-      ctx.lineTo(W, cy)
-      ctx.stroke()
+    for (let wz = -96; wz <= 82; wz += 10) {
+      const cy = worldToCanvasY(wz, size)
+      ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(size, cy); ctx.stroke()
     }
+    // Border inside canvas — only on the large view to avoid a double border
+    // with the CSS border applied to the small widget's canvas element.
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(0.5, 0.5, size - 1, size - 1)
   }
 
-  // ── Border ────────────────────────────────────────────────────────────────
-  ctx.strokeStyle = 'rgba(255,255,255,0.25)'
-  ctx.lineWidth = 1
-  ctx.strokeRect(0.5, 0.5, W - 1, H - 1)
+  bgCache.set(size, offscreen)
+  return offscreen
+}
+
+// ─── Canvas drawing ───────────────────────────────────────────────────────────
+
+function drawMinimap(
+  ctx: CanvasRenderingContext2D,
+  size: number,
+  playerX: number,
+  playerZ: number,
+  playerAngle: number,
+): void {
+  const W = size
+  const H = size
+  const isLarge = size >= LARGE_SIZE
+
+  // ── Static background (from cache) ────────────────────────────────────────
+  ctx.drawImage(buildBackground(size), 0, 0)
 
   // ── Markers ───────────────────────────────────────────────────────────────
   const markerR = isLarge ? MARKER_R_LARGE : MARKER_R_SMALL
@@ -238,8 +254,9 @@ export function MinimapHud() {
   return (
     <div
       className={`minimap${isExpanded ? ' minimap--expanded' : ''}`}
-      role="complementary"
-      aria-label="World minimap"
+      role={isExpanded ? 'dialog' : 'complementary'}
+      aria-label={isExpanded ? 'Region map' : 'World minimap'}
+      aria-modal={isExpanded ? true : undefined}
     >
       {/* Expanded header */}
       {isExpanded && (

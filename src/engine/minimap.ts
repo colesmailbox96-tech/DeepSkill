@@ -6,22 +6,25 @@
  *
  * World coordinate conventions
  * ─────────────────────────────
- *  +X → east   (quarry side)
+ *  +X → east   (shoreline side)
  *  −X → west   (chapel side)
  *  +Z → south  (bog / brackroot)
- *  −Z → north  (shoreline / coast)
+ *  −Z → north  (quarry side)
  */
 
 // ─── World bounds ─────────────────────────────────────────────────────────────
 
 /** Leftmost (west) world X used for canvas projection. */
 export const WORLD_MIN_X = -65
-/** Rightmost (east) world X used for canvas projection. */
-export const WORLD_MAX_X = 28
-/** Northernmost (top) world Z used for canvas projection. */
-export const WORLD_MIN_Z = -28
-/** Southernmost (bottom) world Z used for canvas projection. */
-export const WORLD_MAX_Z = 42
+/** Rightmost (east) world X used for canvas projection.
+ *  Shoreline east boundary is x=+80 (shoreline.ts). */
+export const WORLD_MAX_X = 84
+/** Northernmost (top) world Z used for canvas projection.
+ *  Quarry north cliff is z=−96 (quarry.ts). */
+export const WORLD_MIN_Z = -100
+/** Southernmost (bottom) world Z used for canvas projection.
+ *  Brackroot Bog south boundary is z=+82 (brackroot.ts). */
+export const WORLD_MAX_Z = 86
 
 // ─── Region definitions ───────────────────────────────────────────────────────
 
@@ -46,6 +49,7 @@ export const MINIMAP_REGIONS: MinimapRegion[] = [
   {
     id: 'chapel',
     label: 'Tidemark Chapel',
+    // West zone: chapel grounds start at x=−32 (corridor from x=−19).
     contains: (x) => x <= -32,
     color: '#3b4d6a',
     borderColor: '#5a72a0',
@@ -53,6 +57,7 @@ export const MINIMAP_REGIONS: MinimapRegion[] = [
   {
     id: 'bog',
     label: 'Brackroot Bog',
+    // South zone: bog trail begins at z=+19 (brackroot.ts).
     contains: (_, z) => z >= 19,
     color: '#2e4a2e',
     borderColor: '#4a7a3a',
@@ -60,14 +65,16 @@ export const MINIMAP_REGIONS: MinimapRegion[] = [
   {
     id: 'quarry',
     label: 'Redwake Quarry',
-    contains: (x) => x >= 12,
+    // North zone: quarry trail begins at z=−19 (quarry.ts).
+    contains: (_, z) => z <= -19,
     color: '#5a3d28',
     borderColor: '#8a6040',
   },
   {
     id: 'shoreline',
     label: 'Gloamwater Shore',
-    contains: (_, z) => z <= -15,
+    // East zone: shoreline trail begins at x=+19 (shoreline.ts).
+    contains: (x) => x >= 19,
     color: '#2a3d5a',
     borderColor: '#3a6080',
   },
@@ -92,40 +99,47 @@ export interface MinimapMarker {
   x: number
   z: number
   kind: MarkerKind
-  /** Optional short display icon (shown only in expanded view). */
+  /** Optional short display icon that UIs may render alongside the label. */
   icon?: string
 }
 
-/** All static markers registered in the world. */
+/** All static markers registered in the world (22 total). */
 export const MINIMAP_MARKERS: MinimapMarker[] = [
   // ── Spawn ──────────────────────────────────────────────────────────────────
-  { id: 'spawn',           label: 'Spawn',           x:   0,  z:   0,  kind: 'spawn',   icon: '⭐' },
+  { id: 'spawn',           label: 'Spawn',           x:   0,    z:    0,   kind: 'spawn',   icon: '⭐' },
 
   // ── Craft stations ─────────────────────────────────────────────────────────
-  { id: 'hearthfire',      label: 'Hearthfire',      x:  -4,  z:   6,  kind: 'station', icon: '🔥' },
-  { id: 'furnace',         label: 'Furnace',         x:   4,  z:   9,  kind: 'station', icon: '⚒️' },
-  { id: 'workbench',       label: 'Workbench',       x:  -4,  z:   9,  kind: 'station', icon: '🪚' },
-  { id: 'tinkerer',        label: "Tinkerer's Bench", x:  0,  z:  12,  kind: 'station', icon: '⚙️' },
-  { id: 'survey_stone',    label: 'Survey Stone',    x:   4,  z:  14,  kind: 'station', icon: '🧭' },
-  { id: 'warding_altar',   label: 'Warding Altar',   x:  -4,  z:  18,  kind: 'station', icon: '🛡️' },
+  { id: 'hearthfire',      label: 'Hearthfire',      x:  -4,    z:    9,   kind: 'station', icon: '🔥' },
+  { id: 'furnace',         label: 'Furnace',         x:   4,    z:    9,   kind: 'station', icon: '⚒️' },
+  { id: 'workbench',       label: 'Workbench',       x:  -4,    z:    9,   kind: 'station', icon: '🪚' },
+  { id: 'tinkerer',        label: "Tinkerer's Bench", x:  0,    z:   12,   kind: 'station', icon: '⚙️' },
+  { id: 'survey_stone',    label: 'Survey Stone',    x:   4,    z:   14,   kind: 'station', icon: '🧭' },
+  { id: 'warding_altar',   label: 'Warding Altar',   x:  -4,    z:   18,   kind: 'station', icon: '🛡️' },
 
-  // ── Settlement NPCs ────────────────────────────────────────────────────────
-  { id: 'aldric',          label: 'Aldric',          x:   1.5, z:  -6.0, kind: 'npc', icon: '🧔' },
-  { id: 'bron',            label: 'Bron',            x:   6.5, z:   2.0, kind: 'npc', icon: '🔨' },
-  { id: 'mira',            label: 'Mira',            x:   1.5, z:  10.5, kind: 'npc', icon: '🍺' },
-  { id: 'dwyn',            label: 'Dwyn',            x:  -8.5, z:  -8.5, kind: 'npc', icon: '⚔️' },
-  { id: 'sera',            label: 'Sera',            x:   3.5, z:   1.5, kind: 'npc', icon: '🌿' },
-  { id: 'tomas',           label: 'Tomas',           x:  -6.5, z:   1.5, kind: 'npc', icon: '💰' },
+  // ── Settlement NPCs (Hushwood) ─────────────────────────────────────────────
+  { id: 'aldric',          label: 'Aldric',          x:   1.5,  z:   -6.0, kind: 'npc', icon: '🧔' },
+  { id: 'bron',            label: 'Bron',            x:   6.5,  z:    2.0, kind: 'npc', icon: '🔨' },
+  { id: 'mira',            label: 'Mira',            x:   1.5,  z:   10.5, kind: 'npc', icon: '🍺' },
+  { id: 'dwyn',            label: 'Dwyn',            x:  -8.5,  z:   -8.5, kind: 'npc', icon: '⚔️' },
+  { id: 'sera',            label: 'Sera',            x:   3.5,  z:    1.5, kind: 'npc', icon: '🌿' },
+  { id: 'tomas',           label: 'Tomas',           x:  -6.5,  z:    1.5, kind: 'npc', icon: '💰' },
 
-  // ── Chapel NPCs ────────────────────────────────────────────────────────────
-  { id: 'nairn_dusk',      label: 'Nairn Dusk',      x: -34,   z:  -4,   kind: 'npc', icon: '🕯️' },
+  // ── Chapel NPCs / encounters ───────────────────────────────────────────────
+  { id: 'nairn_dusk',      label: 'Nairn Dusk',      x: -34,    z:   -4,   kind: 'npc', icon: '🕯️' },
+  { id: 'chapel_wisp',     label: 'Chapel Wisp',     x: -52,    z:   -4,   kind: 'npc', icon: '👻' },
+
+  // ── Quarry NPC ─────────────────────────────────────────────────────────────
+  { id: 'gorven',          label: 'Gorven',          x:   6,    z:  -55.5, kind: 'npc', icon: '⛏️' },
+
+  // ── Shoreline NPC ──────────────────────────────────────────────────────────
+  { id: 'brin_salt',       label: 'Brin Salt',       x:  53,    z:    3,   kind: 'npc', icon: '🎣' },
 
   // ── Zone labels (shown only in expanded overlay) ───────────────────────────
-  { id: 'zone_hushwood',   label: 'Hushwood',        x:  -5,  z:   5,   kind: 'zone' },
-  { id: 'zone_bog',        label: 'Bog',             x:   0,  z:  28,   kind: 'zone' },
-  { id: 'zone_chapel',     label: 'Chapel',          x: -47,  z:   0,   kind: 'zone' },
-  { id: 'zone_quarry',     label: 'Quarry',          x:  18,  z:   0,   kind: 'zone' },
-  { id: 'zone_shoreline',  label: 'Shoreline',       x:   0,  z: -20,   kind: 'zone' },
+  { id: 'zone_hushwood',   label: 'Hushwood',        x:   0,    z:    0,   kind: 'zone' },
+  { id: 'zone_bog',        label: 'Bog',             x:   0,    z:   50,   kind: 'zone' },
+  { id: 'zone_chapel',     label: 'Chapel',          x: -46,    z:    0,   kind: 'zone' },
+  { id: 'zone_quarry',     label: 'Quarry',          x:   0,    z:  -57,   kind: 'zone' },
+  { id: 'zone_shoreline',  label: 'Shoreline',       x:  50,    z:    0,   kind: 'zone' },
 ]
 
 // ─── Marker colour palette ────────────────────────────────────────────────────
