@@ -88,7 +88,7 @@ export function MainMenuScreen({ hasSave, onContinue, onNewGame }: MainMenuScree
         </nav>
 
         <p className="main-menu__hint">
-          WASD / joystick to move · E to interact · I for inventory
+          WASD / joystick to move · E to interact · tap or click creature to target · I for inventory
         </p>
       </div>
     </div>

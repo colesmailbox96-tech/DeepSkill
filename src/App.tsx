@@ -160,6 +160,7 @@ import { useSaveGame, useLoadGame, clearSaveData, hasSaveData } from './store/us
 import { useSaveLoadStore } from './store/useSaveLoadStore'
 import { useMainMenuStore } from './store/useMainMenuStore'
 import { MainMenuScreen } from './ui/screens/MainMenuScreen'
+import { useMobileStore } from './store/useMobileStore'
 import { registerAllTasks } from './data/tasks/taskRegistry'
 import { useTaskStore } from './store/useTaskStore'
 import { getTask } from './engine/task'
@@ -1339,6 +1340,8 @@ function App() {
 
     // ── Touch controls (mobile) ──────────────────────────────────────────────
     // Single-finger drag → camera orbit; two-finger pinch → zoom.
+    // Phase 52 — short single-finger taps (no significant movement, < 350 ms)
+    // are used for creature targeting instead of starting an orbit.
     // The virtual joystick (MobileControls component) handles movement separately.
     type TouchPhase = 'none' | 'orbit' | 'pinch'
     let touchPhase: TouchPhase = 'none'
@@ -1347,9 +1350,19 @@ function App() {
     let orbitLastY = 0
     let pinchLastDist = 0
 
+    // Phase 52 — tap targeting state
+    const TAP_MAX_MOVE_PX = 12   // pixels – cancel tap if finger moves this far
+    const TAP_MAX_MS      = 350  // milliseconds – cancel tap if held this long
+    let tapStartX    = 0
+    let tapStartY    = 0
+    let tapStartTime = 0
+    let tapCancelled = true
+
     const onTouchStart = (e: TouchEvent) => {
       // Phase 49 — init audio on first touch gesture.
       audioManager.init()
+      // Phase 52 — mark this session as a touch device.
+      useMobileStore.getState().setTouchDevice()
       // Prevent page scroll / zoom on the canvas.
       e.preventDefault()
       if (e.touches.length === 1) {
@@ -1357,8 +1370,14 @@ function App() {
         orbitTouchId = e.touches[0].identifier
         orbitLastX = e.touches[0].clientX
         orbitLastY = e.touches[0].clientY
+        // Phase 52 — begin tap detection for targeting
+        tapStartX    = e.touches[0].clientX
+        tapStartY    = e.touches[0].clientY
+        tapStartTime = performance.now()
+        tapCancelled = false
       } else if (e.touches.length >= 2) {
         touchPhase = 'pinch'
+        tapCancelled = true   // multi-touch is never a tap
         const t0 = e.touches[0]
         const t1 = e.touches[1]
         const dx = t1.clientX - t0.clientX
@@ -1372,6 +1391,14 @@ function App() {
       if (touchPhase === 'orbit' && e.touches.length === 1) {
         const touch = Array.from(e.touches).find((t) => t.identifier === orbitTouchId)
         if (!touch) return
+        // Phase 52 — cancel tap when the finger travels beyond the dead-zone.
+        if (!tapCancelled) {
+          const dx = touch.clientX - tapStartX
+          const dy = touch.clientY - tapStartY
+          if (Math.sqrt(dx * dx + dy * dy) > TAP_MAX_MOVE_PX) {
+            tapCancelled = true
+          }
+        }
         applyOrbitDrag(camState, touch.clientX - orbitLastX, touch.clientY - orbitLastY, TOUCH_ORBIT_SENSITIVITY)
         orbitLastX = touch.clientX
         orbitLastY = touch.clientY
@@ -1388,41 +1415,20 @@ function App() {
       }
     }
 
-    const onTouchEnd = (e: TouchEvent) => {
-      if (e.touches.length === 0) {
-        touchPhase = 'none'
-      } else if (e.touches.length === 1) {
-        touchPhase = 'orbit'
-        orbitTouchId = e.touches[0].identifier
-        orbitLastX = e.touches[0].clientX
-        orbitLastY = e.touches[0].clientY
-      }
-    }
-
-    // ── Phase 31 — Left-click target selection ──────────────────────────────
-    // Raycasts against creature meshes on left-click; clicking a hostile
-    // creature sets it as the combat target; clicking empty space clears it.
+    // ── Phase 31 / Phase 52 — Shared raycast target-selection helper ────────
+    // Used by both left-click (onCanvasClick) and mobile tap (onTouchEnd) so
+    // the two input paths stay behaviour-identical.
     const raycaster = new THREE.Raycaster()
     const _clickNdc = new THREE.Vector2()
 
-    const onCanvasClick = (e: MouseEvent) => {
-      // Phase 49 — init audio on first click gesture.
-      audioManager.init()
-      // Only respond to unmodified left-click (not right-drag release).
-      if (e.button !== 0) return
-
+    const selectTargetAtClientPoint = (clientX: number, clientY: number) => {
       const rect = canvas.getBoundingClientRect()
-      _clickNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
-      _clickNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
-
+      _clickNdc.x = ((clientX - rect.left) / rect.width) * 2 - 1
+      _clickNdc.y = -((clientY - rect.top) / rect.height) * 2 + 1
       raycaster.setFromCamera(_clickNdc, camera)
-
-      // Collect all creature mesh objects and test against them.
       const creatureMeshes = creatures.map((c) => c.mesh)
       const hits = raycaster.intersectObjects(creatureMeshes, true)
-
       if (hits.length > 0) {
-        // Walk up the hierarchy to find the matching Creature.
         const hitObj = hits[0].object
         const matched = creatures.find((c) => {
           let obj: THREE.Object3D | null = hitObj
@@ -1445,12 +1451,41 @@ function App() {
           )
         }
       } else {
-        // Clicked empty space — deselect.
+        // Tapped/clicked empty space — deselect current target.
         if (combatRef.current.target) {
           setTarget(combatRef.current, null)
           useCombatStore.getState().clearTarget()
         }
       }
+    }
+
+    const onTouchEnd = (e: TouchEvent) => {
+      // Phase 52 — tap targeting: resolve if this was a valid short tap.
+      if (!tapCancelled && performance.now() - tapStartTime < TAP_MAX_MS) {
+        const t = e.changedTouches[0]
+        selectTargetAtClientPoint(t.clientX, t.clientY)
+        // Show ripple feedback at tap position.
+        useMobileStore.getState().showTapFeedback(t.clientX, t.clientY)
+      }
+      tapCancelled = true
+
+      if (e.touches.length === 0) {
+        touchPhase = 'none'
+      } else if (e.touches.length === 1) {
+        touchPhase = 'orbit'
+        orbitTouchId = e.touches[0].identifier
+        orbitLastX = e.touches[0].clientX
+        orbitLastY = e.touches[0].clientY
+      }
+    }
+
+    // ── Phase 31 — Left-click target selection ──────────────────────────────
+    const onCanvasClick = (e: MouseEvent) => {
+      // Phase 49 — init audio on first click gesture.
+      audioManager.init()
+      // Only respond to unmodified left-click (not right-drag release).
+      if (e.button !== 0) return
+      selectTargetAtClientPoint(e.clientX, e.clientY)
     }
 
     const canvas = renderer.domElement
@@ -2125,7 +2160,7 @@ function App() {
         <h1>Veilmarch</h1>
         <p id="scene-description" className="app-header__desc">
           Playing as <strong>{playerName}</strong>.
-          WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact · click creature to target.
+          WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact · tap or click creature to target.
           I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering, Y = surveying, G = warding, M = audio, P = save.
         </p>
       </header>

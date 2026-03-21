@@ -1,4 +1,5 @@
 import { useRef, useCallback, useEffect, useState } from 'react'
+import { useMobileStore } from '../../store/useMobileStore'
 
 interface MobileControlsProps {
   /** Shared ref that MobileControls writes joystick direction into each frame. */
@@ -15,11 +16,27 @@ const JOYSTICK_RADIUS = 52
 /**
  * Mobile-only overlay: virtual joystick (bottom-left) + action buttons
  * (bottom-right).  Hidden on pointer:fine (mouse) devices via CSS media query.
+ *
+ * Phase 52 — also renders a tap-ripple indicator at the canvas position where
+ * the player tapped to target a creature.
  */
 export function MobileControls({ joystickRef, onInteract, hasTargetRef }: MobileControlsProps) {
   const baseRef = useRef<HTMLDivElement>(null)
   const knobRef = useRef<HTMLDivElement>(null)
   const activeTouchRef = useRef<number | null>(null)
+
+  // Phase 52 — subscribe to tap feedback from the game loop.
+  const tapFeedback      = useMobileStore((s) => s.tapFeedback)
+  const clearTapFeedback = useMobileStore((s) => s.clearTapFeedback)
+
+  // Fallback: if the animation event never fires (e.g. on pointer:fine devices
+  // where the overlay is hidden), clear the feedback after the animation
+  // duration (420 ms) plus a small margin.
+  useEffect(() => {
+    if (!tapFeedback) return
+    const id = setTimeout(clearTapFeedback, 450)
+    return () => clearTimeout(id)
+  }, [tapFeedback, clearTapFeedback])
 
   // Poll the hasTargetRef every 100 ms – only a ref read per tick, no DOM access.
   const [hasTarget, setHasTarget] = useState(false)
@@ -176,6 +193,17 @@ export function MobileControls({ joystickRef, onInteract, hasTargetRef }: Mobile
           E
         </button>
       </div>
+
+      {/* ── Phase 52 — Tap-targeting ripple feedback ──────────────── */}
+      {tapFeedback && (
+        <div
+          key={tapFeedback.key}
+          className="tap-ripple"
+          aria-hidden="true"
+          style={{ left: tapFeedback.x, top: tapFeedback.y }}
+          onAnimationEnd={clearTapFeedback}
+        />
+      )}
     </div>
   )
 }
