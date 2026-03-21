@@ -3537,7 +3537,8 @@ p {
   border-radius: 0.6rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
   pointer-events: auto;
-  z-index: 10;
+  /* Raised to 10000 (above main-menu at 9999) so Settings opens on top. */
+  z-index: 10000;
   overflow: hidden;
   outline: none;
 }
