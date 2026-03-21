@@ -3986,3 +3986,36 @@ p {
     padding: 0.85rem 1.2rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Phase 52 — Mobile Controls Foundation
+   Tap-targeting ripple: a brief circular pulse that appears at the point
+   where the player tapped the canvas to select a creature target.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.tap-ripple {
+  position: fixed;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid rgba(110, 168, 216, 0.85);
+  background: rgba(110, 168, 216, 0.15);
+  pointer-events: none;
+  /* Centre on the tap point (coordinates are the tap centre). */
+  transform: translate(-50%, -50%) scale(0.3);
+  animation: tap-ripple-expand 0.42s ease-out forwards;
+}
+
+@keyframes tap-ripple-expand {
+  0% {
+    transform: translate(-50%, -50%) scale(0.3);
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.6);
+    opacity: 0;
+  }
+}
