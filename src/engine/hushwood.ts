@@ -199,7 +199,7 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
   // so the player can walk north along the road toward Redwake Quarry.
   // The east wall is split into two halves with a 6-unit opening at z = 0
   // so the player can walk east along the road toward Gloamwater Bank.
-  // The west wall is split into two halves with a 6-unit opening at z = 0
+  // The west wall is split into two halves with a 6-unit opening at z = −3 → +3
   // so the player can walk west along the path toward Tidemark Chapel (Phase 47).
   const BOUND = 19
   const boundWalls = [

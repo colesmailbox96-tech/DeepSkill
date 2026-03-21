@@ -1384,6 +1384,29 @@ function App() {
     // session even if the player lingers in the zone or re-enters it later.
     const exploredZones = new Set<string>()
 
+    /**
+     * Fire explore-type task objectives for `zoneId` the first time the player
+     * enters that zone.  Subsequent calls with the same `zoneId` are no-ops.
+     */
+    function triggerZoneExplore(zoneId: string): void {
+      if (exploredZones.has(zoneId)) return
+      exploredZones.add(zoneId)
+      const { active, updateObjective } = useTaskStore.getState()
+      for (const record of active) {
+        const def = getTask(record.taskId)
+        if (!def) continue
+        for (const obj of def.objectives) {
+          if (
+            obj.type === 'explore' &&
+            obj.targetId === zoneId &&
+            (record.progress[obj.id] ?? 0) < obj.required
+          ) {
+            updateObjective(record.taskId, obj.id, 1)
+          }
+        }
+      }
+    }
+
     // Phase 47 — Mist hazard tick accumulator.
     let mistTickAccum = 0
 
@@ -1864,41 +1887,13 @@ function App() {
 
       // Phase 37 — Explore objective trigger: fire when the player enters a
       // named zone for the first time.  Each zone fires at most once per
-      // session (guarded by _exploredZones).
-      if (!exploredZones.has('brackroot_trail') && player.mesh.position.z >= 19) {
-        exploredZones.add('brackroot_trail')
-        const { active, updateObjective } = useTaskStore.getState()
-        for (const record of active) {
-          const def = getTask(record.taskId)
-          if (!def) continue
-          for (const obj of def.objectives) {
-            if (
-              obj.type === 'explore' &&
-              obj.targetId === 'brackroot_trail' &&
-              (record.progress[obj.id] ?? 0) < obj.required
-            ) {
-              updateObjective(record.taskId, obj.id, 1)
-            }
-          }
-        }
+      // session (guarded by exploredZones via triggerZoneExplore).
+      if (player.mesh.position.z >= 19) {
+        triggerZoneExplore('brackroot_trail')
       }
       // Phase 47 — Tidemark Chapel explore trigger.
-      if (!exploredZones.has('tidemark_chapel') && player.mesh.position.x <= -32) {
-        exploredZones.add('tidemark_chapel')
-        const { active, updateObjective } = useTaskStore.getState()
-        for (const record of active) {
-          const def = getTask(record.taskId)
-          if (!def) continue
-          for (const obj of def.objectives) {
-            if (
-              obj.type === 'explore' &&
-              obj.targetId === 'tidemark_chapel' &&
-              (record.progress[obj.id] ?? 0) < obj.required
-            ) {
-              updateObjective(record.taskId, obj.id, 1)
-            }
-          }
-        }
+      if (player.mesh.position.x <= -32) {
+        triggerZoneExplore('tidemark_chapel')
       }
       // Sync live target HP to the combat store so the React overlay stays current.
       // Cache the last values written to avoid redundant Zustand updates every frame.
