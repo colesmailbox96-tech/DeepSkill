@@ -1,5 +1,6 @@
 /**
  * Phase 44 — Surveying Skill Foundation
+ * Phase 45 — Hidden Cache System
  *
  * Adds an original discovery skill to Veilmarch.  A survey stone is placed in
  * the Hushwood settlement; players interact with it (or press Y while nearby)
@@ -8,13 +9,20 @@
  * While survey mode is active the engine periodically checks for hidden cache
  * spots within detection range and reveals them with a glowing marker.  When
  * the player walks to a revealed cache and presses E, they receive a randomised
- * salvage reward and surveying XP.
+ * salvage reward drawn from a weighted pool and surveying XP.
+ *
+ * Phase 45 additions:
+ *   - Weighted randomised salvage pool per cache (replaces single fixed reward).
+ *   - Two new buried cache locations (6 caches total).
+ *   - Live cooldown status exported for the panel UI.
  *
  * Survey caches:
- *   Cache A — near the eastern tree line    (6,  0,  8)  salvage: ore_chip   6 xp
- *   Cache B — south of the fishing dock     (3,  0, -4)  salvage: raw_resin  8 xp
- *   Cache C — behind the carving workbench  (-5, 0,  9)  salvage: flint_shard 10 xp
- *   Cache D — far north trail bend          (0,  0, 24)  salvage: rare_fragment 18 xp
+ *   Cache A — near the eastern tree line    ( 6,  0,  8)  lvl 1   6 xp
+ *   Cache B — south of the fishing dock     ( 3,  0, -4)  lvl 1   8 xp
+ *   Cache C — behind the carving workbench  (-5,  0,  9)  lvl 2  10 xp
+ *   Cache D — far north trail bend          ( 0,  0, 24)  lvl 3  18 xp
+ *   Cache E — west camp edge (bog margin)   (-8,  0,  3)  lvl 1   7 xp  ← Phase 45
+ *   Cache F — northeast ridge lookout       ( 8,  0, 18)  lvl 2  12 xp  ← Phase 45
  *
  * The caller (App.tsx) owns the survey timer, reveal loop, cache interaction,
  * item award, and XP grant.  This module provides the data, station visual,
@@ -27,18 +35,31 @@ import { useGameStore } from '../store/useGameStore'
 
 // ─── Survey cache configuration ───────────────────────────────────────────
 
-/** Salvage item IDs that a survey cache can yield. */
-export type SurveyRewardId = 'ore_chip' | 'raw_resin' | 'flint_shard' | 'rare_fragment'
+/**
+ * One entry in a cache's randomised salvage pool.
+ * Higher `weight` values are more likely to be selected.
+ */
+export interface SalvageEntry {
+  /** Item ID matching a registered game item. */
+  itemId: string
+  /** Quantity to award when this entry is chosen. */
+  qty: number
+  /** Relative probability weight (integers, any positive value). */
+  weight: number
+}
 
 export interface SurveyCacheConfig {
   /** Unique cache identifier. */
   id: string
+  /** Human-readable display name shown in the panel. */
+  label: string
   /** World-space position of the hidden cache. */
   position: Readonly<[number, number, number]>
-  /** ID of the salvage item rewarded when claimed. */
-  rewardId: SurveyRewardId
-  /** Quantity of the reward item given. */
-  rewardQty: number
+  /**
+   * Weighted pool of possible salvage rewards.
+   * One entry is drawn at random (weighted) each time the cache is claimed.
+   */
+  rewardPool: SalvageEntry[]
   /** Surveying level required to detect this cache. */
   levelReq: number
   /** Surveying XP awarded when the cache is claimed. */
@@ -51,39 +72,83 @@ export interface SurveyCacheConfig {
 export const SURVEY_CACHE_CONFIGS: Readonly<SurveyCacheConfig[]> = [
   {
     id: 'cache_east_treeline',
+    label: 'East Treeline Cache',
     position: [6, 0, 8],
-    rewardId: 'ore_chip',
-    rewardQty: 2,
+    rewardPool: [
+      { itemId: 'ore_chip',   qty: 2, weight: 4 },
+      { itemId: 'small_stone',qty: 3, weight: 3 },
+      { itemId: 'raw_resin',  qty: 1, weight: 1 },
+    ],
     levelReq: 1,
     xp: 6,
     cooldown: 120,
   },
   {
     id: 'cache_fishing_dock',
+    label: 'Fishing Dock Cache',
     position: [3, 0, -4],
-    rewardId: 'raw_resin',
-    rewardQty: 1,
+    rewardPool: [
+      { itemId: 'raw_resin',  qty: 1, weight: 4 },
+      { itemId: 'reed_fiber', qty: 2, weight: 3 },
+      { itemId: 'ore_chip',   qty: 1, weight: 1 },
+    ],
     levelReq: 1,
     xp: 8,
     cooldown: 120,
   },
   {
     id: 'cache_workbench_behind',
+    label: 'Workbench Cache',
     position: [-5, 0, 9],
-    rewardId: 'flint_shard',
-    rewardQty: 2,
+    rewardPool: [
+      { itemId: 'flint_shard',       qty: 2, weight: 4 },
+      { itemId: 'ore_chip',          qty: 2, weight: 2 },
+      { itemId: 'waystone_fragment', qty: 1, weight: 1 },
+    ],
     levelReq: 2,
     xp: 10,
     cooldown: 150,
   },
   {
     id: 'cache_north_trail',
+    label: 'North Trail Cache',
     position: [0, 0, 24],
-    rewardId: 'rare_fragment',
-    rewardQty: 1,
+    rewardPool: [
+      { itemId: 'rare_fragment',     qty: 1, weight: 3 },
+      { itemId: 'flint_shard',       qty: 2, weight: 2 },
+      { itemId: 'waystone_fragment', qty: 1, weight: 1 },
+    ],
     levelReq: 3,
     xp: 18,
     cooldown: 240,
+  },
+  {
+    // Phase 45 — new cache E
+    id: 'cache_west_bog_edge',
+    label: 'West Bog Cache',
+    position: [-8, 0, 3],
+    rewardPool: [
+      { itemId: 'marsh_herb', qty: 2, weight: 4 },
+      { itemId: 'reed_fiber', qty: 3, weight: 3 },
+      { itemId: 'ore_chip',   qty: 1, weight: 1 },
+    ],
+    levelReq: 1,
+    xp: 7,
+    cooldown: 120,
+  },
+  {
+    // Phase 45 — new cache F
+    id: 'cache_northeast_ridge',
+    label: 'Northeast Ridge Cache',
+    position: [8, 0, 18],
+    rewardPool: [
+      { itemId: 'copper_ore',  qty: 1, weight: 3 },
+      { itemId: 'flint_shard', qty: 1, weight: 3 },
+      { itemId: 'raw_resin',  qty: 2, weight: 1 },
+    ],
+    levelReq: 2,
+    xp: 12,
+    cooldown: 150,
   },
 ] as const
 
@@ -98,6 +163,50 @@ export const SURVEY_MODE_DURATION = 20
 
 /** Interaction radius for the survey stone station. */
 export const SURVEY_STONE_INTERACT_RADIUS = 2.0
+
+// ─── Randomised salvage pool helper ──────────────────────────────────────
+
+/**
+ * Draw one entry from a weighted salvage pool.
+ * Rolls a random value against the cumulative weight sum and returns the
+ * matching entry.  Returns a default ore chip entry if the pool is empty.
+ */
+export function pickReward(pool: SalvageEntry[]): SalvageEntry {
+  if (pool.length === 0) return { itemId: 'ore_chip', qty: 1, weight: 1 }
+  const totalWeight = pool.reduce((sum, e) => sum + e.weight, 0)
+  let roll = Math.random() * totalWeight
+  for (const entry of pool) {
+    roll -= entry.weight
+    if (roll <= 0) return entry
+  }
+  return pool[pool.length - 1]
+}
+
+// ─── Cache status for UI display ─────────────────────────────────────────
+
+/** Snapshot of a single cache's runtime status, safe to pass to React UI. */
+export interface CacheStatusEntry {
+  id: string
+  label: string
+  levelReq: number
+  revealed: boolean
+  /** Seconds remaining on cooldown (0 means ready to be detected). */
+  cooldownRemaining: number
+}
+
+/**
+ * Build a serialisable status snapshot from the live cache array.
+ * Used by App.tsx to push cooldown info into the Zustand UI store each tick.
+ */
+export function buildCacheStatusList(caches: SurveyCache[]): CacheStatusEntry[] {
+  return caches.map((c) => ({
+    id: c.config.id,
+    label: c.config.label,
+    levelReq: c.config.levelReq,
+    revealed: c.revealed,
+    cooldownRemaining: c.cooldownRemaining,
+  }))
+}
 
 // ─── Survey cache runtime state ───────────────────────────────────────────
 

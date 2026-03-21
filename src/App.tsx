@@ -91,6 +91,8 @@ import {
   tickCacheCooldowns,
   hideAllCaches,
   getSurveyingLevel,
+  pickReward,
+  buildCacheStatusList,
   SURVEY_MODE_DURATION,
   SURVEY_CLAIM_RADIUS,
   SURVEY_STONE_INTERACT_RADIUS,
@@ -280,6 +282,8 @@ function App() {
   const tinkerFromPanelRef = useRef<(recipe: import('./engine/tinkering').TinkerRecipeConfig) => void>(() => {})
   /** Survey callback set by the game loop, called by SurveyingPanel sweep button. */
   const startSurveyFromPanelRef = useRef<() => void>(() => {})
+  /** Accumulator for throttling cache-status updates to ~1 Hz (Phase 45). */
+  const surveyStatusAccumRef = useRef(0)
 
   useEffect(() => {
     const container = sceneRef.current
@@ -796,23 +800,25 @@ function App() {
         )
         return
       }
+      // Phase 45 — draw a randomised reward from the weighted pool.
+      const reward = pickReward(cache.config.rewardPool)
       const { inventory, addItem, grantSkillXp } = useGameStore.getState()
-      const rewardName = getItem(cache.config.rewardId)?.name ?? cache.config.rewardId
-      const hasExisting = inventory.slots.some((s) => s.id === cache.config.rewardId)
+      const rewardName = getItem(reward.itemId)?.name ?? reward.itemId
+      const hasExisting = inventory.slots.some((s) => s.id === reward.itemId)
       const slotsUsed = inventory.slots.length
       const canAdd = hasExisting || slotsUsed < inventory.maxSlots
       if (!canAdd) {
         useNotifications.getState().push('Your inventory is full — make room before claiming.', 'info')
         return
       }
-      addItem({ id: cache.config.rewardId, name: rewardName, quantity: cache.config.rewardQty })
+      addItem({ id: reward.itemId, name: rewardName, quantity: reward.qty })
       grantSkillXp('surveying', cache.config.xp)
       cache.revealed = false
       cache.markerMesh.visible = false
       cache.interactable.interactRadius = 0
       cache.cooldownRemaining = cache.config.cooldown
       useNotifications.getState().push(
-        `You unearth ${rewardName} ×${cache.config.rewardQty}!`,
+        `You unearth ${rewardName} ×${reward.qty}! (+${cache.config.xp} surveying xp)`,
         'success',
       )
     }
@@ -1632,6 +1638,13 @@ function App() {
           hideAllCaches(surveyCaches)
           useNotifications.getState().push('Survey sweep ended.', 'info')
         }
+      }
+      // Phase 45 — push live cache status into the Zustand store for the panel UI.
+      // Throttle to ~1 Hz so the panel updates smoothly without thrashing React.
+      surveyStatusAccumRef.current += delta
+      if (surveyStatusAccumRef.current >= 1.0) {
+        surveyStatusAccumRef.current -= 1.0
+        useSurveyingStore.getState().updateCacheStatus(buildCacheStatusList(surveyCaches))
       }
 
       // Phase 05 — interaction targeting
