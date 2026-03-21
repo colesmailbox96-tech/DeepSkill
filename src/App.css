@@ -3522,7 +3522,7 @@ p {
 /**
  * Floating panel for volume / mute controls.  Positioned at the top-right
  * of the HUD overlay, accessible from anywhere (no station proximity needed).
- * Toggled with the M key or the ♪ button.
+ * Toggled with the M key.
  */
 .audio-panel {
   position: absolute;

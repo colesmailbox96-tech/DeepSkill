@@ -1,9 +1,9 @@
 /**
  * Phase 49 — Audio Settings Panel
  *
- * A floating panel toggled with the M key (or the ♪ button in the HUD)
- * that lets the player adjust volume levels and toggle mute.  The panel
- * is accessible from anywhere — no proximity to a station is required.
+ * A floating panel toggled with the M key that lets the player adjust volume
+ * levels and toggle mute.  The panel is accessible from anywhere — no
+ * proximity to a station is required.
  *
  * Volume changes are committed immediately to useAudioStore; App.tsx
  * subscribes to the store and applies changes to the audioManager
@@ -22,10 +22,12 @@ interface SliderRowProps {
 }
 
 function SliderRow({ label, value, onChange }: SliderRowProps) {
+  const inputId = `audio-slider-${label.toLowerCase()}`
   return (
     <div className="audio-panel__row">
-      <label className="audio-panel__label">{label}</label>
+      <label className="audio-panel__label" htmlFor={inputId}>{label}</label>
       <input
+        id={inputId}
         className="audio-panel__slider"
         type="range"
         min={0}
@@ -33,9 +35,8 @@ function SliderRow({ label, value, onChange }: SliderRowProps) {
         step={0.01}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        aria-label={label}
       />
-      <span className="audio-panel__pct">{Math.round(value * 100)}%</span>
+      <span className="audio-panel__pct" aria-hidden="true">{Math.round(value * 100)}%</span>
     </div>
   )
 }

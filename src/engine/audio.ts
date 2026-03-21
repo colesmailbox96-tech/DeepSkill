@@ -260,13 +260,11 @@ class AudioManager {
    * boundary); the method is cheap when the region has not changed.
    */
   setRegion(region: AudioRegion): void {
-    if (!this.ctx || !this.noiseFilter || !this.noiseNodeGain || !this.droneGain) return
+    if (!this.ctx || !this.noiseFilter || !this.noiseNodeGain || !this.droneGain || !this.lfoGain) return
     if (region === this.currentRegion) return
     this.currentRegion = region
 
     const cfg = REGION_CONFIG[region]
-    if (!this.ctx || !this.noiseFilter || !this.noiseNodeGain || !this.droneGain || !this.lfoGain) return
-
     const now = this.ctx.currentTime
 
     // Apply noise filter settings
@@ -282,7 +280,19 @@ class AudioManager {
       this._ensureDrone(cfg.droneFreq)
       this.droneGain.gain.setTargetAtTime(cfg.droneLevel, now, 1.0)
     } else {
+      // Fade the drone out, then stop and disconnect its oscillator to avoid
+      // keeping it running silently and wasting CPU.
       this.droneGain.gain.setTargetAtTime(0, now, 0.8)
+      if (this.droneOsc) {
+        const stopAt = now + 4.0 // allow gain to reach ~0 before stopping
+        try {
+          this.droneOsc.stop(stopAt)
+        } catch {
+          // Ignore errors if the oscillator was already stopped.
+        }
+        this.droneOsc.disconnect()
+        this.droneOsc = null
+      }
     }
 
     // LFO modulation depth (shoreline gets wave motion on the filter)
@@ -369,7 +379,7 @@ class AudioManager {
   private _makeNoiseBuffer(durationSec: number): AudioBuffer {
     const ctx = this.ctx!
     const sampleRate = ctx.sampleRate
-    const frameCount = sampleRate * durationSec
+    const frameCount = Math.floor(sampleRate * durationSec)
     const buf = ctx.createBuffer(2, frameCount, sampleRate)
     for (let ch = 0; ch < 2; ch++) {
       const data = buf.getChannelData(ch)

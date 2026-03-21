@@ -153,6 +153,7 @@ import { WardingPanel } from './ui/hud/WardingPanel'
 import { HazardWarningHud } from './ui/hud/HazardWarningHud'
 import { AudioSettingsPanel } from './ui/hud/AudioSettingsPanel'
 import { audioManager, getAudioRegion } from './engine/audio'
+import type { AudioRegion } from './engine/audio'
 import { useAudioStore } from './store/useAudioStore'
 import { registerAllTasks } from './data/tasks/taskRegistry'
 import { useTaskStore } from './store/useTaskStore'
@@ -1135,6 +1136,8 @@ function App() {
     const keys = new Set<string>()
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.repeat) return
+      // Phase 49 — initialise audio on first key gesture (browser autoplay policy).
+      audioManager.init()
       keys.add(e.code)
       if (e.code === 'KeyE' && interactionState.target) {
         audioManager.playSfx('interact')
@@ -1202,7 +1205,7 @@ function App() {
       }
       if (e.code === 'KeyM') {
         // Phase 49 — toggle audio settings panel (available everywhere).
-        audioManager.init()
+        // audioManager.init() was already called at the top of onKeyDown.
         useAudioStore.getState().togglePanel()
       }
     }
@@ -1271,6 +1274,8 @@ function App() {
     let pinchLastDist = 0
 
     const onTouchStart = (e: TouchEvent) => {
+      // Phase 49 — init audio on first touch gesture.
+      audioManager.init()
       // Prevent page scroll / zoom on the canvas.
       e.preventDefault()
       if (e.touches.length === 1) {
@@ -1327,6 +1332,8 @@ function App() {
     const _clickNdc = new THREE.Vector2()
 
     const onCanvasClick = (e: MouseEvent) => {
+      // Phase 49 — init audio on first click gesture.
+      audioManager.init()
       // Only respond to unmodified left-click (not right-drag release).
       if (e.button !== 0) return
 
@@ -1422,23 +1429,16 @@ function App() {
     let hazardTickAccum = 0
     let prevHazardId: string | null = null
 
-    // Phase 49 — Audio Foundation: initialise and subscribe to store changes.
-    audioManager.init()
+    // Phase 49 — Audio Foundation: subscribe to store changes.
+    // Do NOT call audioManager.init() here — defer until the first user gesture
+    // to comply with browser autoplay policy and avoid allocating audio
+    // resources before they are needed.
     const unsubscribeAudio = useAudioStore.subscribe((s) => {
       audioManager.setVolumes(s.masterVolume, s.musicVolume, s.sfxVolume, s.ambientVolume)
       audioManager.setMuted(s.isMuted)
     })
-    // Apply initial store values right away.
-    const initialAudioState = useAudioStore.getState()
-    audioManager.setVolumes(
-      initialAudioState.masterVolume,
-      initialAudioState.musicVolume,
-      initialAudioState.sfxVolume,
-      initialAudioState.ambientVolume,
-    )
-    audioManager.setMuted(initialAudioState.isMuted)
     // Per-frame audio-region tracker.
-    let prevAudioRegion: import('./engine/audio').AudioRegion | null = null
+    let prevAudioRegion: AudioRegion | null = null
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
       const delta = clock.getDelta()
