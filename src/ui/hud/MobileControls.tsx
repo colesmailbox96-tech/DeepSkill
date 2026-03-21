@@ -26,8 +26,17 @@ export function MobileControls({ joystickRef, onInteract, hasTargetRef }: Mobile
   const activeTouchRef = useRef<number | null>(null)
 
   // Phase 52 — subscribe to tap feedback from the game loop.
-  const tapFeedback    = useMobileStore((s) => s.tapFeedback)
+  const tapFeedback      = useMobileStore((s) => s.tapFeedback)
   const clearTapFeedback = useMobileStore((s) => s.clearTapFeedback)
+
+  // Fallback: if the animation event never fires (e.g. on pointer:fine devices
+  // where the overlay is hidden), clear the feedback after the animation
+  // duration (420 ms) plus a small margin.
+  useEffect(() => {
+    if (!tapFeedback) return
+    const id = setTimeout(clearTapFeedback, 450)
+    return () => clearTimeout(id)
+  }, [tapFeedback, clearTapFeedback])
 
   // Poll the hasTargetRef every 100 ms – only a ref read per tick, no DOM access.
   const [hasTarget, setHasTarget] = useState(false)

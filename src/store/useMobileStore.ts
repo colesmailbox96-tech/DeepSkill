@@ -45,7 +45,8 @@ export const useMobileStore = create<MobileState>((set) => ({
   isTouchDevice: false,
   tapFeedback: null,
 
-  setTouchDevice: () => set({ isTouchDevice: true }),
+  setTouchDevice: () =>
+    set((state) => (state.isTouchDevice ? state : { isTouchDevice: true })),
   showTapFeedback: (x, y) => set({ tapFeedback: { x, y, key: ++_tapKey } }),
   clearTapFeedback: () => set({ tapFeedback: null }),
 }))

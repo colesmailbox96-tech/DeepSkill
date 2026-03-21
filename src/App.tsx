@@ -1415,84 +1415,20 @@ function App() {
       }
     }
 
-    const onTouchEnd = (e: TouchEvent) => {
-      // Phase 52 — tap targeting: resolve if this was a valid short tap.
-      if (!tapCancelled && performance.now() - tapStartTime < TAP_MAX_MS) {
-        const t = e.changedTouches[0]
-        const rect = canvas.getBoundingClientRect()
-        _clickNdc.x = ((t.clientX - rect.left) / rect.width) * 2 - 1
-        _clickNdc.y = -((t.clientY - rect.top) / rect.height) * 2 + 1
-        raycaster.setFromCamera(_clickNdc, camera)
-        const creatureMeshes = creatures.map((c) => c.mesh)
-        const hits = raycaster.intersectObjects(creatureMeshes, true)
-        if (hits.length > 0) {
-          const hitObj = hits[0].object
-          const matched = creatures.find((c) => {
-            let obj: THREE.Object3D | null = hitObj
-            while (obj) {
-              if (obj === c.mesh) return true
-              obj = obj.parent
-            }
-            return false
-          })
-          if (matched && matched.def.aggroRadius && matched.state !== 'dead') {
-            setTarget(combatRef.current, matched)
-            useCombatStore.getState().setTargetInfo(
-              matched.def.name,
-              matched.hp,
-              matched.def.maxHp ?? matched.hp,
-            )
-            useNotifications.getState().push(
-              `You target the ${matched.def.name}.`,
-              'info',
-            )
-          }
-        } else {
-          // Tapped empty space — deselect current target.
-          if (combatRef.current.target) {
-            setTarget(combatRef.current, null)
-            useCombatStore.getState().clearTarget()
-          }
-        }
-        // Show ripple feedback at tap position.
-        useMobileStore.getState().showTapFeedback(t.clientX, t.clientY)
-      }
-      tapCancelled = true
-
-      if (e.touches.length === 0) {
-        touchPhase = 'none'
-      } else if (e.touches.length === 1) {
-        touchPhase = 'orbit'
-        orbitTouchId = e.touches[0].identifier
-        orbitLastX = e.touches[0].clientX
-        orbitLastY = e.touches[0].clientY
-      }
-    }
-
-    // ── Phase 31 — Left-click target selection ──────────────────────────────
-    // Raycasts against creature meshes on left-click; clicking a hostile
-    // creature sets it as the combat target; clicking empty space clears it.
+    // ── Phase 31 / Phase 52 — Shared raycast target-selection helper ────────
+    // Used by both left-click (onCanvasClick) and mobile tap (onTouchEnd) so
+    // the two input paths stay behaviour-identical.
     const raycaster = new THREE.Raycaster()
     const _clickNdc = new THREE.Vector2()
 
-    const onCanvasClick = (e: MouseEvent) => {
-      // Phase 49 — init audio on first click gesture.
-      audioManager.init()
-      // Only respond to unmodified left-click (not right-drag release).
-      if (e.button !== 0) return
-
+    const selectTargetAtClientPoint = (clientX: number, clientY: number) => {
       const rect = canvas.getBoundingClientRect()
-      _clickNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
-      _clickNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
-
+      _clickNdc.x = ((clientX - rect.left) / rect.width) * 2 - 1
+      _clickNdc.y = -((clientY - rect.top) / rect.height) * 2 + 1
       raycaster.setFromCamera(_clickNdc, camera)
-
-      // Collect all creature mesh objects and test against them.
       const creatureMeshes = creatures.map((c) => c.mesh)
       const hits = raycaster.intersectObjects(creatureMeshes, true)
-
       if (hits.length > 0) {
-        // Walk up the hierarchy to find the matching Creature.
         const hitObj = hits[0].object
         const matched = creatures.find((c) => {
           let obj: THREE.Object3D | null = hitObj
@@ -1515,12 +1451,41 @@ function App() {
           )
         }
       } else {
-        // Clicked empty space — deselect.
+        // Tapped/clicked empty space — deselect current target.
         if (combatRef.current.target) {
           setTarget(combatRef.current, null)
           useCombatStore.getState().clearTarget()
         }
       }
+    }
+
+    const onTouchEnd = (e: TouchEvent) => {
+      // Phase 52 — tap targeting: resolve if this was a valid short tap.
+      if (!tapCancelled && performance.now() - tapStartTime < TAP_MAX_MS) {
+        const t = e.changedTouches[0]
+        selectTargetAtClientPoint(t.clientX, t.clientY)
+        // Show ripple feedback at tap position.
+        useMobileStore.getState().showTapFeedback(t.clientX, t.clientY)
+      }
+      tapCancelled = true
+
+      if (e.touches.length === 0) {
+        touchPhase = 'none'
+      } else if (e.touches.length === 1) {
+        touchPhase = 'orbit'
+        orbitTouchId = e.touches[0].identifier
+        orbitLastX = e.touches[0].clientX
+        orbitLastY = e.touches[0].clientY
+      }
+    }
+
+    // ── Phase 31 — Left-click target selection ──────────────────────────────
+    const onCanvasClick = (e: MouseEvent) => {
+      // Phase 49 — init audio on first click gesture.
+      audioManager.init()
+      // Only respond to unmodified left-click (not right-drag release).
+      if (e.button !== 0) return
+      selectTargetAtClientPoint(e.clientX, e.clientY)
     }
 
     const canvas = renderer.domElement
