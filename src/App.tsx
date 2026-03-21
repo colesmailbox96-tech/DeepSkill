@@ -151,6 +151,10 @@ import { CarvingPanel } from './ui/hud/CarvingPanel'
 import { TinkeringPanel } from './ui/hud/TinkeringPanel'
 import { WardingPanel } from './ui/hud/WardingPanel'
 import { HazardWarningHud } from './ui/hud/HazardWarningHud'
+import { AudioSettingsPanel } from './ui/hud/AudioSettingsPanel'
+import { audioManager, getAudioRegion } from './engine/audio'
+import type { AudioRegion } from './engine/audio'
+import { useAudioStore } from './store/useAudioStore'
 import { registerAllTasks } from './data/tasks/taskRegistry'
 import { useTaskStore } from './store/useTaskStore'
 import { getTask } from './engine/task'
@@ -388,6 +392,7 @@ function App() {
       // Already chopping this exact tree — do nothing.
       if (choppingRef.current?.node === node) return
       choppingRef.current = { node, elapsed: 0 }
+      audioManager.playSfx('chop')
       useNotifications.getState().push(`You begin chopping the ${cfg.label.toLowerCase()}…`, 'info')
     }
 
@@ -414,6 +419,7 @@ function App() {
       // Already mining this exact rock — do nothing.
       if (miningRef.current?.node === node) return
       miningRef.current = { node, elapsed: 0 }
+      audioManager.playSfx('mine')
       useNotifications.getState().push(`You begin mining the ${cfg.label.toLowerCase()}…`, 'info')
     }
 
@@ -446,6 +452,7 @@ function App() {
       // Already casting at this exact spot — do nothing.
       if (fishingRef.current?.node === node) return
       fishingRef.current = { node, elapsed: 0 }
+      audioManager.playSfx('fish_cast')
       useNotifications.getState().push(`You cast your line at the ${cfg.label.toLowerCase()}…`, 'info')
     }
 
@@ -498,6 +505,8 @@ function App() {
       }
       grantSkillXp('foraging', cfg.xp)
       advanceGatherObjectives(cfg.itemId)
+      audioManager.playSfx('forage')
+      audioManager.playSfx('collect')
       useNotifications.getState().push(
         `You gather ${article(itemName)} ${itemName.toLowerCase()}.`,
         'success',
@@ -1127,8 +1136,11 @@ function App() {
     const keys = new Set<string>()
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.repeat) return
+      // Phase 49 — initialise audio on first key gesture (browser autoplay policy).
+      audioManager.init()
       keys.add(e.code)
       if (e.code === 'KeyE' && interactionState.target) {
+        audioManager.playSfx('interact')
         interactionState.target.onInteract()
       }
       if (e.code === 'KeyF') {
@@ -1190,6 +1202,11 @@ function App() {
         ) {
           warding.openPanel()
         }
+      }
+      if (e.code === 'KeyM') {
+        // Phase 49 — toggle audio settings panel (available everywhere).
+        // audioManager.init() was already called at the top of onKeyDown.
+        useAudioStore.getState().togglePanel()
       }
     }
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code)
@@ -1257,6 +1274,8 @@ function App() {
     let pinchLastDist = 0
 
     const onTouchStart = (e: TouchEvent) => {
+      // Phase 49 — init audio on first touch gesture.
+      audioManager.init()
       // Prevent page scroll / zoom on the canvas.
       e.preventDefault()
       if (e.touches.length === 1) {
@@ -1313,6 +1332,8 @@ function App() {
     const _clickNdc = new THREE.Vector2()
 
     const onCanvasClick = (e: MouseEvent) => {
+      // Phase 49 — init audio on first click gesture.
+      audioManager.init()
       // Only respond to unmodified left-click (not right-drag release).
       if (e.button !== 0) return
 
@@ -1407,6 +1428,17 @@ function App() {
     // Phase 48 — Environmental Hazard System tick accumulator and prior-zone tracker.
     let hazardTickAccum = 0
     let prevHazardId: string | null = null
+
+    // Phase 49 — Audio Foundation: subscribe to store changes.
+    // Do NOT call audioManager.init() here — defer until the first user gesture
+    // to comply with browser autoplay policy and avoid allocating audio
+    // resources before they are needed.
+    const unsubscribeAudio = useAudioStore.subscribe((s) => {
+      audioManager.setVolumes(s.masterVolume, s.musicVolume, s.sfxVolume, s.ambientVolume)
+      audioManager.setMuted(s.isMuted)
+    })
+    // Per-frame audio-region tracker.
+    let prevAudioRegion: AudioRegion | null = null
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
       const delta = clock.getDelta()
@@ -1446,6 +1478,7 @@ function App() {
             if (added) {
               grantSkillXp('woodcutting', cfg.xp)
               advanceGatherObjectives(cfg.logId)
+              audioManager.playSfx('collect')
               useNotifications.getState().push(`You cut ${article(logName)} ${logName.toLowerCase()}.`, 'success')
               fellTree(sess.node)
             } else {
@@ -1477,6 +1510,7 @@ function App() {
             if (added) {
               grantSkillXp('mining', cfg.xp)
               advanceGatherObjectives(cfg.oreId)
+              audioManager.playSfx('collect')
               useNotifications.getState().push(`You mine ${article(oreName)} ${oreName.toLowerCase()}.`, 'success')
               depleteRock(sess.node)
             } else {
@@ -1508,6 +1542,7 @@ function App() {
             if (added) {
               grantSkillXp('fishing', cfg.xp)
               advanceGatherObjectives(cfg.fishId)
+              audioManager.playSfx('collect')
               useNotifications.getState().push(`You catch ${article(fishName)} ${fishName.toLowerCase()}!`, 'success')
               depleteFishSpot(sess.node)
             } else {
@@ -1905,6 +1940,18 @@ function App() {
       // Phase 33 — tick food cooldown timer
       useFoodStore.getState().tickCooldown(delta)
 
+      // Phase 49 — Audio: update ambient region and music mode each frame.
+      {
+        const pos = player.mesh.position
+        const region = getAudioRegion(pos.x, pos.z)
+        if (region !== prevAudioRegion) {
+          audioManager.setRegion(region)
+          prevAudioRegion = region
+        }
+        const inCombat = combatRef.current.target !== null
+        audioManager.setMusicMode(inCombat ? 'combat' : 'peaceful')
+      }
+
       // Phase 37 — Explore objective trigger: fire when the player enters a
       // named zone for the first time.  Each zone fires at most once per
       // session (guarded by exploredZones via triggerZoneExplore).
@@ -1961,6 +2008,8 @@ function App() {
       cancelAnimationFrame(animationFrame)
       resizeObserver.disconnect()
       unsubscribeRespawn()
+      unsubscribeAudio()
+      audioManager.dispose()
       window.removeEventListener('resize', updateViewport)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
@@ -2001,7 +2050,7 @@ function App() {
         <p id="scene-description" className="app-header__desc">
           Playing as <strong>{playerName}</strong>.
           WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact · click creature to target.
-          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering, Y = surveying, G = warding.
+          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering, Y = surveying, G = warding, M = audio.
         </p>
       </header>
       <div
@@ -2058,6 +2107,8 @@ function App() {
           />
           {/* Phase 48 — Environmental hazard warning banner */}
           <HazardWarningHud />
+          {/* Phase 49 — Audio settings panel */}
+          <AudioSettingsPanel />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}
