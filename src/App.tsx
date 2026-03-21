@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { createPlayer, updatePlayer } from './engine/player'
 import {
@@ -156,8 +156,10 @@ import { audioManager, getAudioRegion } from './engine/audio'
 import type { AudioRegion } from './engine/audio'
 import { useAudioStore } from './store/useAudioStore'
 import { SaveLoadPanel } from './ui/hud/SaveLoadPanel'
-import { useSaveGame, useLoadGame } from './store/useSaveLoad'
+import { useSaveGame, useLoadGame, clearSaveData, hasSaveData } from './store/useSaveLoad'
 import { useSaveLoadStore } from './store/useSaveLoadStore'
+import { useMainMenuStore } from './store/useMainMenuStore'
+import { MainMenuScreen } from './ui/screens/MainMenuScreen'
 import { registerAllTasks } from './data/tasks/taskRegistry'
 import { useTaskStore } from './store/useTaskStore'
 import { getTask } from './engine/task'
@@ -299,9 +301,6 @@ function App() {
   const saveGame = useSaveGame()
   const loadGame = useLoadGame()
 
-  // Restore progress on mount (runs once; load is a no-op when no save exists).
-  useEffect(() => { loadGame() }, [loadGame])
-
   // Auto-save every 60 seconds — separate effect so it does not couple to the
   // main game-loop useEffect.  saveGame is stable (memoised with useCallback).
   useEffect(() => {
@@ -311,6 +310,36 @@ function App() {
     }, 60_000)
     return () => clearInterval(interval)
   }, [saveGame])
+
+  // ── Phase 51 — Main Menu / Continue Flow ─────────────────────────────────
+  const menuVisible = useMainMenuStore((s) => s.isVisible)
+  const hideMenu    = useMainMenuStore((s) => s.hide)
+
+  // Check for an existing save exactly once when the component mounts.
+  // The value is stable for the lifetime of the menu — it only becomes
+  // false after a "New Game" action, which also hides the menu.
+  const menuHasSave = useMemo(() => hasSaveData(), [])
+
+  /**
+   * "Continue" — restore the saved snapshot, then enter the world.
+   * Auto-load on boot is intentionally removed: the player now explicitly
+   * chooses Continue vs New Game from the main menu.
+   */
+  const handleContinue = () => {
+    loadGame()
+    hideMenu()
+  }
+
+  /**
+   * "New Game" — wipe the persistent save, reset in-memory state to defaults,
+   * and enter the world with a fresh character.
+   */
+  const handleNewGame = () => {
+    clearSaveData()
+    useSaveLoadStore.getState().notifyCleared()
+    useGameStore.getState().resetToDefaults()
+    hideMenu()
+  }
   /** Interact callback set by the game loop, called by the mobile interact button. */
   const mobileInteractRef = useRef<() => void>(() => {})
   /** True when the player is in range of an interactable – drives the interact button pulse. */
@@ -2143,6 +2172,14 @@ function App() {
           />
         </div>
         <div ref={promptRef} className="interaction-prompt" aria-live="polite" />
+        {/* Phase 51 — Main menu / title screen overlay (shown on boot) */}
+        {menuVisible && (
+          <MainMenuScreen
+            hasSave={menuHasSave}
+            onContinue={handleContinue}
+            onNewGame={handleNewGame}
+          />
+        )}
       </div>
     </main>
   )
