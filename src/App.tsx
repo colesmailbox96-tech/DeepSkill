@@ -155,6 +155,9 @@ import { AudioSettingsPanel } from './ui/hud/AudioSettingsPanel'
 import { audioManager, getAudioRegion } from './engine/audio'
 import type { AudioRegion } from './engine/audio'
 import { useAudioStore } from './store/useAudioStore'
+import { SaveLoadPanel } from './ui/hud/SaveLoadPanel'
+import { useSaveGame, useLoadGame } from './store/useSaveLoad'
+import { useSaveLoadStore } from './store/useSaveLoadStore'
 import { registerAllTasks } from './data/tasks/taskRegistry'
 import { useTaskStore } from './store/useTaskStore'
 import { getTask } from './engine/task'
@@ -291,6 +294,23 @@ function App() {
   // ── Mobile controls shared state ────────────────────────────────────────
   /** Joystick direction written by MobileControls, read by the game loop. */
   const mobileJoystickRef = useRef<{ x: number; z: number }>({ x: 0, z: 0 })
+
+  // ── Phase 50 — Save / Load ────────────────────────────────────────────────
+  const saveGame = useSaveGame()
+  const loadGame = useLoadGame()
+
+  // Restore progress on mount (runs once; load is a no-op when no save exists).
+  useEffect(() => { loadGame() }, [loadGame])
+
+  // Auto-save every 60 seconds — separate effect so it does not couple to the
+  // main game-loop useEffect.  saveGame is stable (memoised with useCallback).
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const saved = saveGame()
+      if (saved) useSaveLoadStore.getState().notifySaved()
+    }, 60_000)
+    return () => clearInterval(interval)
+  }, [saveGame])
   /** Interact callback set by the game loop, called by the mobile interact button. */
   const mobileInteractRef = useRef<() => void>(() => {})
   /** True when the player is in range of an interactable – drives the interact button pulse. */
@@ -1208,6 +1228,10 @@ function App() {
         // audioManager.init() was already called at the top of onKeyDown.
         useAudioStore.getState().togglePanel()
       }
+      if (e.code === 'KeyP') {
+        // Phase 50 — toggle save/load panel (available everywhere).
+        useSaveLoadStore.getState().togglePanel()
+      }
     }
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code)
     window.addEventListener('keydown', onKeyDown)
@@ -2050,7 +2074,7 @@ function App() {
         <p id="scene-description" className="app-header__desc">
           Playing as <strong>{playerName}</strong>.
           WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact · click creature to target.
-          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering, Y = surveying, G = warding, M = audio.
+          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering, Y = surveying, G = warding, M = audio, P = save.
         </p>
       </header>
       <div
@@ -2109,6 +2133,8 @@ function App() {
           <HazardWarningHud />
           {/* Phase 49 — Audio settings panel */}
           <AudioSettingsPanel />
+          {/* Phase 50 — Save / Load panel */}
+          <SaveLoadPanel />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}

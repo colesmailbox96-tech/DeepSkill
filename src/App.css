@@ -3658,3 +3658,163 @@ p {
     width: 210px;
   }
 }
+
+/* ── Phase 50 — Save / Load Panel ─────────────────────────────────────────── */
+
+.save-panel {
+  position: absolute;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: rgba(10, 8, 18, 0.92);
+  border: 1px solid rgba(80, 140, 100, 0.35);
+  border-radius: 0.6rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
+  z-index: 10;
+  overflow: hidden;
+  outline: none;
+}
+
+.save-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.7rem;
+  background: rgba(40, 80, 55, 0.25);
+  border-bottom: 1px solid rgba(60, 120, 80, 0.2);
+}
+
+.save-panel__title {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(150, 220, 170, 0.9);
+  letter-spacing: 0.03em;
+}
+
+.save-panel__close {
+  font-size: 0.8rem;
+  font-family: inherit;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  border: none;
+  background: transparent;
+  color: rgba(130, 180, 150, 0.6);
+  cursor: pointer;
+  transition: color 0.12s;
+  line-height: 1;
+}
+
+.save-panel__close:hover {
+  color: rgba(220, 80, 60, 0.9);
+}
+
+.save-panel__status {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.72rem;
+  border-bottom: 1px solid rgba(60, 120, 80, 0.15);
+  background: rgba(8, 12, 10, 0.4);
+  min-height: 1.6rem;
+  display: flex;
+  align-items: center;
+}
+
+.save-panel__status--saved {
+  color: rgba(140, 220, 160, 0.9);
+}
+
+.save-panel__status--exists {
+  color: rgba(180, 200, 160, 0.7);
+}
+
+.save-panel__status--none {
+  color: rgba(140, 120, 100, 0.55);
+  font-style: italic;
+}
+
+.save-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.55rem 0.7rem;
+}
+
+.save-panel__btn {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.38rem 0.6rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgba(80, 140, 100, 0.35);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  text-align: left;
+}
+
+.save-panel__btn--save {
+  background: rgba(30, 70, 45, 0.55);
+  color: rgba(160, 230, 180, 0.92);
+  border-color: rgba(80, 160, 110, 0.4);
+}
+
+.save-panel__btn--save:hover {
+  background: rgba(40, 90, 60, 0.75);
+  color: #9fe8b8;
+  border-color: rgba(100, 180, 130, 0.55);
+}
+
+.save-panel__btn--load {
+  background: rgba(30, 55, 80, 0.55);
+  color: rgba(140, 190, 230, 0.85);
+  border-color: rgba(70, 130, 190, 0.35);
+}
+
+.save-panel__btn--load:hover:not(:disabled) {
+  background: rgba(35, 70, 105, 0.75);
+  color: #9dcfef;
+  border-color: rgba(90, 150, 210, 0.5);
+}
+
+.save-panel__btn--load:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.save-panel__btn--clear {
+  background: rgba(70, 30, 25, 0.45);
+  color: rgba(215, 130, 120, 0.8);
+  border-color: rgba(180, 70, 60, 0.3);
+}
+
+.save-panel__btn--clear:hover {
+  background: rgba(90, 35, 30, 0.65);
+  color: rgba(240, 150, 135, 0.95);
+  border-color: rgba(200, 90, 75, 0.45);
+}
+
+.save-panel__hint {
+  padding: 0.25rem 0.7rem;
+  font-size: 0.6rem;
+  color: rgba(100, 140, 110, 0.4);
+  border-top: 1px solid rgba(60, 120, 80, 0.12);
+  background: rgba(8, 10, 8, 0.5);
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+@media (pointer: coarse) {
+  .save-panel {
+    top: auto;
+    bottom: 7.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 220px;
+  }
+}

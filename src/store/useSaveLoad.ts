@@ -30,8 +30,8 @@ function isValidNumber(v: unknown): v is number {
 }
 
 /** Serialise the relevant slice of game state to localStorage. */
-export function useSaveGame(): () => void {
-  return useCallback(() => {
+export function useSaveGame(): () => boolean {
+  return useCallback((): boolean => {
     try {
       const { playerStats, inventory, skills, equipment, settings } =
         useGameStore.getState()
@@ -44,9 +44,11 @@ export function useSaveGame(): () => void {
         settings,
       }
       localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot))
+      return true
     } catch (err) {
       // localStorage can throw in private-browsing modes or when the quota is full.
       console.warn('[Save] failed to persist game state:', err)
+      return false
     }
   }, [])
 }
