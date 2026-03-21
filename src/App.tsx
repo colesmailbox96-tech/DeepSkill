@@ -1737,7 +1737,7 @@ function App() {
         const tooFar = wardingAltarStation
           ? player.mesh.position.distanceTo(wardingAltarStation.mesh.position) > WARDING_ALTAR_INTERACT_RADIUS
           : false
-        if (tooFar) {
+        if (player.moveState === 'walk' || tooFar) {
           wardRef.current = null
           useNotifications.getState().push('You step away from the warding altar.', 'info')
         } else {
@@ -1746,19 +1746,31 @@ function App() {
             wardRef.current = null
             const { inventory, addItem, removeItem, grantSkillXp } = useGameStore.getState()
             const outputName = getItem(sess.recipe.outputId)?.name ?? sess.recipe.outputId
-            const hasExisting = inventory.slots.some((s) => s.id === sess.recipe.outputId)
-            const slotsUsed = inventory.slots.length
-            const canAdd = hasExisting || slotsUsed < inventory.maxSlots
-            if (!canAdd) {
-              useNotifications.getState().push('Your inventory is full — ward mark lost.', 'info')
-            } else {
-              removeItem(sess.recipe.materialId, sess.recipe.materialQty)
-              addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
-              grantSkillXp('warding', sess.recipe.xp)
+            const materialName = getItem(sess.recipe.materialId)?.name ?? sess.recipe.materialId
+            // Re-validate material at completion.
+            const matSlot = inventory.slots.find((s) => s.id === sess.recipe.materialId)
+            if (!matSlot || matSlot.quantity < sess.recipe.materialQty) {
               useNotifications.getState().push(
-                `Ward mark inscribed: ${outputName}! (+${sess.recipe.xp} warding xp)`,
-                'success',
+                `The ${materialName.toLowerCase()} material was used up — inscription cancelled.`,
+                'info',
               )
+            } else {
+              // Guard: account for the slot freed when the material stack is fully consumed.
+              const hasExisting = inventory.slots.some((s) => s.id === sess.recipe.outputId)
+              const willFreeSlot = matSlot.quantity === sess.recipe.materialQty
+              const slotsAfterRemove = inventory.slots.length - (willFreeSlot ? 1 : 0)
+              const canAdd = hasExisting || slotsAfterRemove < inventory.maxSlots
+              if (!canAdd) {
+                useNotifications.getState().push('Your inventory is full — ward mark could not be stored.', 'info')
+              } else {
+                removeItem(sess.recipe.materialId, sess.recipe.materialQty)
+                addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
+                grantSkillXp('warding', sess.recipe.xp)
+                useNotifications.getState().push(
+                  `Ward mark inscribed: ${outputName}! (+${sess.recipe.xp} warding xp)`,
+                  'success',
+                )
+              }
             }
           }
         }
