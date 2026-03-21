@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { createPlayer, updatePlayer } from './engine/player'
 import {
@@ -156,8 +156,10 @@ import { audioManager, getAudioRegion } from './engine/audio'
 import type { AudioRegion } from './engine/audio'
 import { useAudioStore } from './store/useAudioStore'
 import { SaveLoadPanel } from './ui/hud/SaveLoadPanel'
-import { useSaveGame, useLoadGame } from './store/useSaveLoad'
+import { useSaveGame, useLoadGame, clearSaveData, hasSaveData } from './store/useSaveLoad'
 import { useSaveLoadStore } from './store/useSaveLoadStore'
+import { useMainMenuStore } from './store/useMainMenuStore'
+import { MainMenuScreen } from './ui/screens/MainMenuScreen'
 import { registerAllTasks } from './data/tasks/taskRegistry'
 import { useTaskStore } from './store/useTaskStore'
 import { getTask } from './engine/task'
@@ -299,18 +301,50 @@ function App() {
   const saveGame = useSaveGame()
   const loadGame = useLoadGame()
 
-  // Restore progress on mount (runs once; load is a no-op when no save exists).
-  useEffect(() => { loadGame() }, [loadGame])
+  // ── Phase 51 — Main Menu / Continue Flow ─────────────────────────────────
+  const menuVisible = useMainMenuStore((s) => s.isVisible)
+  const hideMenu    = useMainMenuStore((s) => s.hide)
 
-  // Auto-save every 60 seconds — separate effect so it does not couple to the
-  // main game-loop useEffect.  saveGame is stable (memoised with useCallback).
+  // Check for an existing save exactly once when the component mounts.
+  // The value is stable for the lifetime of the menu — it only becomes
+  // false after a "New Game" action, which also hides the menu.
+  const menuHasSave = useMemo(() => hasSaveData(), [])
+
+  /**
+   * "Continue" — restore the saved snapshot, then enter the world.
+   * Auto-load on boot is intentionally removed: the player now explicitly
+   * chooses Continue vs New Game from the main menu.
+   */
+  const handleContinue = () => {
+    loadGame()
+    hideMenu()
+  }
+
+  /**
+   * "New Game" — wipe the persistent save, reset in-memory state to defaults,
+   * and enter the world with a fresh character.
+   */
+  const handleNewGame = () => {
+    clearSaveData()
+    useSaveLoadStore.getState().notifyCleared()
+    useGameStore.getState().resetToDefaults()
+    hideMenu()
+  }
+
+  // Auto-save every 60 seconds, but only after the player has entered the world.
+  // While the main menu is visible the game state is at defaults (or not yet
+  // loaded), so triggering a save here would overwrite an existing save with
+  // default data.  Adding `menuVisible` to the dependency array causes React to
+  // re-install the effect whenever the menu is shown/hidden, and the early
+  // return below ensures no interval is created while the menu is open.
   useEffect(() => {
+    if (menuVisible) return     // title screen is showing — do not auto-save
     const interval = setInterval(() => {
       const saved = saveGame()
       if (saved) useSaveLoadStore.getState().notifySaved()
     }, 60_000)
     return () => clearInterval(interval)
-  }, [saveGame])
+  }, [saveGame, menuVisible])
   /** Interact callback set by the game loop, called by the mobile interact button. */
   const mobileInteractRef = useRef<() => void>(() => {})
   /** True when the player is in range of an interactable – drives the interact button pulse. */
@@ -1158,6 +1192,14 @@ function App() {
       if (e.repeat) return
       // Phase 49 — initialise audio on first key gesture (browser autoplay policy).
       audioManager.init()
+      // Phase 51 — while the main menu is visible, suppress all world input so
+      // the player cannot move or interact behind the overlay.  The M key is
+      // still permitted so the Settings button in the menu can open the audio
+      // panel via keyboard as well.
+      if (isMenuVisible) {
+        if (e.code === 'KeyM') useAudioStore.getState().togglePanel()
+        return
+      }
       keys.add(e.code)
       if (e.code === 'KeyE' && interactionState.target) {
         audioManager.playSfx('interact')
@@ -1243,6 +1285,14 @@ function App() {
     let isDefeated = useRespawnStore.getState().defeated
     const unsubscribeRespawn = useRespawnStore.subscribe(
       (s) => { isDefeated = s.defeated },
+    )
+
+    // Phase 51 — mirror main-menu visibility into a local let so the animate
+    // loop and key handlers can gate world-input without reading Zustand on
+    // every frame.  Starts true (menu is shown on boot).
+    let isMenuVisible = useMainMenuStore.getState().isVisible
+    const unsubscribeMenu = useMainMenuStore.subscribe(
+      (s) => { isMenuVisible = s.isVisible },
     )
 
     // ── Orbit drag (right mouse button) ────────────────────────────────────
@@ -1470,8 +1520,9 @@ function App() {
       // Phase 34 — freeze all player-input and combat systems while the
       // respawn overlay is visible.  The camera, NPC ambient sway, and
       // resource-node timers still advance so the world looks alive.
+      // Phase 51 — same gate applies while the main menu is shown on boot.
 
-      if (!isDefeated) {
+      if (!isDefeated && !isMenuVisible) {
         updatePlayer(player, keys, delta, camState.theta, collidableBoxes, mobileJoystickRef.current)
       }
       updateOrbitCamera(camera, player.mesh, camState, delta, collidables)
@@ -1479,7 +1530,7 @@ function App() {
       // Phase 08 — advance NPC ambient idle sway
       updateNpcs(allNpcs, delta)
 
-      if (!isDefeated) {
+      if (!isDefeated && !isMenuVisible) {
       // Phase 15 — tick woodcutting session and respawn timers
       updateTreeNodes(allTreeNodes, delta)
       if (choppingRef.current) {
@@ -2033,6 +2084,7 @@ function App() {
       resizeObserver.disconnect()
       unsubscribeRespawn()
       unsubscribeAudio()
+      unsubscribeMenu()
       audioManager.dispose()
       window.removeEventListener('resize', updateViewport)
       window.removeEventListener('keydown', onKeyDown)
@@ -2143,6 +2195,14 @@ function App() {
           />
         </div>
         <div ref={promptRef} className="interaction-prompt" aria-live="polite" />
+        {/* Phase 51 — Main menu / title screen overlay (shown on boot) */}
+        {menuVisible && (
+          <MainMenuScreen
+            hasSave={menuHasSave}
+            onContinue={handleContinue}
+            onNewGame={handleNewGame}
+          />
+        )}
       </div>
     </main>
   )

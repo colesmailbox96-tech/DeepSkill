@@ -194,6 +194,14 @@ export interface GameState {
    * Moves the item back into inventory.  No-op when the slot is empty.
    */
   unequipItem: (slot: EquipSlot) => void
+
+  /**
+   * Phase 51 — Reset all game state to its initial defaults.
+   *
+   * Used by the Main Menu "New Game" flow to wipe any in-memory progress
+   * before starting a fresh session.
+   */
+  resetToDefaults: () => void
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -463,6 +471,18 @@ export const useGameStore = create<GameState>((set, get) => ({
       equipment: newEquipment,
       equipStats: newEquipStats,
       inventory: { ...state.inventory, slots: updatedSlots },
+    })
+  },
+
+  // Phase 51 — reset all in-memory progress to starter defaults.
+  resetToDefaults: () => {
+    set({
+      playerStats: structuredClone(DEFAULT_PLAYER_STATS),
+      inventory:   structuredClone(DEFAULT_INVENTORY),
+      skills:      structuredClone(DEFAULT_SKILLS),
+      settings:    structuredClone(DEFAULT_SETTINGS),
+      equipment:   structuredClone(DEFAULT_EQUIPMENT),
+      equipStats:  { totalAttack: 0, totalDefence: 0 },
     })
   },
 }))
