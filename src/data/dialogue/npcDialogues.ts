@@ -273,6 +273,68 @@ const tomasTree = {
   },
 }
 
+// ─── Nairn Dusk — Ward-Adept (Phase 47) ──────────────────────────────────────
+
+const nairnDuskTree = {
+  npcName: 'Nairn Dusk (Ward-Adept)',
+  rootNode: 'intro',
+  repeatNode: 'repeat',
+  nodes: {
+    intro: {
+      key: 'intro',
+      text: "You've found the chapel, then. Most who wander this way don't come back whole. The mist from the shaft — it seeps into the lungs, into the mind. I learned to read the ward patterns carved into these stones. They hold it back, if you know how to use them.",
+      choices: [
+        { label: 'What is the mist?', nextNode: 'mist' },
+        { label: 'What are ward patterns?', nextNode: 'wards' },
+        { label: 'What happened here?', nextNode: 'history' },
+        { label: 'I should be careful. Farewell.', nextNode: null },
+      ],
+    },
+    mist: {
+      key: 'mist',
+      text: "The sealed shaft runs deep — deeper than anyone has measured. What rises from it is not water, though it floods these floors every season. It is something older. It drains the warmth from you. Stand in it long enough without protection and you'll collapse.",
+      choices: [
+        { label: 'How do I protect myself?', nextNode: 'protection' },
+        { label: 'What are ward patterns?', nextNode: 'wards' },
+        { label: 'I understand. Farewell.', nextNode: null },
+      ],
+    },
+    protection: {
+      key: 'protection',
+      text: "An Ashwillow Ward, carried on your person, will shield you. The glyphs on the disc resonate with the boundary markers etched into the stone here — the mist cannot settle where the pattern holds. Craft one at the warding altar in Hushwood before you venture deeper.",
+      choices: [
+        { label: 'What are ward patterns?', nextNode: 'wards' },
+        { label: 'Thank you. Farewell.', nextNode: null },
+      ],
+    },
+    wards: {
+      key: 'wards',
+      text: "Ward patterns are sigil frameworks — interlocking shapes that redirect occult energy rather than absorb it. The ones here were carved by the chapel founders to contain whatever they discovered in the shaft. The Warding Altar back in Hushwood is a working copy of those old techniques. Use it.",
+      choices: [
+        { label: 'What happened here?', nextNode: 'history' },
+        { label: 'Thank you. Farewell.', nextNode: null },
+      ],
+    },
+    history: {
+      key: 'history',
+      text: "This was a tidal shrine, built when the Reach was still young. The founders believed the shaft connected to something they called the Tidemark — a boundary beneath the ground where the Veil runs thin. They sealed it, eventually. Whatever they saw down there convinced them the boundary should stay closed.",
+      choices: [
+        { label: 'What is the mist?', nextNode: 'mist' },
+        { label: 'Unsettling. Farewell.', nextNode: null },
+      ],
+    },
+    repeat: {
+      key: 'repeat',
+      text: "The mist still rises. Carry your ward if you go deeper — I've seen what happens to those who don't.",
+      choices: [
+        { label: 'Tell me about the mist again.', nextNode: 'mist' },
+        { label: 'How do I protect myself?', nextNode: 'protection' },
+        { label: 'Farewell.', nextNode: null },
+      ],
+    },
+  },
+}
+
 // ─── Public registration function ─────────────────────────────────────────────
 
 /**
@@ -286,4 +348,5 @@ export function registerAllDialogues(): void {
   registerDialogue(dwynTree)
   registerDialogue(seraTree)
   registerDialogue(tomasTree)
+  registerDialogue(nairnDuskTree)
 }

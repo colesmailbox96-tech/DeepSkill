@@ -110,6 +110,16 @@ import {
 import type { WardRecipeConfig } from './engine/warding'
 import { useWardingStore } from './store/useWardingStore'
 import { buildBrackroot } from './engine/brackroot'
+import {
+  buildTidemarkChapel,
+  MIST_ZONE_MIN_X,
+  MIST_ZONE_MAX_X,
+  MIST_ZONE_MIN_Z,
+  MIST_ZONE_MAX_Z,
+  MIST_TICK_INTERVAL,
+  MIST_TICK_DAMAGE,
+  MIST_WARD_ITEM_ID,
+} from './engine/tidemark_chapel'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
 import { useFoodStore } from './store/useFoodStore'
@@ -514,6 +524,12 @@ function App() {
     const brackroot = buildBrackroot(scene, interactables, onChopStart)
     collidables.push(...brackroot.collidables)
     const allTreeNodes = [...treeNodes, ...brackroot.treeNodes]
+
+    // Phase 47 — Tidemark Chapel Zone
+    // Build the western mist-hazard shrine zone and merge its results.
+    const chapel = buildTidemarkChapel(scene, interactables)
+    collidables.push(...chapel.collidables)
+    allNpcs.push(...chapel.npcs)
 
     // Phase 22 — Cooking System Foundation
     // Cooking session: tracks which recipe is being cooked and elapsed cook time.
@@ -1367,6 +1383,13 @@ function App() {
     // A one-shot flag per explore zone so the trigger fires exactly once per
     // session even if the player lingers in the zone or re-enters it later.
     const exploredZones = new Set<string>()
+
+    // Phase 47 — Mist hazard tick accumulator.
+    let mistTickAccum = 0
+
+    // Track whether the player was already in the mist zone to avoid
+    // repeated entry notifications on every frame.
+    let playerInMist = false
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
       const delta = clock.getDelta()
@@ -1779,6 +1802,51 @@ function App() {
       // Phase 05 — interaction targeting
       updateInteraction(interactionState, player, interactables)
 
+      // Phase 47 — Tidemark Chapel mist hazard tick.
+      // While the player is inside the mist zone they take periodic damage
+      // unless they carry an Ashwillow Ward in their inventory.
+      {
+        const pos = player.mesh.position
+        const inMist =
+          pos.x >= MIST_ZONE_MIN_X && pos.x <= MIST_ZONE_MAX_X &&
+          pos.z >= MIST_ZONE_MIN_Z && pos.z <= MIST_ZONE_MAX_Z
+
+        if (inMist && !playerInMist) {
+          // Entry notification
+          const { inventory } = useGameStore.getState()
+          const hasWard = inventory.slots.some((s) => s.id === MIST_WARD_ITEM_ID)
+          if (hasWard) {
+            useNotifications.getState().push('Your Ashwillow Ward hums — the mist cannot take hold.', 'info')
+          } else {
+            useNotifications.getState().push('A cold mist seeps from the shaft. Your skin prickles.', 'warning')
+          }
+          mistTickAccum = 0
+        }
+        playerInMist = inMist
+
+        if (inMist) {
+          mistTickAccum += delta
+          if (mistTickAccum >= MIST_TICK_INTERVAL) {
+            mistTickAccum -= MIST_TICK_INTERVAL
+            const { inventory, playerStats, setHealth } = useGameStore.getState()
+            const hasWard = inventory.slots.some((s) => s.id === MIST_WARD_ITEM_ID)
+            if (!hasWard) {
+              const newHp = Math.max(0, playerStats.health - MIST_TICK_DAMAGE)
+              setHealth(newHp)
+              useNotifications.getState().push(
+                `The mist seep drains you. (−${MIST_TICK_DAMAGE} HP)`,
+                'warning',
+              )
+              if (newHp <= 0) {
+                _onPlayerDefeated()
+              }
+            }
+          }
+        } else {
+          mistTickAccum = 0
+        }
+      }
+
       // Phase 29/30 — tick creature AI (roaming, flee, aggro, pursuit bounds, reset)
       updateCreatures(creatures, delta, player.mesh.position, onCreatureAttack)
 
@@ -1807,6 +1875,24 @@ function App() {
             if (
               obj.type === 'explore' &&
               obj.targetId === 'brackroot_trail' &&
+              (record.progress[obj.id] ?? 0) < obj.required
+            ) {
+              updateObjective(record.taskId, obj.id, 1)
+            }
+          }
+        }
+      }
+      // Phase 47 — Tidemark Chapel explore trigger.
+      if (!exploredZones.has('tidemark_chapel') && player.mesh.position.x <= -32) {
+        exploredZones.add('tidemark_chapel')
+        const { active, updateObjective } = useTaskStore.getState()
+        for (const record of active) {
+          const def = getTask(record.taskId)
+          if (!def) continue
+          for (const obj of def.objectives) {
+            if (
+              obj.type === 'explore' &&
+              obj.targetId === 'tidemark_chapel' &&
               (record.progress[obj.id] ?? 0) < obj.required
             ) {
               updateObjective(record.taskId, obj.id, 1)

@@ -199,6 +199,8 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
   // so the player can walk north along the road toward Redwake Quarry.
   // The east wall is split into two halves with a 6-unit opening at z = 0
   // so the player can walk east along the road toward Gloamwater Bank.
+  // The west wall is split into two halves with a 6-unit opening at z = 0
+  // so the player can walk west along the path toward Tidemark Chapel (Phase 47).
   const BOUND = 19
   const boundWalls = [
     // North wall — left half (x = −20 → −3)
@@ -213,7 +215,10 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
     _addWall(scene, 0.4, 6, 17,  BOUND, 3, -11.5, matBound),
     // East wall — south half (z = +3 → +20)
     _addWall(scene, 0.4, 6, 17,  BOUND, 3,  11.5, matBound),
-    _addWall(scene, 0.4, 6, 40, -BOUND,  3,  0,     matBound), // west
+    // West wall — north half (z = −20 → −3): 6-unit gap at z = 0 for chapel path
+    _addWall(scene, 0.4, 6, 17, -BOUND, 3, -11.5, matBound),
+    // West wall — south half (z = +3 → +20)
+    _addWall(scene, 0.4, 6, 17, -BOUND, 3,  11.5, matBound),
   ]
   collidables.push(...boundWalls)
 
