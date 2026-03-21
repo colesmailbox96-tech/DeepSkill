@@ -35,13 +35,18 @@ export type InputAction =
 /**
  * Map from keyboard code to InputAction.  Used by App.tsx's `onKeyDown` to
  * translate raw browser key events into the shared action vocabulary.
+ *
+ * Self-managed panel keys (I / K / J / L) are intentionally absent here.
+ * Those panels install their own `window.addEventListener('keydown')` handler,
+ * so real key presses are handled directly by the component.  The mobile path
+ * still reaches those panels through `onInputAction` → `dispatchPanelKey`,
+ * which re-dispatches a synthetic event that the panel's own handler catches.
+ * Keeping them out of this table prevents a real key press from triggering
+ * App's onKeyDown → onInputAction → dispatchPanelKey → synthetic event → panel
+ * handler in addition to the direct panel handler (double-toggle / loop).
  */
 export const KEY_TO_ACTION: Readonly<Record<string, InputAction>> = {
   KeyE: 'interact',
-  KeyI: 'toggle-inventory',
-  KeyK: 'toggle-skills',
-  KeyJ: 'toggle-journal',
-  KeyL: 'toggle-ledger',
   KeyM: 'toggle-audio',
   KeyP: 'toggle-save',
   KeyF: 'toggle-smithing',

@@ -1,12 +1,11 @@
 import { useRef, useCallback, useEffect, useState } from 'react'
+import type * as React from 'react'
 import { useMobileStore } from '../../store/useMobileStore'
 import type { InputAction } from '../../engine/inputActions'
 
 interface MobileControlsProps {
   /** Shared ref that MobileControls writes joystick direction into each frame. */
   joystickRef: React.MutableRefObject<{ x: number; z: number }>
-  /** Called when the user taps the interact button. */
-  onInteract: () => void
   /** Ref updated by the game loop each frame – true when an interaction target is in range. */
   hasTargetRef: React.MutableRefObject<boolean>
   /**
@@ -27,11 +26,11 @@ const JOYSTICK_RADIUS = 52
  * Phase 52 — also renders a tap-ripple indicator at the canvas position where
  * the player tapped to target a creature.
  *
- * Phase 53 — secondary buttons use the shared InputAction dispatcher instead
- * of raw KeyboardEvent dispatch.  Journal and Ledger buttons added for feature
- * parity with the desktop keyboard shortcuts.
+ * Phase 53 — all action buttons (including Interact) route through the unified
+ * InputAction dispatcher.  Journal and Ledger buttons added for feature parity
+ * with desktop keyboard shortcuts.
  */
-export function MobileControls({ joystickRef, onInteract, hasTargetRef, dispatchAction }: MobileControlsProps) {
+export function MobileControls({ joystickRef, hasTargetRef, dispatchAction }: MobileControlsProps) {
   const baseRef = useRef<HTMLDivElement>(null)
   const knobRef = useRef<HTMLDivElement>(null)
   const activeTouchRef = useRef<number | null>(null)
@@ -132,18 +131,9 @@ export function MobileControls({ joystickRef, onInteract, hasTargetRef, dispatch
     [resetKnob],
   )
 
-  const onInteractTouch = useCallback(
-    (e: React.TouchEvent) => {
-      e.stopPropagation()
-      e.preventDefault()
-      onInteract()
-    },
-    [onInteract],
-  )
+  // ── Phase 53 — all action buttons route through the unified dispatcher ────
 
-  // ── Phase 53 — panel-toggle helpers via the unified dispatcher ───────────
-
-  const makePanelTouchHandler = useCallback(
+  const makeTouchHandler = useCallback(
     (action: InputAction) => (e: React.TouchEvent) => {
       e.stopPropagation()
       e.preventDefault()
@@ -152,10 +142,11 @@ export function MobileControls({ joystickRef, onInteract, hasTargetRef, dispatch
     [dispatchAction],
   )
 
-  const onInventoryTouch = makePanelTouchHandler('toggle-inventory')
-  const onSkillsTouch    = makePanelTouchHandler('toggle-skills')
-  const onJournalTouch   = makePanelTouchHandler('toggle-journal')
-  const onLedgerTouch    = makePanelTouchHandler('toggle-ledger')
+  const onInteractTouch  = makeTouchHandler('interact')
+  const onInventoryTouch = makeTouchHandler('toggle-inventory')
+  const onSkillsTouch    = makeTouchHandler('toggle-skills')
+  const onJournalTouch   = makeTouchHandler('toggle-journal')
+  const onLedgerTouch    = makeTouchHandler('toggle-ledger')
 
   return (
     <div className="mobile-controls">

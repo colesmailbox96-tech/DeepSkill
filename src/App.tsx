@@ -348,8 +348,6 @@ function App() {
     }, 60_000)
     return () => clearInterval(interval)
   }, [saveGame, menuVisible])
-  /** Interact callback set by the game loop, called by the mobile interact button. */
-  const mobileInteractRef = useRef<() => void>(() => {})
   /** True when the player is in range of an interactable – drives the interact button pulse. */
   const mobileHasTargetRef = useRef(false)
   /**
@@ -1172,11 +1170,6 @@ function App() {
     const camState = createCameraState()
 
     const interactionState = createInteractionState()
-
-    // Wire up the mobile interact button to trigger the current interaction target.
-    mobileInteractRef.current = () => {
-      if (interactionState.target) interactionState.target.onInteract()
-    }
 
     // Phase 05 — highlight material helper
     let previousTarget: Interactable | null = null
@@ -2262,7 +2255,6 @@ function App() {
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}
-            onInteract={() => mobileInteractRef.current()}
             hasTargetRef={mobileHasTargetRef}
             dispatchAction={(action) => dispatchActionRef.current(action)}
           />
