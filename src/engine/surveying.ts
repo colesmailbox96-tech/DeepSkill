@@ -169,7 +169,7 @@ export const SURVEY_STONE_INTERACT_RADIUS = 2.0
 /**
  * Draw one entry from a weighted salvage pool.
  * Rolls a random value against the cumulative weight sum and returns the
- * matching entry.  Falls back to the first entry if the pool is empty.
+ * matching entry.  Returns a default ore chip entry if the pool is empty.
  */
 export function pickReward(pool: SalvageEntry[]): SalvageEntry {
   if (pool.length === 0) return { itemId: 'ore_chip', qty: 1, weight: 1 }

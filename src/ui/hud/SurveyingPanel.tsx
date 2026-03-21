@@ -62,15 +62,17 @@ export function SurveyingPanel({ onStartSurvey }: SurveyingPanelProps) {
     ? Math.round((timeRemaining / SURVEY_MODE_DURATION) * 100)
     : 0
 
-  const { readyCount, cooldownCount, lockedCount } = cacheStatusList.reduce(
-    (acc, c) => {
-      if (c.cooldownRemaining > 0) acc.cooldownCount++
-      else if (c.levelReq > surveyingLevel) acc.lockedCount++
-      else acc.readyCount++
-      return acc
-    },
-    { readyCount: 0, cooldownCount: 0, lockedCount: 0 },
-  )
+  const { readyCount, cooldownCount, lockedCount, revealedCount } =
+    cacheStatusList.reduce(
+      (acc, c) => {
+        if (c.cooldownRemaining > 0) acc.cooldownCount++
+        else if (c.levelReq > surveyingLevel) acc.lockedCount++
+        else if (c.revealed) acc.revealedCount++
+        else acc.readyCount++
+        return acc
+      },
+      { readyCount: 0, cooldownCount: 0, lockedCount: 0, revealedCount: 0 },
+    )
 
   return (
     <div
@@ -129,9 +131,12 @@ export function SurveyingPanel({ onStartSurvey }: SurveyingPanelProps) {
             Cache detection radius: {SURVEY_DETECT_RADIUS} m · Sweep duration: {SURVEY_MODE_DURATION} s
           </span>
           <ul className="surveying-panel__reward-list">
-            <li>Lvl 1 — <em>Ore Chip</em>, <em>Raw Resin</em>, <em>Marsh Herb</em></li>
-            <li>Lvl 2 — <em>Flint Shard</em>, <em>Copper Ore</em></li>
-            <li>Lvl 3 — <em>Rare Fragment</em>, <em>Waystone Fragment</em></li>
+            <li>Possible cache rewards include:</li>
+            <li>
+              <em>Ore Chip</em>, <em>Raw Resin</em>, <em>Reed Fiber</em>,{' '}
+              <em>Marsh Herb</em>, <em>Flint Shard</em>, <em>Copper Ore</em>,{' '}
+              <em>Rare Fragment</em>, <em>Waystone Fragment</em>
+            </li>
           </ul>
         </div>
 
@@ -141,7 +146,7 @@ export function SurveyingPanel({ onStartSurvey }: SurveyingPanelProps) {
             <div className="surveying-panel__cache-status-header">
               <span className="surveying-panel__cache-status-title">Buried Caches</span>
               <span className="surveying-panel__cache-status-summary">
-                {readyCount} ready · {cooldownCount} resetting · {lockedCount} locked
+                {readyCount} ready · {revealedCount > 0 ? `${revealedCount} revealed · ` : ''}{cooldownCount} resetting · {lockedCount} locked
               </span>
             </div>
             <ul className="surveying-panel__cache-list" aria-label="Cache status">

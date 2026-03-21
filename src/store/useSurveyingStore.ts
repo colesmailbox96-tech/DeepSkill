@@ -20,7 +20,7 @@ interface SurveyingState {
   surveyActive: boolean
   /** Seconds remaining in the current sweep (counts down from SURVEY_MODE_DURATION). */
   surveyTimeRemaining: number
-  /** Live status of every cache — updated each game loop tick. */
+  /** Live status of every cache — updated periodically (≈1 Hz) from the App.tsx game loop. */
   cacheStatusList: CacheStatusEntry[]
   openPanel: () => void
   closePanel: () => void

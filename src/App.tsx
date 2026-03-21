@@ -1643,7 +1643,7 @@ function App() {
       // Throttle to ~1 Hz so the panel updates smoothly without thrashing React.
       surveyStatusAccumRef.current += delta
       if (surveyStatusAccumRef.current >= 1.0) {
-        surveyStatusAccumRef.current = 0
+        surveyStatusAccumRef.current -= 1.0
         useSurveyingStore.getState().updateCacheStatus(buildCacheStatusList(surveyCaches))
       }
 
