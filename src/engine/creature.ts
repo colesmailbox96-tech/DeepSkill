@@ -320,6 +320,30 @@ const CREATURE_DEFS: CreatureDef[] = [
     attackCooldown: 2.0,
     respawnDelay: 30,
   },
+
+  // 7. Chapel Wisp — Phase 47 Tidemark Chapel creature.  An unstable
+  //    light-being that drifts through the flooded inner shrine.  Ethereal and
+  //    swift, it attacks with a cold pulse.  Drops a wisp_ember.
+  {
+    id: 'chapel_wisp',
+    name: 'Chapel Wisp',
+    x: -52,
+    z: -4,
+    color: 0x90c0e8,
+    scale: 0.65,
+    roamRadius: 6,
+    pursuitRadius: 20,
+    speed: 2.6,
+    fleeSpeedMult: 1.8,
+    idleBase: 3.0,
+    aggroRadius: 7,
+    maxHp: 16,
+    attackDamage: 3,
+    attackCooldown: 1.8,
+    respawnDelay: 35,
+    dropItemId: 'wisp_ember',
+    dropChance: 0.70,
+  },
 ]
 
 /** Interaction radius for wildlife harvest. */

@@ -604,6 +604,21 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'Its acrid scent and latent ward pattern unsettles most creatures of the Reach, causing them to avoid the marked ground.',
   },
 
+  // ── Phase 47 — Tidemark Chapel Drops ─────────────────────────────────────
+
+  {
+    id: 'wisp_ember',
+    name: 'Wisp Ember',
+    type: 'material',
+    stackable: true,
+    value: 14,
+    icon: 'items/wisp_ember.png',
+    description:
+      'A cold blue-white fragment of condensed mist-light shed by a Chapel Wisp. ' +
+      'Warm to the touch despite its pallor, it hums faintly with occult charge — ' +
+      'useful in advanced ward inscriptions.',
+  },
+
   // ── Phase 26 / 27 — Starter Equipment ────────────────────────────────────
 
   {
