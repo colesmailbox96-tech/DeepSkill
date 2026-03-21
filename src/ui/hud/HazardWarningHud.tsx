@@ -12,6 +12,7 @@
  * correct accent colour without extra prop-drilling.
  */
 
+import type { CSSProperties } from 'react'
 import { useHazardStore } from '../../store/useHazardStore'
 import { getAllHazardDefs } from '../../engine/hazard'
 
@@ -32,7 +33,7 @@ export function HazardWarningHud() {
   return (
     <div
       className={`hazard-warning${isProtected ? ' hazard-warning--protected' : ' hazard-warning--danger'}`}
-      style={{ '--hazard-color': def.color } as React.CSSProperties}
+      style={{ '--hazard-color': def.color } as CSSProperties}
       role="status"
       aria-live="polite"
       aria-label={`Hazard: ${def.label}`}

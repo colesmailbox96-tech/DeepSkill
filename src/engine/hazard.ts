@@ -4,7 +4,7 @@
  * Provides a data-driven framework for axis-aligned hazard volumes.  Each
  * HazardDef describes a region of the world where the player suffers a
  * periodic effect (damage or debuff) unless they carry an appropriate ward
- * item.  All per-frame tick logic is driven by App.tsx via tickHazards().
+ * item.  Per-frame hazard checks are driven by the main game loop in App.tsx.
  *
  * Hazard zones currently registered
  * ───────────────────────────────────

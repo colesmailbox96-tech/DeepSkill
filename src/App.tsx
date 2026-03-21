@@ -1851,8 +1851,14 @@ function App() {
           // Refresh protection status each tick (player may pick up/drop ward).
           const { inventory } = useGameStore.getState()
           const isProtected = isProtectedFromHazard(hazardDef, inventory)
-          // Update store so the HUD badge stays in sync.
-          useHazardStore.getState().setActiveHazard(hazardDef.id, isProtected)
+          // Update store only when state changes to avoid redundant HUD re-renders.
+          const hazardState = useHazardStore.getState()
+          if (
+            hazardState.activeHazardId !== hazardDef.id ||
+            hazardState.isProtected !== isProtected
+          ) {
+            hazardState.setActiveHazard(hazardDef.id, isProtected)
+          }
 
           hazardTickAccum += delta
           while (hazardTickAccum >= hazardDef.tickInterval) {
