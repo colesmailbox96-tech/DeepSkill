@@ -1,10 +1,21 @@
 html {
-  overflow-x: hidden;
+  /* Lock the document surface so the game canvas fills the screen without
+     the browser adding scrollbars or allowing rubber-band scrolling. */
+  height: 100%;
+  overflow: hidden;
+  /* Prevent iOS Safari elastic overscroll on the root. */
+  overscroll-behavior: none;
+  /* Do NOT set touch-action here — it would cascade to all descendants and
+     disable scrolling inside HUD panels.  touch-action is set on the game
+     canvas and virtual joystick in App.css where it is actually needed. */
 }
 
 body {
   margin: 0;
-  overflow-x: hidden;
+  height: 100%;
+  overflow: hidden;
+  /* Belt-and-suspenders: also block overscroll on body. */
+  overscroll-behavior: none;
   width: 100%;
   font-family:
     Inter,

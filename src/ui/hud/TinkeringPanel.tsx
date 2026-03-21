@@ -85,7 +85,7 @@ export function TinkeringPanel({ onTinker }: TinkeringPanelProps) {
   )
 
   const isOpenRef = useRef(false)
-  isOpenRef.current = isOpen
+  useEffect(() => { isOpenRef.current = isOpen }, [isOpen])
   const panelRef = useRef<HTMLDivElement>(null)
 
   const handleClose = useCallback(() => closePanel(), [closePanel])

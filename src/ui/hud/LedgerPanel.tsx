@@ -36,7 +36,7 @@ export function LedgerPanel() {
   const [tab, setTab] = useState<LedgerTab>('deposit')
 
   const isOpenRef = useRef(false)
-  isOpenRef.current = isOpen
+  useEffect(() => { isOpenRef.current = isOpen }, [isOpen])
   const panelRef = useRef<HTMLDivElement>(null)
 
   const handleClose = useCallback(() => {

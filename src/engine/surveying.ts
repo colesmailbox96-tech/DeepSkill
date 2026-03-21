@@ -360,6 +360,7 @@ export function buildSurveyCaches(
 
     // Declare a mutable reference so the interactable's onInteract closure
     // can forward to the cache object without needing null! or circular init.
+    // eslint-disable-next-line prefer-const
     let resolvedCache: SurveyCache
 
     const interactable: Interactable = {
