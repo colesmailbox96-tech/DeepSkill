@@ -1330,7 +1330,7 @@ Each phase below is deliberately narrow.
 
 ---
 
-## Phase 52 — Mobile Controls Foundation
+## Phase 52 — Mobile Controls Foundation ✅
 
 **Goal:** ensure the game is not desktop-only cosplay.
 
@@ -1343,14 +1343,14 @@ Each phase below is deliberately narrow.
 
 ---
 
-## Phase 53 — Input Unification Pass
+## Phase 53 — Input Unification Pass ✅
 
 **Goal:** standardize desktop and mobile actions.
 
 **Deliverables:**
-- shared action abstraction,
-- no broken feature parity,
-- consistent targeting and interaction behavior.
+- shared action abstraction (`src/engine/inputActions.ts` — `InputAction` type + `KEY_TO_ACTION` map + `dispatchPanelKey`),
+- no broken feature parity (Journal 📖 and Ledger 🏛️ buttons added to MobileControls),
+- consistent targeting and interaction behavior (both click and tap share `selectTargetAtClientPoint`; all panel toggles route through unified `onInputAction`).
 
 ---
 

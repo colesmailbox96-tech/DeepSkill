@@ -1,13 +1,19 @@
 import { useRef, useCallback, useEffect, useState } from 'react'
+import type * as React from 'react'
 import { useMobileStore } from '../../store/useMobileStore'
+import type { InputAction } from '../../engine/inputActions'
 
 interface MobileControlsProps {
   /** Shared ref that MobileControls writes joystick direction into each frame. */
   joystickRef: React.MutableRefObject<{ x: number; z: number }>
-  /** Called when the user taps the interact button. */
-  onInteract: () => void
   /** Ref updated by the game loop each frame – true when an interaction target is in range. */
   hasTargetRef: React.MutableRefObject<boolean>
+  /**
+   * Phase 53 — unified action dispatcher provided by App.  Mobile buttons call
+   * this instead of dispatching raw KeyboardEvents so both input paths share
+   * the same logic.
+   */
+  dispatchAction: (action: InputAction) => void
 }
 
 /** Radius of the joystick base in CSS pixels. */
@@ -19,8 +25,12 @@ const JOYSTICK_RADIUS = 52
  *
  * Phase 52 — also renders a tap-ripple indicator at the canvas position where
  * the player tapped to target a creature.
+ *
+ * Phase 53 — all action buttons (including Interact) route through the unified
+ * InputAction dispatcher.  Journal and Ledger buttons added for feature parity
+ * with desktop keyboard shortcuts.
  */
-export function MobileControls({ joystickRef, onInteract, hasTargetRef }: MobileControlsProps) {
+export function MobileControls({ joystickRef, hasTargetRef, dispatchAction }: MobileControlsProps) {
   const baseRef = useRef<HTMLDivElement>(null)
   const knobRef = useRef<HTMLDivElement>(null)
   const activeTouchRef = useRef<number | null>(null)
@@ -121,36 +131,22 @@ export function MobileControls({ joystickRef, onInteract, hasTargetRef }: Mobile
     [resetKnob],
   )
 
-  const onInteractTouch = useCallback(
-    (e: React.TouchEvent) => {
+  // ── Phase 53 — all action buttons route through the unified dispatcher ────
+
+  const makeTouchHandler = useCallback(
+    (action: InputAction) => (e: React.TouchEvent) => {
       e.stopPropagation()
       e.preventDefault()
-      onInteract()
+      dispatchAction(action)
     },
-    [onInteract],
+    [dispatchAction],
   )
 
-  const dispatchKey = useCallback((code: string) => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true }))
-  }, [])
-
-  const onInventoryTouch = useCallback(
-    (e: React.TouchEvent) => {
-      e.stopPropagation()
-      e.preventDefault()
-      dispatchKey('KeyI')
-    },
-    [dispatchKey],
-  )
-
-  const onSkillsTouch = useCallback(
-    (e: React.TouchEvent) => {
-      e.stopPropagation()
-      e.preventDefault()
-      dispatchKey('KeyK')
-    },
-    [dispatchKey],
-  )
+  const onInteractTouch  = makeTouchHandler('interact')
+  const onInventoryTouch = makeTouchHandler('toggle-inventory')
+  const onSkillsTouch    = makeTouchHandler('toggle-skills')
+  const onJournalTouch   = makeTouchHandler('toggle-journal')
+  const onLedgerTouch    = makeTouchHandler('toggle-ledger')
 
   return (
     <div className="mobile-controls">
@@ -184,6 +180,20 @@ export function MobileControls({ joystickRef, onInteract, hasTargetRef }: Mobile
           >
             📊
           </button>
+          <button
+            className="mobile-btn mobile-btn--secondary"
+            onTouchStart={onJournalTouch}
+            aria-label="Open journal"
+          >
+            📖
+          </button>
+          <button
+            className="mobile-btn mobile-btn--secondary"
+            onTouchStart={onLedgerTouch}
+            aria-label="Open ledger"
+          >
+            🏛️
+          </button>
         </div>
         <button
           className={`mobile-btn mobile-btn--interact${hasTarget ? ' mobile-btn--active' : ''}`}
@@ -207,3 +217,4 @@ export function MobileControls({ joystickRef, onInteract, hasTargetRef }: Mobile
     </div>
   )
 }
+

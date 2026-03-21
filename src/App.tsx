@@ -161,6 +161,8 @@ import { useSaveLoadStore } from './store/useSaveLoadStore'
 import { useMainMenuStore } from './store/useMainMenuStore'
 import { MainMenuScreen } from './ui/screens/MainMenuScreen'
 import { useMobileStore } from './store/useMobileStore'
+import { KEY_TO_ACTION, dispatchPanelKey } from './engine/inputActions'
+import type { InputAction } from './engine/inputActions'
 import { registerAllTasks } from './data/tasks/taskRegistry'
 import { useTaskStore } from './store/useTaskStore'
 import { getTask } from './engine/task'
@@ -346,10 +348,15 @@ function App() {
     }, 60_000)
     return () => clearInterval(interval)
   }, [saveGame, menuVisible])
-  /** Interact callback set by the game loop, called by the mobile interact button. */
-  const mobileInteractRef = useRef<() => void>(() => {})
   /** True when the player is in range of an interactable – drives the interact button pulse. */
   const mobileHasTargetRef = useRef(false)
+  /**
+   * Phase 53 — unified action dispatcher.  Set by the game loop once it has
+   * the context (player position, interaction state, station refs) required
+   * to resolve every InputAction.  MobileControls calls this instead of
+   * dispatching raw KeyboardEvents so both input paths share identical logic.
+   */
+  const dispatchActionRef = useRef<(action: InputAction) => void>(() => {})
   /** Smelt callback set by the game loop, called by SmithingPanel recipe buttons. */
   const smeltFromPanelRef = useRef<(recipe: import('./engine/smithing').SmeltRecipeConfig) => void>(() => {})
   /** Forge callback set by the game loop, called by SmithingPanel forge buttons. */
@@ -1164,11 +1171,6 @@ function App() {
 
     const interactionState = createInteractionState()
 
-    // Wire up the mobile interact button to trigger the current interaction target.
-    mobileInteractRef.current = () => {
-      if (interactionState.target) interactionState.target.onInteract()
-    }
-
     // Phase 05 — highlight material helper
     let previousTarget: Interactable | null = null
     const EMISSIVE_HOVER = new THREE.Color(0x886600)
@@ -1189,6 +1191,104 @@ function App() {
 
     // Track which keys are currently held.
     const keys = new Set<string>()
+
+    // ── Phase 53 — Shared input-action handler ──────────────────────────────
+    // Both keyboard (onKeyDown) and mobile controls (dispatchActionRef) call
+    // this single function so all named actions follow an identical code path.
+    const onInputAction = (action: InputAction) => {
+      if (action === 'interact') {
+        if (interactionState.target) {
+          audioManager.playSfx('interact')
+          interactionState.target.onInteract()
+        }
+        return
+      }
+      // Panel-toggle actions whose open/close logic lives inside the component
+      // (InventoryPanel / SkillsPanel / JournalPanel / LedgerPanel) — forward
+      // via a synthetic key event so their built-in handlers fire as normal.
+      if (
+        action === 'toggle-inventory' ||
+        action === 'toggle-skills'    ||
+        action === 'toggle-journal'   ||
+        action === 'toggle-ledger'
+      ) {
+        dispatchPanelKey(action)
+        return
+      }
+      // Station panels — only open when the player is within range.
+      if (action === 'toggle-smithing') {
+        const smithing = useSmithingStore.getState()
+        if (smithing.isOpen) {
+          smithing.closePanel()
+        } else if (
+          furnaceStation &&
+          player.mesh.position.distanceTo(furnaceStation.mesh.position) <= FURNACE_INTERACT_RADIUS
+        ) {
+          smithing.openPanel()
+        }
+        return
+      }
+      if (action === 'toggle-carving') {
+        const carving = useCarvingStore.getState()
+        if (carving.isOpen) {
+          carving.closePanel()
+        } else if (
+          workbenchStation &&
+          player.mesh.position.distanceTo(workbenchStation.mesh.position) <= WORKBENCH_INTERACT_RADIUS
+        ) {
+          carving.openPanel()
+        }
+        return
+      }
+      if (action === 'toggle-tinkering') {
+        const tinkering = useTinkeringStore.getState()
+        if (tinkering.isOpen) {
+          tinkering.closePanel()
+        } else if (
+          tinkererBenchStation &&
+          player.mesh.position.distanceTo(tinkererBenchStation.mesh.position) <= TINKERER_BENCH_INTERACT_RADIUS
+        ) {
+          tinkering.openPanel()
+        }
+        return
+      }
+      if (action === 'toggle-surveying') {
+        const surveying = useSurveyingStore.getState()
+        if (surveying.isOpen) {
+          surveying.closePanel()
+        } else if (
+          surveyStoneStation &&
+          player.mesh.position.distanceTo(surveyStoneStation.mesh.position) <= SURVEY_STONE_INTERACT_RADIUS
+        ) {
+          surveying.openPanel()
+        }
+        return
+      }
+      if (action === 'toggle-warding') {
+        const warding = useWardingStore.getState()
+        if (warding.isOpen) {
+          warding.closePanel()
+        } else if (
+          wardingAltarStation &&
+          player.mesh.position.distanceTo(wardingAltarStation.mesh.position) <= WARDING_ALTAR_INTERACT_RADIUS
+        ) {
+          warding.openPanel()
+        }
+        return
+      }
+      if (action === 'toggle-audio') {
+        useAudioStore.getState().togglePanel()
+        return
+      }
+      if (action === 'toggle-save') {
+        useSaveLoadStore.getState().togglePanel()
+        return
+      }
+    }
+
+    // Wire the action dispatcher into the ref so MobileControls can call it.
+    dispatchActionRef.current = onInputAction
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.repeat) return
       // Phase 49 — initialise audio on first key gesture (browser autoplay policy).
@@ -1202,79 +1302,9 @@ function App() {
         return
       }
       keys.add(e.code)
-      if (e.code === 'KeyE' && interactionState.target) {
-        audioManager.playSfx('interact')
-        interactionState.target.onInteract()
-      }
-      if (e.code === 'KeyF') {
-        // Toggle the smithing panel; open only when near the furnace.
-        const smithing = useSmithingStore.getState()
-        if (smithing.isOpen) {
-          smithing.closePanel()
-        } else if (
-          furnaceStation &&
-          player.mesh.position.distanceTo(furnaceStation.mesh.position) <= FURNACE_INTERACT_RADIUS
-        ) {
-          smithing.openPanel()
-        }
-      }
-      if (e.code === 'KeyV') {
-        // Toggle the carving panel; open only when near the workbench.
-        const carving = useCarvingStore.getState()
-        if (carving.isOpen) {
-          carving.closePanel()
-        } else if (
-          workbenchStation &&
-          player.mesh.position.distanceTo(workbenchStation.mesh.position) <= WORKBENCH_INTERACT_RADIUS
-        ) {
-          carving.openPanel()
-        }
-      }
-      if (e.code === 'KeyT') {
-        // Toggle the tinkering panel; open only when near the tinkerer's bench.
-        const tinkering = useTinkeringStore.getState()
-        if (tinkering.isOpen) {
-          tinkering.closePanel()
-        } else if (
-          tinkererBenchStation &&
-          player.mesh.position.distanceTo(tinkererBenchStation.mesh.position) <= TINKERER_BENCH_INTERACT_RADIUS
-        ) {
-          tinkering.openPanel()
-        }
-      }
-      if (e.code === 'KeyY') {
-        // Toggle the surveying panel; open only when near the survey stone.
-        const surveying = useSurveyingStore.getState()
-        if (surveying.isOpen) {
-          surveying.closePanel()
-        } else if (
-          surveyStoneStation &&
-          player.mesh.position.distanceTo(surveyStoneStation.mesh.position) <= SURVEY_STONE_INTERACT_RADIUS
-        ) {
-          surveying.openPanel()
-        }
-      }
-      if (e.code === 'KeyG') {
-        // Toggle the warding panel; open only when near the warding altar.
-        const warding = useWardingStore.getState()
-        if (warding.isOpen) {
-          warding.closePanel()
-        } else if (
-          wardingAltarStation &&
-          player.mesh.position.distanceTo(wardingAltarStation.mesh.position) <= WARDING_ALTAR_INTERACT_RADIUS
-        ) {
-          warding.openPanel()
-        }
-      }
-      if (e.code === 'KeyM') {
-        // Phase 49 — toggle audio settings panel (available everywhere).
-        // audioManager.init() was already called at the top of onKeyDown.
-        useAudioStore.getState().togglePanel()
-      }
-      if (e.code === 'KeyP') {
-        // Phase 50 — toggle save/load panel (available everywhere).
-        useSaveLoadStore.getState().togglePanel()
-      }
+      // Phase 53 — map key code to named action and route through the unified handler.
+      const action = KEY_TO_ACTION[e.code]
+      if (action) onInputAction(action)
     }
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code)
     window.addEventListener('keydown', onKeyDown)
@@ -2225,8 +2255,8 @@ function App() {
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}
-            onInteract={() => mobileInteractRef.current()}
             hasTargetRef={mobileHasTargetRef}
+            dispatchAction={(action) => dispatchActionRef.current(action)}
           />
         </div>
         <div ref={promptRef} className="interaction-prompt" aria-live="polite" />
