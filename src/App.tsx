@@ -1849,7 +1849,7 @@ function App() {
 
         if (inMist) {
           mistTickAccum += delta
-          if (mistTickAccum >= MIST_TICK_INTERVAL) {
+          while (mistTickAccum >= MIST_TICK_INTERVAL) {
             mistTickAccum -= MIST_TICK_INTERVAL
             const { inventory, playerStats, setHealth } = useGameStore.getState()
             const hasWard = inventory.slots.some((s) => s.id === MIST_WARD_ITEM_ID)

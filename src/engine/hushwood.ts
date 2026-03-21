@@ -215,7 +215,7 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
     _addWall(scene, 0.4, 6, 17,  BOUND, 3, -11.5, matBound),
     // East wall — south half (z = +3 → +20)
     _addWall(scene, 0.4, 6, 17,  BOUND, 3,  11.5, matBound),
-    // West wall — north half (z = −20 → −3): 6-unit gap at z = 0 for chapel path
+    // West wall — north half (z = −20 → −3): 6-unit gap from z = −3 → +3 (centered at z = 0) for chapel path
     _addWall(scene, 0.4, 6, 17, -BOUND, 3, -11.5, matBound),
     // West wall — south half (z = +3 → +20)
     _addWall(scene, 0.4, 6, 17, -BOUND, 3,  11.5, matBound),

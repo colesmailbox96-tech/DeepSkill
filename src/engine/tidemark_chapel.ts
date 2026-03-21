@@ -104,16 +104,16 @@ export function buildTidemarkChapel(
   const npcs: Npc[] = []
 
   // ── Connecting corridor (x = −19 → −32, z = −3 → +3) ────────────────────
-  const corridor = _addBox(scene, 13, 0.04, 6, -25.5, 0.01, 0, matCorridor)
-  collidables.push(corridor)
+  // Floor plane only — not collidable (player AABB must pass through).
+  _addBox(scene, 13, 0.04, 6, -25.5, 0.01, 0, matCorridor)
 
   // Corridor side walls (prevent walking off the path)
   collidables.push(_addWall(scene, 13, 4, 0.4, -25.5, 2, -3,  matBound))
   collidables.push(_addWall(scene, 13, 4, 0.4, -25.5, 2,  3,  matBound))
 
   // ── Chapel grounds floor (x = −32 → −60, z = −18 → +18) ─────────────────
-  const groundFloor = _addBox(scene, 28, 0.04, 36, -46, 0.01, 0, matChapelGround)
-  collidables.push(groundFloor)
+  // Floor plane only — not collidable.
+  _addBox(scene, 28, 0.04, 36, -46, 0.01, 0, matChapelGround)
 
   // ── Boundary walls (chapel perimeter) ────────────────────────────────────
   // North wall (z = −18)
@@ -131,25 +131,18 @@ export function buildTidemarkChapel(
   // ── Ruined outer chapel walls (visual set-pieces) ─────────────────────────
   // North ruined section — broken wall fragment
   const northWallA = _addBox(scene, 6, 2.8, 0.5, -36,   1.4, -17, matRuin)
-  scene.add(northWallA)
   const northWallB = _addBox(scene, 4, 1.6, 0.5, -50,   0.8, -17, matRuin)
-  scene.add(northWallB)
   const northWallC = _addBox(scene, 3, 2.2, 0.5, -56,   1.1, -17, matRuin)
-  scene.add(northWallC)
   collidables.push(northWallA, northWallB, northWallC)
 
   // South ruined section
   const southWallA = _addBox(scene, 5, 2.4, 0.5, -38,   1.2,  17, matRuin)
-  scene.add(southWallA)
   const southWallB = _addBox(scene, 4, 1.8, 0.5, -53,   0.9,  17, matRuin)
-  scene.add(southWallB)
   collidables.push(southWallA, southWallB)
 
   // West back wall — large crumbling section
   const westWallA = _addBox(scene, 0.5, 3.2, 10, -59.5, 1.6,  -5, matRuin)
-  scene.add(westWallA)
   const westWallB = _addBox(scene, 0.5, 2.0, 10, -59.5, 1.0,   7, matRuin)
-  scene.add(westWallB)
   collidables.push(westWallA, westWallB)
 
   // ── Broken columns ────────────────────────────────────────────────────────
@@ -233,7 +226,6 @@ export function buildTidemarkChapel(
 
   // ── Stone altar slab in the middle of the grounds (ward-relevant) ─────────
   const altarSlab = _addBox(scene, 1.6, 0.2, 0.9, -40, 0.1, 0, matDarkStone)
-  scene.add(altarSlab)
   collidables.push(altarSlab)
 
   // Etched glyph on the slab surface
@@ -269,8 +261,7 @@ export function buildTidemarkChapel(
   })
   const lanternPositions: [number, number][] = [[-32.5, -5], [-32.5, 5]]
   for (const [lx, lz] of lanternPositions) {
-    const post = _addBox(scene, 0.1, 1.6, 0.1, lx, 0.8, lz, matDarkStone)
-    scene.add(post)
+    _addBox(scene, 0.1, 1.6, 0.1, lx, 0.8, lz, matDarkStone)
     const lanternBox = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.28, 0.25), matLantern)
     lanternBox.position.set(lx, 1.8, lz)
     scene.add(lanternBox)
