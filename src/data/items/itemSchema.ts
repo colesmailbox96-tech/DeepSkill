@@ -86,8 +86,9 @@ export interface ConsumableMeta {
  * - 'blunt'  — clubs, hammers; strong stagger potential.
  * - 'slash'  — swords, daggers; reliable consistent damage.
  * - 'pierce' — spears, rapiers; narrower arc, high single-hit damage.
+ * - 'ranged' — bows; attack from a distance, consume ammo per shot.
  */
-export type WeaponType = 'blunt' | 'slash' | 'pierce'
+export type WeaponType = 'blunt' | 'slash' | 'pierce' | 'ranged'
 
 /**
  * Extra data attached to items of type 'equipment'.
@@ -101,6 +102,10 @@ export type WeaponType = 'blunt' | 'slash' | 'pierce'
  *                > 1.0 swing faster (e.g. 1.4 for a dagger); values < 1.0
  *                swing slower (e.g. 0.65 for a warhammer).
  * weaponType   — broad weapon archetype; only relevant for mainHand items.
+ * rangeBonus   — flat bonus to outgoing ranged damage (bows only).  When
+ *                present, the weapon fires projectiles instead of swinging.
+ * ammoId       — inventory item ID that is consumed one-per-shot (e.g.
+ *                'flint_arrow').  Required when rangeBonus is set.
  * requirements — minimum skill levels required to equip, keyed by skill id.
  */
 export interface EquipMeta {
@@ -109,6 +114,8 @@ export interface EquipMeta {
   defenceBonus?: number
   attackSpeed?: number
   weaponType?: WeaponType
+  rangeBonus?: number
+  ammoId?: string
   requirements?: Partial<Record<string, number>>
 }
 

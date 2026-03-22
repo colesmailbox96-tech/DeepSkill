@@ -130,13 +130,21 @@ import { LedgerPanel } from './ui/hud/LedgerPanel'
 import { EquipmentPanel } from './ui/hud/EquipmentPanel'
 import { MobileControls } from './ui/hud/MobileControls'
 import { CombatTargetHud } from './ui/hud/CombatTargetHud'
-import { buildCreatures, updateCreatures, triggerFlee } from './engine/creature'
+import { buildCreatures, updateCreatures, triggerFlee, triggerAggro } from './engine/creature'
 import type { Creature } from './engine/creature'
 import {
   createCombatState,
   updateCombat,
   setTarget,
+  PLAYER_BASE_ATTACK,
 } from './engine/combat'
+import {
+  createRangedState,
+  fireProjectile,
+  updateRanged,
+  disposeArrowResources,
+  PLAYER_RANGED_RANGE,
+} from './engine/ranged'
 import { rollLoot } from './engine/loot'
 import { useCombatStore } from './store/useCombatStore'
 import { RESPAWN_X, RESPAWN_Y, RESPAWN_Z, RESPAWN_LOCATION_LABEL } from './engine/respawn'
@@ -1093,6 +1101,8 @@ function App() {
 
     // Phase 31 — combat state (target + player attack timer).
     const combatRef = { current: createCombatState() }
+    // Phase 61 — ranged combat state (in-flight projectiles + reload timer).
+    const rangedRef = { current: createRangedState() }
 
     // Precompute world-space bounding boxes for static collidables once so that
     // updatePlayer() doesn't have to call setFromObject() every frame.
@@ -2135,6 +2145,63 @@ function App() {
         onPlayerHit,
         onPlayerKill,
       )
+
+      // Phase 61 — tick ranged combat loop (bow auto-fire + projectile flight).
+      {
+        const target = combatRef.current.target
+        if (target && target.state !== 'dead' && rangedRef.current.reloadTimer <= 0) {
+          // Check whether a ranged weapon is currently equipped in mainHand.
+          const gameState = useGameStore.getState()
+          const mainHandItem = gameState.equipment['mainHand']
+          const weaponDef = mainHandItem ? getItem(mainHandItem.id) : null
+          if (
+            weaponDef?.equipMeta?.weaponType === 'ranged' &&
+            weaponDef.equipMeta.ammoId
+          ) {
+            const ammoId = weaponDef.equipMeta.ammoId
+            const ammoSlot = gameState.inventory.slots.find((s) => s.id === ammoId)
+            const dist = player.mesh.position.distanceTo(target.mesh.position)
+            if (ammoSlot && ammoSlot.quantity > 0 && dist <= PLAYER_RANGED_RANGE) {
+              // Consume one arrow before firing.
+              gameState.removeItem(ammoId, 1)
+              const rangedDamage = Math.max(
+                1,
+                PLAYER_BASE_ATTACK +
+                  gameState.equipStats.totalAttack +
+                  (weaponDef.equipMeta.rangeBonus ?? 0) +
+                  useFoodStore.getState().buffAttackBonus,
+              )
+              const fired = fireProjectile(
+                rangedRef.current,
+                player.mesh.position,
+                target,
+                rangedDamage,
+                scene,
+                gameState.equipStats.attackSpeed,
+              )
+              if (!fired) {
+                // Refund ammo if the fire call rejected (defensive guard).
+                const ammoName = getItem(ammoId)?.name ?? ammoId
+                gameState.addItem({ id: ammoId, name: ammoName, quantity: 1 })
+              }
+            }
+          }
+        }
+
+        // Advance all in-flight projectiles every frame.
+        updateRanged(
+          rangedRef.current,
+          delta,
+          scene,
+          (hitTarget, damage) => {
+            // Force the struck creature into aggro so it responds to ranged hits
+            // from outside its normal aggro radius.
+            triggerAggro(hitTarget)
+            onPlayerHit(hitTarget, damage)
+          },
+          onPlayerKill,
+        )
+      }
       // Phase 33 — tick food cooldown timer
       useFoodStore.getState().tickCooldown(delta)
 
@@ -2246,6 +2313,8 @@ function App() {
         }
       })
       renderer.dispose()
+      // Phase 61 — free shared arrow geometry/material that are not part of the scene graph.
+      disposeArrowResources()
       container.removeChild(renderer.domElement)
     }
   }, [])
