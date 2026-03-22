@@ -242,6 +242,11 @@ function App() {
     useTaskStore.getState().acceptTask('haul_for_the_hearth')
     useTaskStore.getState().acceptTask('stock_the_camp_stores')
     useTaskStore.getState().acceptTask('stone_from_the_quarry')
+    // Phase 64 — Tidemark Storyline Arc
+    useTaskStore.getState().acceptTask('tidemark_word')
+    useTaskStore.getState().acceptTask('tidemark_ward_proof')
+    useTaskStore.getState().acceptTask('tidemark_mist_born')
+    useTaskStore.getState().acceptTask('tidemark_sealed_shaft')
   }, [])
 
   // Advance 'talk' objectives and handle 'deliver' objectives when the player
@@ -1234,6 +1239,24 @@ function App() {
         `You defeat the ${target.def.name}!`,
         'success',
       )
+
+      // Phase 64 — Advance any active 'kill' task objectives matching this creature.
+      {
+        const { active, updateObjective } = useTaskStore.getState()
+        for (const record of active) {
+          const def = getTask(record.taskId)
+          if (!def) continue
+          for (const obj of def.objectives) {
+            if (
+              obj.type === 'kill' &&
+              obj.targetId === target.def.id &&
+              (record.progress[obj.id] ?? 0) < obj.required
+            ) {
+              updateObjective(record.taskId, obj.id, 1)
+            }
+          }
+        }
+      }
 
       // Phase 32 — roll loot table and award results.
       const { items, currency } = rollLoot(target.def.id)
