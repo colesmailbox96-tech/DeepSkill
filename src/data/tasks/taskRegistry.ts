@@ -237,7 +237,7 @@ const aWardBeforeTheMist: TaskDefinition = {
   objectives: [
     {
       id: 'obtain_ashwillow_ward',
-      description: 'Obtain an Ashwillow Ward (1)',
+      description: 'Obtain 1 Ashwillow Ward',
       type: 'gather',
       targetId: 'ashwillow_ward',
       required: 1,

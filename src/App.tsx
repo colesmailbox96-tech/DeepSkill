@@ -233,8 +233,8 @@ function App() {
   // be marked as complete when the player speaks to the target NPC.
   const openDialogueNpcName = useDialogueStore((s) => s.activeTree?.npcName ?? null)
 
-  // Auto-accept the introductory task once at game start (runs once because
-  // the dependency array is empty; acceptTask is idempotent for known tasks).
+  // Auto-accept all tasks once at game start (runs once because the dependency
+  // array is empty; acceptTask is idempotent for known tasks).
   useEffect(() => {
     useTaskStore.getState().acceptTask('word_from_the_elder')
     useTaskStore.getState().acceptTask('warm_runoff')
@@ -1286,6 +1286,10 @@ function App() {
           if (!mergesIntoStack) {
             freeSlots--
           }
+          // Advance any active gather objectives that match this drop item.
+          for (let i = 0; i < drop.qty; i++) {
+            advanceGatherObjectives(drop.itemId)
+          }
         }
         // else: inventory full — item silently skipped, not announced.
       }
@@ -2217,6 +2221,7 @@ function App() {
                 removeItem(sess.recipe.materialId, sess.recipe.materialQty)
                 addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
                 grantSkillXp('warding', sess.recipe.xp)
+                advanceGatherObjectives(sess.recipe.outputId)
                 useNotifications.getState().push(
                   `Ward mark inscribed: ${outputName}! (+${sess.recipe.xp} warding xp)`,
                   'success',
