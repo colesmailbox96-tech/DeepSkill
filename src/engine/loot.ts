@@ -166,7 +166,7 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
   // Phase 58 — Ashfen Copse creatures now drop duskiron ore as a rare reward,
   // linking combat progression to the new resource tier.
 
-  // Hushfang — sleek charcoal predator; always drops its fang; rare duskiron ore.
+  // Hushfang — sleek charcoal predator; reliably drops its fang; rare duskiron ore.
   hushfang: {
     entries: [
       {
@@ -195,7 +195,7 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
     currencyMax: 6,
   },
 
-  // Ember Ram — stocky geothermal brute; always drops its horn; rare duskiron ore.
+  // Ember Ram — stocky geothermal brute; reliably drops its horn; rare duskiron ore.
   ember_ram: {
     entries: [
       {

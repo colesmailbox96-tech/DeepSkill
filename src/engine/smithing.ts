@@ -235,6 +235,8 @@ export interface ForgeRecipeConfig {
   label: string
   /** Registry ID of the tool produced. */
   toolId: string
+  /** Tool tier that the produced tool occupies (used by getToolSpeedFactor). */
+  toolTier: number
   /** All ingredients consumed during the forge. */
   ingredients: ForgeIngredient[]
   /** Minimum level of the associated gathering skill required to forge. */
@@ -247,7 +249,7 @@ export interface ForgeRecipeConfig {
   xp: number
   /**
    * Speed multiplier applied to gather actions when this tool (or better) is
-   * equipped.  1.0 = same as tier 1; 0.75 = 25 % faster.
+   * equipped.  1.0 = same as tier 1; 0.75 = 25 % faster; 0.60 = 40 % faster.
    */
   tierSpeedFactor: number
 }
@@ -257,6 +259,7 @@ export const FORGE_RECIPES: readonly ForgeRecipeConfig[] = [
   {
     label: 'Copper Hatchet',
     toolId: 'copper_hatchet',
+    toolTier: 2,
     ingredients: [
       { id: 'copper_bar',  label: 'Copper Bar',  qty: 2 },
       { id: 'ashwood_log', label: 'Ashwood Log', qty: 2 },
@@ -270,6 +273,7 @@ export const FORGE_RECIPES: readonly ForgeRecipeConfig[] = [
   {
     label: 'Iron Pick',
     toolId: 'iron_pick',
+    toolTier: 2,
     ingredients: [
       { id: 'iron_bar',      label: 'Iron Bar',      qty: 2 },
       { id: 'ironbark_log',  label: 'Ironbark Log',  qty: 1 },
@@ -284,6 +288,7 @@ export const FORGE_RECIPES: readonly ForgeRecipeConfig[] = [
   {
     label: 'Reinforced Rod',
     toolId: 'reinforced_rod',
+    toolTier: 2,
     ingredients: [
       { id: 'copper_bar', label: 'Copper Bar', qty: 1 },
       { id: 'reed_fiber', label: 'Reed Fiber', qty: 3 },
@@ -300,6 +305,7 @@ export const FORGE_RECIPES: readonly ForgeRecipeConfig[] = [
   {
     label: 'Duskiron Hatchet',
     toolId: 'duskiron_hatchet',
+    toolTier: 3,
     ingredients: [
       { id: 'duskiron_bar',  label: 'Duskiron Bar',  qty: 2 },
       { id: 'ironbark_log',  label: 'Ironbark Log',  qty: 2 },
@@ -322,14 +328,19 @@ export function getAllForgeRecipes(): ForgeRecipeConfig[] {
 /**
  * Return the gather-speed multiplier that applies at the given tool tier.
  * Tier 1 (starter tools) → 1.0 (no bonus).
- * Tier 2+ → the `tierSpeedFactor` from the first recipe that produces a tier-2
- * tool, which is the canonical source of truth for the upgrade magnitude.
+ * Higher tiers → the best (lowest) `tierSpeedFactor` among all forge recipes
+ * whose `toolTier` is less than or equal to the player's current tier.
  * Falls back to 1.0 when tier < 2 or no matching recipe is found.
  */
 export function getToolSpeedFactor(tier: number): number {
   if (tier < 2) return 1.0
-  const recipe = FORGE_RECIPES.find(() => true) // all tier-2 recipes share the same factor
-  return recipe?.tierSpeedFactor ?? 1.0
+  let best = 1.0
+  for (const recipe of FORGE_RECIPES) {
+    if (recipe.toolTier <= tier && recipe.tierSpeedFactor < best) {
+      best = recipe.tierSpeedFactor
+    }
+  }
+  return best
 }
 
 /**

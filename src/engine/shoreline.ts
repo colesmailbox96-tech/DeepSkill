@@ -64,7 +64,10 @@ export interface ShorelineResult {
   collidables: THREE.Mesh[]
   /** Live fishing nodes at the bank for per-frame respawn ticking. */
   fishingNodes: FishingNode[]
-  /** Live forage nodes (reed clumps) for per-frame respawn ticking. */
+  /**
+   * Live forage nodes for per-frame respawn ticking.
+   * Includes all bank forage variants: reed_clump and marsh_glass_reed (Phase 58+).
+   */
   forageNodes: ForageNode[]
   /** Live NPC objects for per-frame ambient sway. */
   npcs: Npc[]
@@ -118,7 +121,8 @@ const MARSH_GLASS_REED_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; varian
  * @param scene         Three.js scene to add meshes to.
  * @param interactables Shared interactables array (mutated in place).
  * @param onCastStart   Fishing callback passed to each bank fishing node.
- * @param onForageStart Foraging callback passed to each reed clump node.
+ * @param onForageStart Foraging callback passed to all bank forage nodes
+ *                      (reed_clump and marsh_glass_reed variants).
  */
 export function buildShoreline(
   scene: THREE.Scene,
