@@ -70,8 +70,9 @@ const bronTree = {
   nodes: {
     intro: {
       key: 'intro',
-      text: "Bron's the name. If it's metal work you need, you've found the right forge. I'm low on ore right now — the quarry haul's been thin. Bring me some stone and we might strike a deal.",
+      text: "Bron's the name. If it's metal work you need, you've found the right forge. I carry tools and ore — quality stock, fair prices. Bring me ores or tools you don't need and I'll give you Marks for them.",
       choices: [
+        { label: 'Browse your wares.', nextNode: null, onSelect: () => useShopStore.getState().openShop('bron') },
         { label: 'What do you make?', nextNode: 'craft' },
         { label: 'Where is the quarry?', nextNode: 'quarry' },
         { label: "I'll look around. Farewell.", nextNode: null },
@@ -81,6 +82,7 @@ const bronTree = {
       key: 'craft',
       text: "Tools, mostly. A solid hatchet, a reliable pick — that's what keeps this settlement alive. Give me the materials and I'll shape something worth carrying.",
       choices: [
+        { label: 'Browse your wares.', nextNode: null, onSelect: () => useShopStore.getState().openShop('bron') },
         { label: 'Where is the quarry?', nextNode: 'quarry' },
         { label: 'Understood. Farewell.', nextNode: null },
       ],
@@ -96,6 +98,7 @@ const bronTree = {
       key: 'repeat',
       text: "Back already? The forge never sleeps. What do you need?",
       choices: [
+        { label: 'Browse your wares.', nextNode: null, onSelect: () => useShopStore.getState().openShop('bron') },
         { label: 'What do you make?', nextNode: 'craft' },
         { label: 'Where is the quarry?', nextNode: 'quarry' },
         { label: 'Nothing right now. Farewell.', nextNode: null },
@@ -248,12 +251,12 @@ const tomasTree = {
   nodes: {
     intro: {
       key: 'intro',
-      text: "Tomas at your service, finest wares this side of the Veil! Tools, provisions, odds and ends — have a look at what I've got.",
+      text: "Tomas at your service, finest wares this side of the Veil! Provisions, herbs, basic materials — have a look at what I've got. Need tools? Bron at the forge or Brin Salt down at the shoreline may have what you're after.",
       choices: [
         {
           label: 'Open the shop.',
           nextNode: null,
-          onSelect: () => useShopStore.getState().openShop(),
+          onSelect: () => useShopStore.getState().openShop('tomas'),
         },
         { label: 'Maybe later. Farewell.', nextNode: null },
       ],
@@ -265,7 +268,7 @@ const tomasTree = {
         {
           label: 'Open the shop.',
           nextNode: null,
-          onSelect: () => useShopStore.getState().openShop(),
+          onSelect: () => useShopStore.getState().openShop('tomas'),
         },
         { label: 'Not now. Farewell.', nextNode: null },
       ],
@@ -335,6 +338,42 @@ const nairnDuskTree = {
   },
 }
 
+// ─── Brin Salt — Fisher (Phase 55) ───────────────────────────────────────────
+
+const brinSaltTree = {
+  npcName: 'Brin Salt (Fisher)',
+  rootNode: 'intro',
+  repeatNode: 'repeat',
+  nodes: {
+    intro: {
+      key: 'intro',
+      text: "Name's Brin Salt. I run tackle and rods for anyone serious about fishing Gloamwater Bank. Quality gear, no rubbish. I'll buy any fish you pull from these channels too.",
+      choices: [
+        { label: 'Browse your tackle.', nextNode: null, onSelect: () => useShopStore.getState().openShop('brin_salt') },
+        { label: 'Any tips for the good spots?', nextNode: 'spots' },
+        { label: 'Good to know. Farewell.', nextNode: null },
+      ],
+    },
+    spots: {
+      key: 'spots',
+      text: "Minnows hug the shallows nearest the bank. Perch hold at middle depth — use a bait basket to bring them up. Gloomfin are rare; they run deep past the dock end, usually at dusk. Don't rush the cast.",
+      choices: [
+        { label: 'Browse your tackle.', nextNode: null, onSelect: () => useShopStore.getState().openShop('brin_salt') },
+        { label: 'Thanks for the advice.', nextNode: null },
+      ],
+    },
+    repeat: {
+      key: 'repeat',
+      text: "Back at the bank? Good haul this morning if you got here early. What do you need?",
+      choices: [
+        { label: 'Browse your tackle.', nextNode: null, onSelect: () => useShopStore.getState().openShop('brin_salt') },
+        { label: 'Any tips for the good spots?', nextNode: 'spots' },
+        { label: 'Nothing right now. Farewell.', nextNode: null },
+      ],
+    },
+  },
+}
+
 // ─── Public registration function ─────────────────────────────────────────────
 
 /**
@@ -349,4 +388,5 @@ export function registerAllDialogues(): void {
   registerDialogue(seraTree)
   registerDialogue(tomasTree)
   registerDialogue(nairnDuskTree)
+  registerDialogue(brinSaltTree)
 }

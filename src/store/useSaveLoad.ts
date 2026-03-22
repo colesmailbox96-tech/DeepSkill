@@ -4,12 +4,14 @@
  * Persists a minimal save snapshot to localStorage so that mobile users can
  * leave the app and return without losing progress.
  *
- * Saved fields: playerStats, inventory, skills, equipment, and settings.
+ * Saved fields: playerStats, inventory, skills, equipment, settings, and
+ * vendor stock counts (so finite-supply items stay depleted across sessions).
  * Large/transient state (NPC positions, combat, active sessions) is
  * intentionally excluded — it is rebuilt from defaults on each load.
  */
 import { useCallback } from 'react'
 import { useGameStore } from './useGameStore'
+import { useShopStore } from './useShopStore'
 import type { PlayerStats, InventoryState, EquipmentState, Settings } from './useGameStore'
 import type { SkillsState } from './useGameStore'
 
@@ -22,6 +24,9 @@ interface SaveSnapshot {
   skills: SkillsState
   equipment: EquipmentState
   settings: Settings
+  /** Remaining stock counts for finite-supply vendor items. Optional for
+   *  backward compatibility with saves created before Phase 55. */
+  vendorStocks?: Record<string, Record<string, number>>
 }
 
 /** Runtime guard: verify that `v` is a finite, non-NaN number. */
@@ -35,6 +40,7 @@ export function useSaveGame(): () => boolean {
     try {
       const { playerStats, inventory, skills, equipment, settings } =
         useGameStore.getState()
+      const { vendorStocks } = useShopStore.getState()
       const snapshot: SaveSnapshot = {
         version: 1,
         playerStats,
@@ -42,6 +48,7 @@ export function useSaveGame(): () => boolean {
         skills,
         equipment,
         settings,
+        vendorStocks,
       }
       localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot))
       return true
@@ -119,6 +126,12 @@ export function useLoadGame(): () => void {
 
       if (snapshot.settings) {
         store.updateSettings(snapshot.settings)
+      }
+
+      // Restore vendor stock counts if present (Phase 55+).
+      // Absent in saves from before Phase 55; the store will use its defaults.
+      if (snapshot.vendorStocks && typeof snapshot.vendorStocks === 'object') {
+        useShopStore.getState().setVendorStocks(snapshot.vendorStocks)
       }
     } catch (err) {
       console.warn('[Load] failed to restore game state:', err)

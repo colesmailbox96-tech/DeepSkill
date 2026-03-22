@@ -1,12 +1,18 @@
 /**
  * Phase 23 — Starter Shop / Trade Interface
  * Phase 24 — uses economy module for currency naming and transaction validation.
+ * Phase 55 — Vendor Diversity: panel adapts to the active vendor (Tomas/Bron/Brin Salt).
  *
- * Two-tab panel (Buy / Sell) opened by interacting with Tomas (Merchant).
- * Close via the ✕ button, pressing Escape, or pressing B again.
+ * Two-tab panel (Buy / Sell) opened by interacting with any vendor NPC.
+ * Close via the ✕ button or pressing Escape.
  *
- * Buy tab  — shows vendor stock with item names and buy prices in Marks.
- * Sell tab — shows player inventory items with sell prices in Marks.
+ * Buy tab  — shows the vendor's specific stock with buy prices in Marks.
+ * Sell tab — shows player inventory items accepted by this vendor, with prices.
+ *
+ * Each vendor has distinct stock and sell constraints:
+ *   Tomas (general)      — provisions and raw materials; buys anything.
+ *   Bron (toolsmith)     — gathering tools and ores; buys tools + mining materials.
+ *   Brin Salt (fisher)   — fishing gear and tackle; buys fish + fishing tools.
  *
  * Currency: Marks (⬡) displayed in the header.
  * Buy deducts Marks; sell adds Marks.
@@ -18,7 +24,6 @@ import { useShopStore } from '../../store/useShopStore'
 import { useNotifications } from '../../store/useNotifications'
 import { getItem } from '../../data/items/itemRegistry'
 import {
-  VENDOR_STOCK,
   getBuyPrice,
   getSellPrice,
   CURRENCY_SYMBOL,
@@ -26,13 +31,18 @@ import {
   CURRENCY_PLURAL,
   validatePurchase,
   validateSale,
+  getVendorDef,
+  canSellToVendor,
 } from '../../engine/shop'
 
 type ShopTab = 'buy' | 'sell'
 
 export function ShopPanel() {
-  const isOpen   = useShopStore((s) => s.isOpen)
-  const closeShop = useShopStore((s) => s.closeShop)
+  const isOpen       = useShopStore((s) => s.isOpen)
+  const vendorId     = useShopStore((s) => s.vendorId)
+  const vendorStocks = useShopStore((s) => s.vendorStocks)
+  const closeShop    = useShopStore((s) => s.closeShop)
+  const decrementStock = useShopStore((s) => s.decrementStock)
 
   const coins       = useGameStore((s) => s.playerStats.coins)
   const slots       = useGameStore((s) => s.inventory.slots)
@@ -53,18 +63,12 @@ export function ShopPanel() {
     closeShop()
   }, [closeShop])
 
-  // Escape closes; B toggles.
+  // Escape closes the panel.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return
       if (e.code === 'Escape' && isOpenRef.current) {
         handleClose()
-      } else if (e.code === 'KeyB') {
-        if (isOpenRef.current) {
-          handleClose()
-        } else {
-          useShopStore.getState().openShop()
-        }
       }
     }
     window.addEventListener('keydown', onKey)
@@ -78,6 +82,8 @@ export function ShopPanel() {
 
   if (!isOpen) return null
 
+  const vendor = getVendorDef(vendorId)
+
   // ── Buy tab ──────────────────────────────────────────────────────────────────
 
   const handleBuy = (itemId: string) => {
@@ -86,6 +92,18 @@ export function ShopPanel() {
     const price = getBuyPrice(def.value)
     const { inventory } = useGameStore.getState()
     const alreadyHasItem = inventory.slots.some((s) => s.id === itemId)
+
+    // Defensive: verify remaining stock for finite-supply items.
+    // Only enter this block when the item is confirmed finite-supply (stock !== null).
+    const currentStocks = useShopStore.getState().vendorStocks
+    const vendorItemDef = vendor.stock.find((v) => v.id === itemId)
+    if (vendorItemDef && vendorItemDef.stock !== null) {
+      const remaining = currentStocks[vendorId]?.[itemId] ?? vendorItemDef.stock
+      if (remaining <= 0) {
+        useNotifications.getState().push('That item is out of stock.', 'info')
+        return
+      }
+    }
 
     const result = validatePurchase(
       price,
@@ -103,6 +121,8 @@ export function ShopPanel() {
     // so spendCoins is guaranteed to succeed here.
     if (!spendCoins(price)) return  // defensive — should never fire
     addItem({ id: itemId, name: def.name, quantity: 1 })
+    // Decrement remaining stock for finite-supply items.
+    decrementStock(vendorId, itemId)
     useNotifications.getState().push(
       `Bought ${def.name} for ${price} ${price === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}.`,
       'success',
@@ -139,12 +159,15 @@ export function ShopPanel() {
       className="shop-panel"
       role="dialog"
       aria-modal="false"
-      aria-label="Tomas's Shop"
+      aria-label={vendor.displayName}
       tabIndex={-1}
     >
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="shop-panel__header">
-        <span className="shop-panel__title">Tomas's Shop</span>
+        <div className="shop-panel__title-block">
+          <span className="shop-panel__title">{vendor.displayName}</span>
+          <span className="shop-panel__tagline">{vendor.tagline}</span>
+        </div>
         <span className="shop-panel__coins" aria-label={`${coins} ${coins === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}`}>
           <span className="shop-panel__coin-icon">{CURRENCY_SYMBOL}</span>
           {coins} <span className="shop-panel__coin-label">{coins === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}</span>
@@ -181,21 +204,35 @@ export function ShopPanel() {
       {/* ── Buy list ──────────────────────────────────────────────────────── */}
       {tab === 'buy' && (
         <ul className="shop-panel__list" role="list">
-          {VENDOR_STOCK.map(({ id }) => {
+          {vendor.stock.map(({ id, stock: initialStock }) => {
             const def = getItem(id)
             if (!def) return null
             const price = getBuyPrice(def.value)
             const canAfford = coins >= price
+            // Determine remaining stock: if item is finite-supply, read the
+            // live count from the store; unlimited items have remaining = null.
+            const remaining: number | null =
+              initialStock !== null
+                ? (vendorStocks[vendorId]?.[id] ?? initialStock)
+                : null
+            const soldOut = remaining !== null && remaining <= 0
             return (
               <li key={id} className="shop-row" role="listitem">
-                <span className="shop-row__name">{def.name}</span>
-                <span className={`shop-row__price${canAfford ? '' : ' shop-row__price--insufficient'}`}>
+                <span className="shop-row__name">
+                  {def.name}
+                  {remaining !== null && (
+                    <span className={`shop-row__stock${soldOut ? ' shop-row__stock--out' : ''}`}>
+                      {soldOut ? ' (sold out)' : ` (${remaining} left)`}
+                    </span>
+                  )}
+                </span>
+                <span className={`shop-row__price${canAfford && !soldOut ? '' : ' shop-row__price--insufficient'}`}>
                   {CURRENCY_SYMBOL} {price}
                 </span>
                 <button
                   className="shop-row__btn"
                   onClick={() => handleBuy(id)}
-                  disabled={!canAfford}
+                  disabled={!canAfford || soldOut}
                   aria-label={`Buy ${def.name} for ${price} ${price === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}`}
                 >
                   Buy
@@ -212,10 +249,16 @@ export function ShopPanel() {
           {(() => {
             const sellableSlots = slots.filter((item) => {
               const def = getItem(item.id)
-              return def && def.type !== 'quest'
+              return def && canSellToVendor(def, vendor)
             })
             if (sellableSlots.length === 0) {
-              return <li className="shop-row shop-row--empty">Nothing to sell.</li>
+              return (
+                <li className="shop-row shop-row--empty">
+                  {vendor.role === 'general'
+                    ? 'Nothing to sell.'
+                    : `${vendor.shortName} doesn't want anything you're carrying.`}
+                </li>
+              )
             }
             return sellableSlots.map((item) => {
               const def = getItem(item.id)!
@@ -245,3 +288,4 @@ export function ShopPanel() {
     </div>
   )
 }
+

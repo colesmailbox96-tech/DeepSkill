@@ -700,11 +700,23 @@ p {
   flex-shrink: 0;
 }
 
+.shop-panel__title-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
 .shop-panel__title {
   font-size: 0.9rem;
   font-weight: 700;
   color: #f0e8c0;
-  flex: 1;
+}
+
+.shop-panel__tagline {
+  font-size: 0.7rem;
+  color: #8fa8a0;
+  font-style: italic;
 }
 
 .shop-panel__coins {
@@ -816,6 +828,16 @@ p {
 .shop-row__qty {
   color: #6e7880;
   font-size: 0.75rem;
+}
+
+.shop-row__stock {
+  color: #7a9080;
+  font-size: 0.7rem;
+  font-style: italic;
+}
+
+.shop-row__stock--out {
+  color: #8a5050;
 }
 
 .shop-row__price {

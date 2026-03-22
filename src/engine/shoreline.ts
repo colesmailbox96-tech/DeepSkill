@@ -34,7 +34,7 @@ import { buildFishingNodesAt } from './fishing'
 import type { FishingNode } from './fishing'
 import { buildForageNodesAt } from './foraging'
 import type { ForageNode } from './foraging'
-import { useNotifications } from '../store/useNotifications'
+import { useDialogueStore } from '../store/useDialogueStore'
 
 // ─── Shared materials ────────────────────────────────────────────────────────
 const matSand    = new THREE.MeshStandardMaterial({ color: 0xc8b882, roughness: 0.95 })
@@ -248,10 +248,7 @@ export function buildShoreline(
     mesh: brinGroup,
     label: 'Brin Salt (Fisher)',
     interactRadius: 2.2,
-    onInteract: () =>
-      useNotifications
-        .getState()
-        .push('Brin Salt: "The tidal channels run deep here — best spots are out past the dock."', 'info'),
+    onInteract: () => useDialogueStore.getState().openDialogue('Brin Salt (Fisher)'),
   }
   interactables.push(brinInteractable)
 
