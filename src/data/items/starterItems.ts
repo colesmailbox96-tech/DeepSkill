@@ -1377,7 +1377,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
   {
     id: 'vault_seal_ward',
     name: 'Vault Seal Ward',
-    type: 'material',
+    type: 'consumable',
     stackable: true,
     value: 28,
     icon: 'items/vault_seal_ward.png',
