@@ -199,6 +199,16 @@ export function InventoryPanel() {
                   🛡 Defence <strong>+{tooltipDef.equipMeta.defenceBonus}</strong>
                 </span>
               )}
+              {tooltipDef.equipMeta.attackSpeed !== undefined && (
+                  <span className="inv-tooltip__stat inv-tooltip__stat--spd">
+                    ⚡ Speed <strong>{tooltipDef.equipMeta.attackSpeed.toFixed(2)}×</strong>
+                  </span>
+                )}
+              {tooltipDef.equipMeta.weaponType && (
+                <span className="inv-tooltip__stat inv-tooltip__stat--type">
+                  Type: <strong>{tooltipDef.equipMeta.weaponType}</strong>
+                </span>
+              )}
               <span className="inv-tooltip__slot">
                 Slot: {EQUIP_SLOT_META[tooltipDef.equipMeta.slot].label}
               </span>

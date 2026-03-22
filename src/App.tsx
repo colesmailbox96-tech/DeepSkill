@@ -2131,6 +2131,7 @@ function App() {
         player.mesh.position,
         useGameStore.getState().equipStats.totalAttack +
           useFoodStore.getState().buffAttackBonus,
+        useGameStore.getState().equipStats.attackSpeed,
         onPlayerHit,
         onPlayerKill,
       )
