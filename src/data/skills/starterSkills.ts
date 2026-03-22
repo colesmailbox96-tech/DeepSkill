@@ -14,6 +14,7 @@ import { xpToNextLevel } from './xpCurve'
  * Phase 42: carving skill added.
  * Phase 43: tinkering skill added.
  * Phase 46: warding skill added.
+ * Phase 63: tailoring skill added.
  */
 export const STARTER_SKILLS: Skill[] = [
   {
@@ -117,5 +118,16 @@ export const STARTER_SKILLS: Skill[] = [
     experienceToNextLevel: xpToNextLevel(1),
     description:
       'Inscribing protective marks drawn from deep-root lore and hedge-ritual. A skilled warden crafts stronger ward patterns, extends their duration, and unlocks signs that guard against harsher threats.',
+  },
+
+  // Phase 63 — Armor and Clothing Craft Routes
+  {
+    id: 'tailoring',
+    name: 'Tailoring',
+    level: 1,
+    experience: 0,
+    experienceToNextLevel: xpToNextLevel(1),
+    description:
+      'Stitching hide, binding, and padded cloth into wearable protection and utility garments. A skilled tailor produces tighter seams, wastes less material, and unlocks more elaborate armour patterns.',
   },
 ]

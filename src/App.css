@@ -4410,3 +4410,211 @@ p {
     right: 10px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Phase 63 — Tailoring Panel
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.tailoring-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 390px;
+  max-width: calc(100vw - 1.5rem);
+  max-height: 80vh;
+  background: linear-gradient(160deg, rgba(10, 8, 14, 0.97) 0%, rgba(20, 12, 22, 0.97) 100%);
+  border: 1px solid rgba(140, 90, 160, 0.35);
+  border-radius: 0.6rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(160, 100, 180, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  pointer-events: auto;
+  z-index: 600;
+  outline: none;
+  font-family: inherit;
+  color: rgba(220, 205, 230, 0.92);
+}
+
+/* Header */
+.tailoring-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem 0.6rem;
+  background: rgba(100, 50, 120, 0.12);
+  border-bottom: 1px solid rgba(140, 90, 160, 0.25);
+  flex-shrink: 0;
+}
+
+.tailoring-panel__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: rgba(200, 155, 220, 0.95);
+  flex: 1 1 auto;
+}
+
+.tailoring-panel__level {
+  font-size: 0.72rem;
+  color: rgba(170, 125, 190, 0.75);
+  background: rgba(100, 50, 120, 0.18);
+  border: 1px solid rgba(140, 90, 160, 0.2);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  white-space: nowrap;
+}
+
+.tailoring-panel__close {
+  flex-shrink: 0;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.3rem;
+  color: rgba(200, 185, 210, 0.7);
+  cursor: pointer;
+  font-size: 0.78rem;
+  line-height: 1;
+  pointer-events: auto;
+  transition: background 0.12s, color 0.12s;
+}
+
+.tailoring-panel__close:hover {
+  background: rgba(200, 60, 40, 0.2);
+  color: #e08070;
+}
+
+/* Recipe list */
+.tailoring-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+/* Recipe card */
+.tailoring-recipe {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(140, 90, 160, 0.2);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  transition: border-color 0.12s;
+}
+
+.tailoring-recipe:hover {
+  border-color: rgba(170, 110, 190, 0.4);
+}
+
+.tailoring-recipe--locked {
+  opacity: 0.6;
+}
+
+.tailoring-recipe__top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tailoring-recipe__name {
+  flex: 1 1 auto;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(215, 185, 230, 0.95);
+}
+
+.tailoring-recipe__lock-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(200, 80, 60, 0.85);
+  background: rgba(200, 60, 40, 0.12);
+  border: 1px solid rgba(200, 60, 40, 0.2);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  white-space: nowrap;
+}
+
+/* Ingredient list inside each recipe card */
+.tailoring-recipe__ingredient-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.78rem;
+  color: rgba(185, 165, 200, 0.8);
+}
+
+.tailoring-recipe__ingredient--low {
+  color: rgba(200, 90, 70, 0.85);
+}
+
+.tailoring-recipe__stock {
+  font-size: 0.7rem;
+  color: rgba(150, 135, 165, 0.6);
+}
+
+.tailoring-recipe__meta {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: rgba(150, 130, 165, 0.65);
+}
+
+.tailoring-recipe__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.tailoring-recipe__btn {
+  padding: 0.25rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  background: rgba(100, 50, 120, 0.55);
+  color: rgba(220, 185, 240, 0.95);
+  border: 1px solid rgba(150, 90, 170, 0.4);
+  pointer-events: auto;
+  transition: background 0.12s, color 0.12s;
+}
+
+.tailoring-recipe__btn:hover:not(:disabled) {
+  background: rgba(130, 70, 155, 0.75);
+  color: #dbb8f0;
+}
+
+.tailoring-recipe__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Hint bar */
+.tailoring-panel__hint {
+  flex-shrink: 0;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.62rem;
+  color: rgba(140, 120, 155, 0.4);
+  border-top: 1px solid rgba(140, 90, 160, 0.12);
+  background: rgba(10, 8, 14, 0.5);
+  text-align: right;
+  letter-spacing: 0.02em;
+}

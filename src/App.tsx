@@ -84,6 +84,13 @@ import {
 import type { TinkerRecipeConfig } from './engine/tinkering'
 import { useTinkeringStore } from './store/useTinkeringStore'
 import {
+  buildSewingTableStation,
+  findTailorableMaterial,
+  getTailoringLevel,
+} from './engine/tailoring'
+import type { TailorRecipeConfig } from './engine/tailoring'
+import { useTailoringStore } from './store/useTailoringStore'
+import {
   buildSurveyStoneStation,
   buildSurveyCaches,
   revealNearbyCaches,
@@ -158,6 +165,7 @@ import { JournalPanel } from './ui/hud/JournalPanel'
 import { SmithingPanel } from './ui/hud/SmithingPanel'
 import { CarvingPanel } from './ui/hud/CarvingPanel'
 import { TinkeringPanel } from './ui/hud/TinkeringPanel'
+import { TailoringPanel } from './ui/hud/TailoringPanel'
 import { WardingPanel } from './ui/hud/WardingPanel'
 import { CookPanel } from './ui/hud/CookPanel'
 import { HazardWarningHud } from './ui/hud/HazardWarningHud'
@@ -210,6 +218,8 @@ interface CarveSession  { recipe: CarveRecipeConfig;  elapsed: number }
 interface TinkerSession { recipe: TinkerRecipeConfig; elapsed: number }
 /** Phase 46 — Active ward session: recipe being inscribed + elapsed time. */
 interface WardSession   { recipe: WardRecipeConfig;   elapsed: number }
+/** Phase 63 — Active tailor session: recipe being stitched + elapsed time. */
+interface TailorSession { recipe: TailorRecipeConfig; elapsed: number }
 
 function App() {
   const sceneRef = useRef<HTMLDivElement>(null)
@@ -378,6 +388,8 @@ function App() {
   const carveFromPanelRef = useRef<(recipe: import('./engine/carving').CarveRecipeConfig) => void>(() => {})
   /** Tinker callback set by the game loop, called by TinkeringPanel recipe buttons. */
   const tinkerFromPanelRef = useRef<(recipe: import('./engine/tinkering').TinkerRecipeConfig) => void>(() => {})
+  /** Tailor callback set by the game loop, called by TailoringPanel recipe buttons. */
+  const tailorFromPanelRef = useRef<(recipe: import('./engine/tailoring').TailorRecipeConfig) => void>(() => {})
   /** Survey callback set by the game loop, called by SurveyingPanel sweep button. */
   const startSurveyFromPanelRef = useRef<() => void>(() => {})
   /** Ward callback set by the game loop, called by WardingPanel recipe buttons. */
@@ -897,6 +909,68 @@ function App() {
     tinkererBenchStation = buildTinkererBenchStation(scene, interactables, () => onTinkerStart())
     tinkerFromPanelRef.current = (recipe) => onTinkerStart(recipe)
 
+    // Phase 63 — Tailoring Foundation
+    // Tailor session: tracks which recipe is being stitched and elapsed time.
+    const tailorRef = { current: null as TailorSession | null }
+    // Captured after buildSewingTableStation(); read by onTailorStart and the tick.
+    let sewingTableStation: import('./engine/tailoring').SewingTableStation | null = null
+    const SEWING_TABLE_INTERACT_RADIUS = 2.0
+
+    const onTailorStart = (recipe?: TailorRecipeConfig) => {
+      // Already tailoring — do nothing.
+      if (tailorRef.current) return
+      const { inventory } = useGameStore.getState()
+
+      if (sewingTableStation) {
+        const dist = player.mesh.position.distanceTo(sewingTableStation.mesh.position)
+        if (dist > SEWING_TABLE_INTERACT_RADIUS) {
+          useNotifications.getState().push('You need to be at the sewing table to tailor.', 'info')
+          return
+        }
+      }
+
+      const chosen = recipe ?? findTailorableMaterial(inventory.slots)
+      if (!chosen) {
+        useNotifications.getState().push('You have no materials ready to stitch here.', 'info')
+        useTailoringStore.getState().openPanel()
+        return
+      }
+      if (getTailoringLevel() < chosen.levelReq) {
+        useNotifications.getState().push(
+          `You need level ${chosen.levelReq} Tailoring to stitch this.`,
+          'info',
+        )
+        useTailoringStore.getState().openPanel()
+        return
+      }
+      const primarySlot = inventory.slots.find((s) => s.id === chosen.materialId)
+      if (!primarySlot || primarySlot.quantity < chosen.materialQty) {
+        const materialName = getItem(chosen.materialId)?.name ?? chosen.materialId
+        useNotifications.getState().push(
+          `You don't have enough ${materialName.toLowerCase()} to stitch this.`,
+          'info',
+        )
+        useTailoringStore.getState().openPanel()
+        return
+      }
+      const sec = chosen.secondaryIngredient
+      const secSlot = inventory.slots.find((s) => s.id === sec.id)
+      if (!secSlot || secSlot.quantity < sec.qty) {
+        useNotifications.getState().push(
+          `You also need ${sec.qty}× ${sec.label} to stitch this.`,
+          'info',
+        )
+        useTailoringStore.getState().openPanel()
+        return
+      }
+      useTailoringStore.getState().openPanel()
+      tailorRef.current = { recipe: chosen, elapsed: 0 }
+      useNotifications.getState().push('You begin stitching...', 'info')
+    }
+
+    sewingTableStation = buildSewingTableStation(scene, interactables, () => onTailorStart())
+    tailorFromPanelRef.current = (recipe) => onTailorStart(recipe)
+
     // Phase 44 — Surveying Foundation
     let surveyStoneStation: import('./engine/surveying').SurveyStoneStation | null = null
     // Declared before onStartSurvey so the closure captures the variable without TDZ risk.
@@ -1140,6 +1214,7 @@ function App() {
       forgeRef.current = null
       carveRef.current = null
       tinkerRef.current = null
+      tailorRef.current = null
       // Show the blocking respawn overlay.
       useRespawnStore.getState().triggerDefeat(RESPAWN_LOCATION_LABEL)
     }
@@ -1296,6 +1371,18 @@ function App() {
           player.mesh.position.distanceTo(tinkererBenchStation.mesh.position) <= TINKERER_BENCH_INTERACT_RADIUS
         ) {
           tinkering.openPanel()
+        }
+        return
+      }
+      if (action === 'toggle-tailoring') {
+        const tailoring = useTailoringStore.getState()
+        if (tailoring.isOpen) {
+          tailoring.closePanel()
+        } else if (
+          sewingTableStation &&
+          player.mesh.position.distanceTo(sewingTableStation.mesh.position) <= SEWING_TABLE_INTERACT_RADIUS
+        ) {
+          tailoring.openPanel()
         }
         return
       }
@@ -1990,6 +2077,66 @@ function App() {
         }
       }
 
+      // Phase 63 — tick tailor session
+      if (tailorRef.current) {
+        const sess = tailorRef.current
+        const tooFar = sewingTableStation
+          ? player.mesh.position.distanceTo(sewingTableStation.mesh.position) > SEWING_TABLE_INTERACT_RADIUS
+          : false
+        if (player.moveState === 'walk' || tooFar) {
+          tailorRef.current = null
+          useNotifications.getState().push('You step away from the sewing table.', 'info')
+        } else {
+          sess.elapsed += delta
+          if (sess.elapsed >= sess.recipe.tailorDuration) {
+            tailorRef.current = null
+            const { inventory, addItem, removeItem, grantSkillXp } = useGameStore.getState()
+            const outputName   = getItem(sess.recipe.outputId)?.name  ?? sess.recipe.outputId
+            const materialName = getItem(sess.recipe.materialId)?.name ?? sess.recipe.materialId
+            // Re-validate primary material at completion.
+            const matSlot = inventory.slots.find((s) => s.id === sess.recipe.materialId)
+            if (!matSlot || matSlot.quantity < sess.recipe.materialQty) {
+              useNotifications.getState().push(
+                `The ${materialName.toLowerCase()} was used up — stitching cancelled.`,
+                'info',
+              )
+              return
+            }
+            // Re-validate secondary ingredient at completion.
+            const sec = sess.recipe.secondaryIngredient
+            const secSlot = inventory.slots.find((s) => s.id === sec.id)
+            if (!secSlot || secSlot.quantity < sec.qty) {
+              useNotifications.getState().push(
+                `The ${sec.label.toLowerCase()} was used up — stitching cancelled.`,
+                'info',
+              )
+              return
+            }
+            // Guard: ensure the output can be received before consuming materials.
+            // Both the primary and secondary ingredients may each free a slot when
+            // their stacks are fully depleted, so account for both when calculating
+            // available space.
+            const hasExistingOutput = inventory.slots.some((s) => s.id === sess.recipe.outputId)
+            let slotsAfterRemove = inventory.slots.length
+            if (matSlot.quantity <= sess.recipe.materialQty) slotsAfterRemove -= 1
+            if (secSlot.quantity <= sec.qty) slotsAfterRemove -= 1
+            const canAdd = hasExistingOutput || slotsAfterRemove < inventory.maxSlots
+            if (!canAdd) {
+              useNotifications.getState().push("Your inventory is full — make room before stitching.", 'info')
+              return
+            }
+            removeItem(sess.recipe.materialId, sess.recipe.materialQty)
+            removeItem(sec.id, sec.qty)
+            addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
+            grantSkillXp('tailoring', sess.recipe.xp)
+            useNotifications.getState().push(
+              `You stitch together ${outputName}!`,
+              'success',
+            )
+          }
+        }
+      }
+
       // Phase 44 — tick surveying: sweep timer, cache reveal, animate, and cooldowns
       tickCacheCooldowns(surveyCaches, delta)
       animateCacheMarkers(surveyCaches, delta)
@@ -2326,7 +2473,7 @@ function App() {
         <p id="scene-description" className="app-header__desc">
           Playing as <strong>{playerName}</strong>.
           WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact · tap or click creature to target.
-          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering, Y = surveying, G = warding, M = audio, P = save, N = map.
+          I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering, H = tailoring, Y = surveying, G = warding, M = audio, P = save, N = map.
         </p>
       </header>
       <div
@@ -2372,6 +2519,10 @@ function App() {
           {/* Phase 43 — Tinkering panel */}
           <TinkeringPanel
             onTinker={(recipe) => tinkerFromPanelRef.current(recipe)}
+          />
+          {/* Phase 63 — Tailoring panel */}
+          <TailoringPanel
+            onTailor={(recipe) => tailorFromPanelRef.current(recipe)}
           />
           {/* Phase 44 — Surveying panel */}
           <SurveyingPanel

@@ -29,6 +29,7 @@ export type InputAction =
   | 'toggle-smithing'
   | 'toggle-carving'
   | 'toggle-tinkering'
+  | 'toggle-tailoring'
   | 'toggle-surveying'
   | 'toggle-warding'
   | 'toggle-map'
@@ -53,6 +54,7 @@ export const KEY_TO_ACTION: Readonly<Record<string, InputAction>> = {
   KeyF: 'toggle-smithing',
   KeyV: 'toggle-carving',
   KeyT: 'toggle-tinkering',
+  KeyH: 'toggle-tailoring',
   KeyY: 'toggle-surveying',
   KeyG: 'toggle-warding',
   KeyN: 'toggle-map',
