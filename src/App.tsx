@@ -136,11 +136,13 @@ import {
   createCombatState,
   updateCombat,
   setTarget,
+  PLAYER_BASE_ATTACK,
 } from './engine/combat'
 import {
   createRangedState,
   fireProjectile,
   updateRanged,
+  disposeArrowResources,
   PLAYER_RANGED_RANGE,
 } from './engine/ranged'
 import { rollLoot } from './engine/loot'
@@ -2164,7 +2166,9 @@ function App() {
               gameState.removeItem(ammoId, 1)
               const rangedDamage = Math.max(
                 1,
-                (weaponDef.equipMeta.rangeBonus ?? 0) +
+                PLAYER_BASE_ATTACK +
+                  gameState.equipStats.totalAttack +
+                  (weaponDef.equipMeta.rangeBonus ?? 0) +
                   useFoodStore.getState().buffAttackBonus,
               )
               const fired = fireProjectile(
@@ -2309,6 +2313,8 @@ function App() {
         }
       })
       renderer.dispose()
+      // Phase 61 — free shared arrow geometry/material that are not part of the scene graph.
+      disposeArrowResources()
       container.removeChild(renderer.domElement)
     }
   }, [])

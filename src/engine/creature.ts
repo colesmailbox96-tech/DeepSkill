@@ -594,12 +594,19 @@ export function triggerFlee(creature: Creature, fromPos: THREE.Vector3): void {
  * it responds to the shot regardless of proximity.
  *
  * No-op for non-hostile creatures (no aggroRadius / no maxHp), dead creatures,
- * or creatures already pursuing / returning.
+ * or creatures already pursuing, fleeing, returning, or resetting.
  */
 export function triggerAggro(creature: Creature): void {
   if (creature.state === 'dead') return
   if (!_isHostile(creature.def)) return
-  if (creature.state === 'aggro') return
+  if (
+    creature.state === 'aggro' ||
+    creature.state === 'flee' ||
+    creature.state === 'reset' ||
+    creature.state === 'return'
+  ) {
+    return
+  }
   creature.state = 'aggro'
 }
 

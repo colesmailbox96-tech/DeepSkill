@@ -31,7 +31,7 @@ export const PLAYER_RANGED_RANGE = 14.0
 
 /**
  * Travel speed of an arrow in metres per second.
- * Fast enough to feel responsive; slow enough for visible flight arc.
+ * Fast enough to feel responsive; slow enough that arrow travel is visually noticeable.
  */
 export const PROJECTILE_SPEED = 20.0
 
@@ -57,7 +57,33 @@ const TARGET_CENTER_HEIGHT = 1.0
 /** Minimum attack-speed multiplier to prevent division by near-zero values. */
 const MIN_ATTACK_SPEED = 0.1
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Shared arrow mesh resources ───────────────────────────────────────────────
+//
+// Creating a new CylinderGeometry + MeshBasicMaterial per arrow causes avoidable
+// GC pressure and GPU resource churn during sustained ranged combat.  Instead,
+// one geometry and one material are allocated at module-init time and shared
+// across all projectile Mesh instances.  Call disposeArrowResources() on session
+// teardown (e.g. inside App.tsx's cleanup effect) to free them.
+
+/** Shared geometry for all in-flight arrow meshes (oriented along +Z). */
+const _arrowGeom: THREE.BufferGeometry = (() => {
+  const g = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 4)
+  g.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI / 2))
+  return g
+})()
+
+/** Shared material for all in-flight arrow meshes. */
+const _arrowMat: THREE.MeshBasicMaterial = new THREE.MeshBasicMaterial({ color: 0x8b6914 })
+
+/**
+ * Free the shared arrow geometry and material.
+ * Call once when the 3-D scene is torn down (e.g. inside the App.tsx
+ * `useEffect` cleanup) to avoid GPU resource leaks.
+ */
+export function disposeArrowResources(): void {
+  _arrowGeom.dispose()
+  _arrowMat.dispose()
+}
 
 /** One arrow in flight. */
 export interface Projectile {
@@ -124,13 +150,9 @@ export function fireProjectile(
   const targetCentre = target.mesh.position.clone().setY(target.mesh.position.y + TARGET_CENTER_HEIGHT)
   const dir = new THREE.Vector3().subVectors(targetCentre, origin).normalize()
 
-  // Build arrow geometry: short cylinder rotated to face along +Z, then
-  // realigned to the flight direction via quaternion.
-  const geom = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 4)
-  // Rotate cylinder so its long axis aligns with +Z (arrow tip forward).
-  geom.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI / 2))
-  const mat = new THREE.MeshBasicMaterial({ color: 0x8b6914 })
-  const mesh = new THREE.Mesh(geom, mat)
+  // Create a mesh that reuses the shared geometry and material.
+  // No per-shot allocation — dramatically reduces GC pressure during sustained fire.
+  const mesh = new THREE.Mesh(_arrowGeom, _arrowMat)
   mesh.position.copy(origin)
 
   // Point the mesh along the flight direction.
@@ -212,11 +234,11 @@ export function updateRanged(
     }
   }
 
-  // Remove and dispose hit/expired projectiles.
+  // Remove culled projectiles from the scene.
+  // Geometry and material are shared resources — do NOT dispose them here;
+  // they are freed once on teardown via disposeArrowResources().
   for (const proj of toRemove) {
     scene.remove(proj.mesh)
-    proj.mesh.geometry.dispose()
-    ;(proj.mesh.material as THREE.Material).dispose()
     const idx = state.projectiles.indexOf(proj)
     if (idx !== -1) state.projectiles.splice(idx, 1)
   }
