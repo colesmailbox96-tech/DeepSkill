@@ -1,15 +1,18 @@
 /**
  * Phase 22 — Cooking System Foundation
+ * Phase 59 — Cooking Expansion: hushfang_meat and ember_ram_meat added.
+ * Phase 62 — Creature Loot Expansion: toad_gland → marsh_tonic added.
  *
  * Provides the hearthcraft cooking engine for Veilmarch.  A single campfire
  * cook station is placed in the Hushwood settlement; players interact with it
  * to cook raw ingredients into restorative food.
  *
  * Cookable recipes (raw → cooked):
- *   minnow          → cooked_minnow   (lvl 1, 2 s, 10 xp, heals  6 HP)
- *   perch           → cooked_perch    (lvl 1, 3 s, 18 xp, heals 14 HP)
- *   gloomfin        → cooked_gloomfin (lvl 5, 4 s, 30 xp, heals 25 HP)
- *   cinderhare_meat → cooked_cinderhare (lvl 1, 3 s, 15 xp, heals 18 HP)
+ *   minnow          → cooked_minnow    (lvl 1, 2 s, 10 xp, heals  6 HP)
+ *   perch           → cooked_perch     (lvl 1, 3 s, 18 xp, heals 14 HP)
+ *   gloomfin        → cooked_gloomfin  (lvl 5, 4 s, 30 xp, heals 25 HP)
+ *   cinderhare_meat → cooked_cinderhare(lvl 1, 3 s, 15 xp, heals 18 HP)
+ *   toad_gland      → marsh_tonic      (lvl 3, 5 s, 20 xp, heals 12 HP + stamina) [Phase 62]
  *
  * The caller (App.tsx) owns the level check, timed session, item swap, and XP
  * grant.  This module provides the data, station visual, and helpers.
@@ -29,6 +32,7 @@ export type CookableId =
   | 'cinderhare_meat'
   | 'hushfang_meat'
   | 'ember_ram_meat'
+  | 'toad_gland'
 
 export interface CookRecipeConfig {
   /** Human-readable ingredient name for notification messages. */
@@ -102,6 +106,18 @@ export const COOK_RECIPE_CONFIG: Readonly<Record<CookableId, CookRecipeConfig>> 
     xp: 50,
     healsHp: 22,
   },
+  // Phase 62 — Creature Loot Expansion: toad_gland rendered into marsh_tonic.
+  // The numbing properties of the gland produce a restorative tonic that heals
+  // a modest amount of HP and replenishes stamina — useful after skirmishes.
+  toad_gland: {
+    label: 'Toad Gland',
+    rawId: 'toad_gland',
+    cookedId: 'marsh_tonic',
+    levelReq: 3,
+    cookDuration: 5,
+    xp: 20,
+    healsHp: 12,
+  },
 } as const
 
 /**
@@ -113,6 +129,7 @@ const COOK_PRIORITY: CookableId[] = [
   'hushfang_meat',
   'gloomfin',
   'cinderhare_meat',
+  'toad_gland',
   'perch',
   'minnow',
 ]

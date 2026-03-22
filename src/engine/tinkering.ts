@@ -1,5 +1,7 @@
 /**
  * Phase 43 — Tinkering Skill Foundation
+ * Phase 58 — Dusk Lens Mount added.
+ * Phase 62 — Creature Loot Expansion: sealing_pitch, hide_wrap, char_pad added.
  *
  * Provides a tinkerer's bench station and the assembly interface for
  * Veilmarch.  A single bench is placed in the Hushwood settlement; players
@@ -11,6 +13,10 @@
  *   iron_bar     ×1  → reinforced_hook  (lvl 2,  6 s, 15 xp)
  *   ashwood_shaft×2  → bait_basket      (lvl 3,  9 s, 18 xp)
  *   iron_bar     ×2  → repair_clamp     (lvl 4, 10 s, 22 xp)
+ *   duskiron_bar ×1 + marsh_glass_reed ×2 → dusk_lens_mount (lvl 8, 12 s, 38 xp) [Phase 58]
+ *   copper_bar   ×1 + resinous_organ   ×2 → sealing_pitch   (lvl 5, 10 s, 26 xp) [Phase 62]
+ *   iron_bar     ×1 + hushfang_hide    ×2 → hide_wrap        (lvl 6, 11 s, 30 xp) [Phase 62]
+ *   iron_bar     ×1 + ember_ram_hide   ×2 → char_pad         (lvl 7, 12 s, 34 xp) [Phase 62]
  *
  * The caller (App.tsx) owns the level check, timed session, item swap, and XP
  * grant.  This module provides the data, station visual, and helpers.
@@ -26,7 +32,7 @@ import { useGameStore } from '../store/useGameStore'
 export type TinkerableId = 'copper_bar' | 'iron_bar' | 'ashwood_shaft' | 'duskiron_bar'
 
 /** Union of every tinkering output ID. */
-export type TinkerOutputId = 'lantern_parts' | 'reinforced_hook' | 'bait_basket' | 'repair_clamp' | 'dusk_lens_mount'
+export type TinkerOutputId = 'lantern_parts' | 'reinforced_hook' | 'bait_basket' | 'repair_clamp' | 'dusk_lens_mount' | 'sealing_pitch' | 'hide_wrap' | 'char_pad'
 
 export interface TinkerRecipeConfig {
   /** Human-readable label for notifications. */
@@ -101,6 +107,47 @@ export const TINKER_RECIPE_CONFIG: Readonly<Record<TinkerOutputId, TinkerRecipeC
     tinkerDuration: 12,
     xp: 38,
   },
+  // Phase 62 — Creature Loot Expansion: three new tinkering recipes that
+  // consume creature-dropped materials, connecting combat to the crafting economy.
+
+  // Sealing Pitch: copper plate pressed against resinous organs to cure a
+  // waterproof adhesive disc.  Used in lanterns, containers, and joins.
+  sealing_pitch: {
+    label: 'Sealing Pitch',
+    materialId: 'copper_bar',
+    materialQty: 1,
+    secondaryIngredient: { id: 'resinous_organ', qty: 2, label: 'Resinous Organ' },
+    outputId: 'sealing_pitch',
+    levelReq: 5,
+    tinkerDuration: 10,
+    xp: 26,
+  },
+
+  // Hide Wrap: layers of Hushfang hide stitched around an iron backing strip.
+  // A padded panel used in armour linings and weapon grips.
+  hide_wrap: {
+    label: 'Hide Wrap',
+    materialId: 'iron_bar',
+    materialQty: 1,
+    secondaryIngredient: { id: 'hushfang_hide', qty: 2, label: 'Hushfang Hide' },
+    outputId: 'hide_wrap',
+    levelReq: 6,
+    tinkerDuration: 11,
+    xp: 30,
+  },
+
+  // Char Pad: thick Ember Ram hide bonded to an iron backing and hardened by
+  // residual mineral heat.  A primary impact-buffer component for mid-tier armour.
+  char_pad: {
+    label: 'Char Pad',
+    materialId: 'iron_bar',
+    materialQty: 1,
+    secondaryIngredient: { id: 'ember_ram_hide', qty: 2, label: 'Ember Ram Hide' },
+    outputId: 'char_pad',
+    levelReq: 7,
+    tinkerDuration: 12,
+    xp: 34,
+  },
 } as const
 
 /**
@@ -114,6 +161,9 @@ const TINKER_DISPLAY_ORDER: TinkerOutputId[] = [
   'bait_basket',
   'repair_clamp',
   'dusk_lens_mount',
+  'sealing_pitch',
+  'hide_wrap',
+  'char_pad',
 ]
 
 // ─── Tinkerer's bench station type ───────────────────────────────────────

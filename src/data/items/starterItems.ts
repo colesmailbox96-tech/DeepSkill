@@ -981,4 +981,157 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       effect: 'Restores 22 HP · +3 Attack for 45 s',
     },
   },
+
+  // ── Phase 62 — Creature Loot Expansion ─────────────────────────────────
+  // Drop materials: hides, bone shards, glands, and resinous organs harvested
+  // from defeated creatures.  Each feeds at least one crafting route, tying
+  // combat rewards directly into the carving, cooking, and tinkering skills.
+
+  {
+    id: 'bone_shard',
+    name: 'Bone Shard',
+    type: 'material',
+    stackable: true,
+    value: 3,
+    icon: 'items/bone_shard.png',
+    description:
+      'A splintered fragment of dense creature bone, still sharp along one edge. ' +
+      'Collected in quantity it can be shaped into fine needles and pins at the carving bench.',
+  },
+
+  {
+    id: 'toad_gland',
+    name: 'Toad Gland',
+    type: 'material',
+    stackable: true,
+    value: 5,
+    icon: 'items/toad_gland.png',
+    description:
+      'A small, pale gland stripped from a Mossback Toad, faintly luminescent and slick to the touch. ' +
+      'Rendered over a hearthfire it yields a numbing tonic used by marsh travellers.',
+  },
+
+  {
+    id: 'resinous_organ',
+    name: 'Resinous Organ',
+    type: 'material',
+    stackable: true,
+    value: 6,
+    icon: 'items/resinous_organ.png',
+    description:
+      'A compact organ saturated with natural resin, harvested from thornlings and root crawlers. ' +
+      'When pressed with copper it cures into a waterproof sealing pitch prized by tinkers.',
+  },
+
+  {
+    id: 'thornling_hide',
+    name: 'Thornling Hide',
+    type: 'material',
+    stackable: true,
+    value: 4,
+    icon: 'items/thornling_hide.png',
+    description:
+      'A rough, bark-like hide peeled from a defeated Thornling, studded with hardened briar nodes. ' +
+      'Coarse but supple enough to be shaped into a serviceable binding at the carving bench.',
+  },
+
+  {
+    id: 'hushfang_hide',
+    name: 'Hushfang Hide',
+    type: 'material',
+    stackable: true,
+    value: 9,
+    icon: 'items/hushfang_hide.png',
+    description:
+      'A smooth, charcoal-dark hide stripped from a Hushfang, surprisingly thin yet tough. ' +
+      'Its dense weave holds stitching well, making it ideal for padded wrappings and light armour panels.',
+  },
+
+  {
+    id: 'ember_ram_hide',
+    name: 'Ember Ram Hide',
+    type: 'material',
+    stackable: true,
+    value: 11,
+    icon: 'items/ember_ram_hide.png',
+    description:
+      'A thick, heat-scarred hide taken from an Ember Ram, carrying faint mineral discolouration. ' +
+      'The geothermal conditioning makes it naturally resistant to abrasion — a key material for padded armour.',
+  },
+
+  // ── Phase 62 — Crafted outputs ─────────────────────────────────────────
+  // Items produced at existing craft stations using the new creature drops.
+
+  {
+    id: 'bone_needle',
+    name: 'Bone Needle',
+    type: 'material',
+    stackable: true,
+    value: 8,
+    icon: 'items/bone_needle.png',
+    description:
+      'A slender needle ground from two bone shards at the carving bench, with a narrow eye bored through the blunt end. ' +
+      'Used to stitch hides and fabric with far more precision than a chitin pin allows.',
+  },
+
+  {
+    id: 'rough_binding',
+    name: 'Rough Binding',
+    type: 'material',
+    stackable: true,
+    value: 7,
+    icon: 'items/rough_binding.png',
+    description:
+      'A length of thornling hide worked at the carving bench into a flat, flexible strip. ' +
+      'Coarse but durable — used to lash tool handles, reinforce seams, and bundle equipment.',
+  },
+
+  {
+    id: 'marsh_tonic',
+    name: 'Marsh Tonic',
+    type: 'consumable',
+    stackable: true,
+    value: 14,
+    icon: 'items/marsh_tonic.png',
+    description:
+      'A cloudy amber tonic rendered from a Mossback Toad gland over a hearthfire. ' +
+      'The mild anaesthetic properties dull sharp pain and restore a second wind after a hard fight.',
+    consumableMeta: { healsHp: 12, restoresStamina: 20, effect: 'Restores 12 HP · +20 Stamina' },
+  },
+
+  {
+    id: 'sealing_pitch',
+    name: 'Sealing Pitch',
+    type: 'material',
+    stackable: true,
+    value: 18,
+    icon: 'items/sealing_pitch.png',
+    description:
+      'A disc of dark, flexible pitch formed by pressing resinous organs against a copper plate at the tinkering bench. ' +
+      'Waterproof and adhesive — used to seal joints in lanterns, containers, and mechanical assemblies.',
+  },
+
+  {
+    id: 'hide_wrap',
+    name: 'Hide Wrap',
+    type: 'material',
+    stackable: true,
+    value: 22,
+    icon: 'items/hide_wrap.png',
+    description:
+      'Layers of Hushfang hide stitched around an iron backing strip at the tinkering bench. ' +
+      'A versatile padded panel used as inner lining for armour and as handle grips on heavy weapons.',
+  },
+
+  {
+    id: 'char_pad',
+    name: 'Char Pad',
+    type: 'material',
+    stackable: true,
+    value: 26,
+    icon: 'items/char_pad.png',
+    description:
+      'A thick slab of Ember Ram hide bonded to an iron backing at the tinkering bench, hardened by residual mineral heat. ' +
+      'Acts as an effective impact buffer — a primary component in mid-tier armour construction.',
+  },
 ]
