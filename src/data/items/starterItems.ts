@@ -816,4 +816,61 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       requirements: { wayfaring: 2 },
     },
   },
+
+  // ── Phase 59 — Cooking Expansion ─────────────────────────────────────────
+
+  {
+    id: 'hushfang_meat',
+    name: 'Hushfang Meat',
+    type: 'material',
+    stackable: true,
+    value: 6,
+    icon: 'items/hushfang_meat.png',
+    description:
+      'A lean strip of dark meat cut from a defeated Hushfang. ' +
+      'Faintly pungent when raw — best cooked over a proper hearthfire to draw out its richness.',
+  },
+
+  {
+    id: 'ember_ram_meat',
+    name: 'Ember Ram Meat',
+    type: 'material',
+    stackable: true,
+    value: 8,
+    icon: 'items/ember_ram_meat.png',
+    description:
+      'A dense, ruddy cut of meat from an Ember Ram, still faintly warm from geothermal heat. ' +
+      'When properly roasted, the natural mineral charge renders into a fortifying tallow.',
+  },
+
+  {
+    id: 'hushfang_steak',
+    name: 'Hushfang Steak',
+    type: 'consumable',
+    stackable: true,
+    value: 18,
+    icon: 'items/hushfang_steak.png',
+    description:
+      'A Hushfang cut seared over hearthfire until the sinew crisps and the dark juices seal in. ' +
+      'Rich and filling — the dense muscle knits closed deeper wounds than ordinary fish or hare.',
+    consumableMeta: { healsHp: 32, effect: 'Restores 32 HP' },
+  },
+
+  {
+    id: 'ember_roast',
+    name: 'Ember Roast',
+    type: 'consumable',
+    stackable: true,
+    value: 26,
+    icon: 'items/ember_roast.png',
+    description:
+      'An Ember Ram haunch slow-roasted over a banked hearthfire, basted in its own mineral-rich fat. ' +
+      'The fortifying warmth lingers after eating, sharpening the next blow struck in anger.',
+    consumableMeta: {
+      healsHp: 22,
+      buffAttack: 3,
+      duration: 45,
+      effect: 'Restores 22 HP · +3 Attack for 45 s',
+    },
+  },
 ]

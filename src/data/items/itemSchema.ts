@@ -72,6 +72,8 @@ export interface ToolMeta {
 export interface ConsumableMeta {
   healsHp?: number
   restoresStamina?: number
+  /** Flat attack bonus added for `duration` seconds after eating. */
+  buffAttack?: number
   duration?: number
   effect?: string
 }

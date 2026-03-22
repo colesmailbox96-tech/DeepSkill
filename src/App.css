@@ -3465,6 +3465,226 @@ p {
   letter-spacing: 0.02em;
 }
 
+/* ── Phase 59 — Cook Panel ───────────────────────────────────────────────── */
+
+.cook-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  max-width: calc(100vw - 1.5rem);
+  max-height: 70vh;
+  background: linear-gradient(160deg, rgba(12, 8, 4, 0.97) 0%, rgba(24, 14, 6, 0.97) 100%);
+  border: 1px solid rgba(200, 130, 50, 0.35);
+  border-radius: 0.55rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(200, 130, 50, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  pointer-events: auto;
+  z-index: 600;
+  outline: none;
+  font-family: inherit;
+  color: rgba(230, 205, 175, 0.92);
+}
+
+/* Header */
+.cook-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem 0.6rem;
+  background: rgba(80, 40, 8, 0.14);
+  border-bottom: 1px solid rgba(200, 130, 50, 0.25);
+  flex-shrink: 0;
+}
+
+.cook-panel__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: rgba(240, 185, 90, 0.95);
+  flex: 1 1 auto;
+}
+
+.cook-panel__level {
+  font-size: 0.72rem;
+  color: rgba(210, 155, 70, 0.75);
+  background: rgba(80, 40, 8, 0.18);
+  border: 1px solid rgba(200, 130, 50, 0.2);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  white-space: nowrap;
+}
+
+.cook-panel__close {
+  flex-shrink: 0;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.3rem;
+  color: rgba(210, 185, 155, 0.7);
+  cursor: pointer;
+  font-size: 0.78rem;
+  line-height: 1;
+  pointer-events: auto;
+  transition: background 0.12s, color 0.12s;
+}
+
+.cook-panel__close:hover {
+  background: rgba(200, 60, 40, 0.2);
+  color: #e08070;
+}
+
+/* Recipe list */
+.cook-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+/* Recipe card */
+.cook-recipe {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(200, 130, 50, 0.2);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  transition: border-color 0.12s;
+}
+
+.cook-recipe:hover {
+  border-color: rgba(230, 165, 70, 0.4);
+}
+
+.cook-recipe--locked {
+  opacity: 0.6;
+}
+
+.cook-recipe__top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cook-recipe__name {
+  flex: 1 1 auto;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(240, 210, 160, 0.95);
+}
+
+.cook-recipe__arrow {
+  color: rgba(200, 140, 60, 0.75);
+}
+
+.cook-recipe__lock-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(200, 80, 60, 0.85);
+  background: rgba(200, 60, 40, 0.12);
+  border: 1px solid rgba(200, 60, 40, 0.2);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  white-space: nowrap;
+}
+
+.cook-recipe__stats {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.cook-recipe__heal {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(100, 210, 120, 0.85);
+}
+
+.cook-recipe__buff {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(240, 185, 60, 0.9);
+  background: rgba(180, 120, 20, 0.15);
+  border: 1px solid rgba(200, 150, 40, 0.25);
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.45rem;
+}
+
+.cook-recipe__meta {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: rgba(160, 130, 90, 0.65);
+}
+
+.cook-recipe__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.cook-recipe__count {
+  font-size: 0.78rem;
+  color: rgba(200, 175, 135, 0.8);
+}
+
+.cook-recipe__count--low {
+  color: rgba(200, 90, 70, 0.85);
+}
+
+.cook-recipe__btn {
+  padding: 0.25rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  background: rgba(110, 55, 10, 0.55);
+  color: rgba(255, 210, 140, 0.95);
+  border: 1px solid rgba(200, 130, 50, 0.4);
+  pointer-events: auto;
+  transition: background 0.12s, color 0.12s;
+}
+
+.cook-recipe__btn:hover:not(:disabled) {
+  background: rgba(150, 75, 15, 0.75);
+  color: #ffd080;
+}
+
+.cook-recipe__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Hint bar */
+.cook-panel__hint {
+  flex-shrink: 0;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.62rem;
+  color: rgba(150, 110, 60, 0.4);
+  border-top: 1px solid rgba(200, 130, 50, 0.12);
+  background: rgba(10, 6, 2, 0.5);
+  text-align: right;
+  letter-spacing: 0.02em;
+}
+
 /* ── Phase 48 — Environmental Hazard Warning HUD ─────────────────────────── */
 
 /**
