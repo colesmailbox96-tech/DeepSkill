@@ -81,17 +81,33 @@ export interface ConsumableMeta {
 // ── Equipment metadata ───────────────────────────────────────────────────────
 
 /**
+ * Weapon archetype — flavour tag and a hook for future combat distinctions.
+ *
+ * - 'blunt'  — clubs, hammers; strong stagger potential.
+ * - 'slash'  — swords, daggers; reliable consistent damage.
+ * - 'pierce' — spears, picks; narrower arc, high single-hit damage.
+ */
+export type WeaponType = 'blunt' | 'slash' | 'pierce'
+
+/**
  * Extra data attached to items of type 'equipment'.
  *
  * slot         — body slot this piece occupies.
  * attackBonus  — flat bonus to outgoing attack damage.
  * defenceBonus — flat damage reduction applied before HP loss.
+ * attackSpeed  — multiplier on the base attack cooldown for weapons in the
+ *                mainHand slot.  Values > 1.0 swing faster (e.g. 1.4 for a
+ *                dagger); values < 1.0 swing slower (e.g. 0.75 for a war-
+ *                hammer).  Defaults to 1.0 when absent.
+ * weaponType   — broad weapon archetype; only relevant for mainHand items.
  * requirements — minimum skill levels required to equip, keyed by skill id.
  */
 export interface EquipMeta {
   slot: EquipSlot
   attackBonus?: number
   defenceBonus?: number
+  attackSpeed?: number
+  weaponType?: WeaponType
   requirements?: Partial<Record<string, number>>
 }
 

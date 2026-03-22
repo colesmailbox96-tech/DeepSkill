@@ -210,7 +210,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   skills: structuredClone(DEFAULT_SKILLS),
   settings: structuredClone(DEFAULT_SETTINGS),
   equipment: structuredClone(DEFAULT_EQUIPMENT),
-  equipStats: { totalAttack: 0, totalDefence: 0 },
+  equipStats: { totalAttack: 0, totalDefence: 0, attackSpeed: 1 },
 
   // ── Player stat mutators ─────────────────────────────────────────────────
   setPlayerName: (name) =>
@@ -482,7 +482,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       skills:      structuredClone(DEFAULT_SKILLS),
       settings:    structuredClone(DEFAULT_SETTINGS),
       equipment:   structuredClone(DEFAULT_EQUIPMENT),
-      equipStats:  { totalAttack: 0, totalDefence: 0 },
+      equipStats:  { totalAttack: 0, totalDefence: 0, attackSpeed: 1 },
     })
   },
 }))

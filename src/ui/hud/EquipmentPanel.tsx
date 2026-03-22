@@ -84,6 +84,9 @@ export function EquipmentPanel() {
         <span className="equip-panel__stat">
           🛡 Defence <strong>{equipStats.totalDefence >= 0 ? '+' : ''}{equipStats.totalDefence}</strong>
         </span>
+        <span className="equip-panel__stat">
+          ⚡ Speed <strong>{(equipStats.attackSpeed ?? 1).toFixed(2)}×</strong>
+        </span>
       </div>
 
       {/* Slot list */}
@@ -92,6 +95,15 @@ export function EquipmentPanel() {
           const item = equipment[slot] ?? null
           const def = item ? getItem(item.id) : null
           const isEmpty = item === null
+          const meta = def?.equipMeta
+
+          // Build a compact stat hint for occupied slots.
+          const statParts: string[] = []
+          if (meta?.attackBonus)  statParts.push(`+${meta.attackBonus} ATK`)
+          if (meta?.defenceBonus) statParts.push(`+${meta.defenceBonus} DEF`)
+          if (meta?.attackSpeed !== undefined && meta.attackSpeed !== 1)
+            statParts.push(`${meta.attackSpeed.toFixed(2)}× SPD`)
+          if (meta?.weaponType)   statParts.push(meta.weaponType)
 
           return (
             <li key={slot} className={`equip-row${isEmpty ? ' equip-row--empty' : ''}`}>
@@ -100,7 +112,12 @@ export function EquipmentPanel() {
                 <span className="equip-row__empty">— empty —</span>
               ) : (
                 <>
-                  <span className="equip-row__name">{def?.name ?? item.id}</span>
+                  <span className="equip-row__name">
+                    {def?.name ?? item.id}
+                    {statParts.length > 0 && (
+                      <span className="equip-row__stat-hint"> ({statParts.join(' · ')})</span>
+                    )}
+                  </span>
                   <button
                     className="equip-row__unequip"
                     onClick={() => unequipItem(slot)}

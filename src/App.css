@@ -440,6 +440,14 @@ p {
   color: #70a8d8;
 }
 
+.inv-tooltip__stat--spd {
+  color: #a8d870;
+}
+
+.inv-tooltip__stat--type {
+  color: #c0a8e0;
+}
+
 .inv-tooltip__slot {
   font-size: 0.68rem;
   color: #7ab8a0;
@@ -1327,6 +1335,12 @@ p {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.equip-row__stat-hint {
+  font-size: 0.68rem;
+  color: #7a8898;
+  margin-left: 0.25rem;
 }
 
 .equip-row__unequip {

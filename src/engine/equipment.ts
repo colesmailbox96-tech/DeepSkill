@@ -39,6 +39,13 @@ export const EQUIP_SLOTS: EquipSlot[] = (
 export interface EquipStats {
   totalAttack: number
   totalDefence: number
+  /**
+   * Effective attack-speed multiplier from the equipped weapon.
+   * Derived from `equipMeta.attackSpeed` on each equipped item (product of all
+   * values; absent fields contribute 1.0).  Used in combat.ts to scale
+   * PLAYER_ATTACK_COOLDOWN — higher values swing faster.
+   */
+  attackSpeed: number
 }
 
 /**
@@ -51,12 +58,14 @@ export function computeEquipStats(
 ): EquipStats {
   let totalAttack = 0
   let totalDefence = 0
+  let attackSpeed = 1
   for (const def of equippedDefs) {
     if (!def?.equipMeta) continue
     totalAttack += def.equipMeta.attackBonus ?? 0
     totalDefence += def.equipMeta.defenceBonus ?? 0
+    attackSpeed *= def.equipMeta.attackSpeed ?? 1
   }
-  return { totalAttack, totalDefence }
+  return { totalAttack, totalDefence, attackSpeed }
 }
 
 // ── Equip validation ─────────────────────────────────────────────────────────

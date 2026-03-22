@@ -784,7 +784,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     description:
       'A knob-headed club carved from dense ashwood, sanded smooth at the grip. ' +
       'Simple and reliable — deals a respectable blow without demanding skilled hands.',
-    equipMeta: { slot: 'mainHand', attackBonus: 4 },
+    equipMeta: { slot: 'mainHand', attackBonus: 4, attackSpeed: 1.0, weaponType: 'blunt' },
   },
 
   {
@@ -813,8 +813,83 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     equipMeta: {
       slot: 'mainHand',
       attackBonus: 6,
+      attackSpeed: 0.9,
+      weaponType: 'pierce',
       requirements: { wayfaring: 2 },
     },
+  },
+
+  // ── Phase 60 — Combat Equipment Stats Pass ────────────────────────────────
+
+  {
+    id: 'flint_dagger',
+    name: 'Flint Dagger',
+    type: 'equipment',
+    stackable: false,
+    value: 16,
+    icon: 'items/flint_dagger.png',
+    description:
+      'A short blade knapped from a single flint core, bound to a wrapped leather grip. ' +
+      'Light enough to slash twice before a heavier weapon lands once — trades raw power for relentless speed.',
+    equipMeta: { slot: 'mainHand', attackBonus: 3, attackSpeed: 1.4, weaponType: 'slash' },
+  },
+
+  {
+    id: 'duskiron_warhammer',
+    name: 'Duskiron Warhammer',
+    type: 'equipment',
+    stackable: false,
+    value: 64,
+    icon: 'items/duskiron_warhammer.png',
+    description:
+      'A flat-faced warhammer forged from duskiron, its head dense enough to split stone. ' +
+      'Each swing arrives slowly but hits with bone-shaking force — only trail-hardened fighters can wield it safely.',
+    equipMeta: {
+      slot: 'mainHand',
+      attackBonus: 12,
+      attackSpeed: 0.65,
+      weaponType: 'blunt',
+      requirements: { wayfaring: 5 },
+    },
+  },
+
+  {
+    id: 'ironscale_helm',
+    name: 'Ironscale Helm',
+    type: 'equipment',
+    stackable: false,
+    value: 30,
+    icon: 'items/ironscale_helm.png',
+    description:
+      'A close-fitting helm of overlapping iron scales riveted to a padded leather cap. ' +
+      'Covers the crown and temples without limiting vision — a practical choice for those who expect trouble.',
+    equipMeta: { slot: 'head', defenceBonus: 2, requirements: { wayfaring: 1 } },
+  },
+
+  {
+    id: 'ironscale_greaves',
+    name: 'Ironscale Greaves',
+    type: 'equipment',
+    stackable: false,
+    value: 26,
+    icon: 'items/ironscale_greaves.png',
+    description:
+      'Articulated greaves of iron scale over cured leather, covering knee to shin. ' +
+      'Heavier than hide wrappings but markedly harder to cut through.',
+    equipMeta: { slot: 'legs', defenceBonus: 2, requirements: { wayfaring: 1 } },
+  },
+
+  {
+    id: 'ironscale_gauntlets',
+    name: 'Ironscale Gauntlets',
+    type: 'equipment',
+    stackable: false,
+    value: 22,
+    icon: 'items/ironscale_gauntlets.png',
+    description:
+      'Knuckle-plated gauntlets of riveted iron scale with a supple leather palm. ' +
+      'Keep grip on the weapon while protecting the fingers from counter-strikes.',
+    equipMeta: { slot: 'hands', defenceBonus: 1, requirements: { wayfaring: 1 } },
   },
 
   // ── Phase 59 — Cooking Expansion ─────────────────────────────────────────

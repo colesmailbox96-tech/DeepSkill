@@ -73,6 +73,9 @@ export function setTarget(state: CombatState, creature: Creature | null): void {
  * @param delta        Frame time in seconds.
  * @param playerPos    Current player world-space position.
  * @param equipAttack  Total attack bonus from currently equipped gear.
+ * @param attackSpeed  Weapon cadence multiplier (1.0 = base; >1 swings faster,
+ *                     <1 swings slower).  Derived from the equipped weapon's
+ *                     `attackSpeed` field in EquipStats.
  * @param onHit        Callback when the player lands a hit; receives the target
  *                     and the final damage value.
  * @param onKill       Callback when a hit kills the target.
@@ -82,6 +85,7 @@ export function updateCombat(
   delta: number,
   playerPos: THREE.Vector3,
   equipAttack: number,
+  attackSpeed: number,
   onHit: (target: Creature, damage: number) => void,
   onKill: (target: Creature) => void,
 ): void {
@@ -112,6 +116,7 @@ export function updateCombat(
       onKill(target)
       state.target = null
     }
-    state.attackTimer = PLAYER_ATTACK_COOLDOWN
+    // Scale cooldown by attackSpeed: higher speed = shorter cooldown.
+    state.attackTimer = PLAYER_ATTACK_COOLDOWN / Math.max(0.1, attackSpeed)
   }
 }
