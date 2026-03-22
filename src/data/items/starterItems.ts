@@ -1134,4 +1134,141 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'A thick slab of Ember Ram hide bonded to an iron backing at the tinkering bench, hardened by residual mineral heat. ' +
       'Acts as an effective impact buffer — a primary component in mid-tier armour construction.',
   },
+
+  // ── Phase 63 — Armor and Clothing Craft Routes ────────────────────────────
+  // Items produced at the Sewing Table in the Hushwood settlement.
+  // Three routes: hide armour (soft mid-tier), patchplate upgrades (reinforced),
+  // and utility clothing with skill-based equip requirements.
+
+  // ── Hide Armor Route ─────────────────────────────────────────────────────
+  // Lightweight hide armour stitched together from Hushfang hides, bone
+  // needles, and rough bindings.  A clear upgrade over the starter roughhide
+  // vest, covering every body slot.
+
+  {
+    id: 'hide_bracers',
+    name: 'Hide Bracers',
+    type: 'equipment',
+    stackable: false,
+    value: 20,
+    icon: 'items/hide_bracers.png',
+    description:
+      'Supple bracers of layered Hushfang hide, stitched tight at the wrist with bone-needle precision. ' +
+      'Light enough for nimble work, sturdy enough to deflect glancing blows.',
+    equipMeta: { slot: 'hands', defenceBonus: 3 },
+  },
+
+  {
+    id: 'hide_hood',
+    name: 'Hide Hood',
+    type: 'equipment',
+    stackable: false,
+    value: 24,
+    icon: 'items/hide_hood.png',
+    description:
+      'A close-fitting hood of doubled Hushfang hide, the seams aligned to shed rain and muffle noise. ' +
+      'Modest head protection favoured by scouts who value silence over ceremony.',
+    equipMeta: { slot: 'head', defenceBonus: 3 },
+  },
+
+  {
+    id: 'hide_leggings',
+    name: 'Hide Leggings',
+    type: 'equipment',
+    stackable: false,
+    value: 28,
+    icon: 'items/hide_leggings.png',
+    description:
+      'Full-length leggings of Hushfang hide, reinforced at the knee and inner thigh with rough-binding strips. ' +
+      'Quiet in the undergrowth and resistant to thorn-scrape and shallow blade work.',
+    equipMeta: { slot: 'legs', defenceBonus: 5 },
+  },
+
+  {
+    id: 'hide_jerkin',
+    name: 'Hide Jerkin',
+    type: 'equipment',
+    stackable: false,
+    value: 34,
+    icon: 'items/hide_jerkin.png',
+    description:
+      'A close-cut jerkin of triple-layered Hushfang hide, belted at the waist and bound at the shoulders. ' +
+      'A reliable mid-tier chest piece — more protection than rough frontier cloth, lighter than iron plate.',
+    equipMeta: { slot: 'chest', defenceBonus: 6 },
+  },
+
+  // ── Patchplate Upgrades ───────────────────────────────────────────────────
+  // Reinforced hide-and-iron hybrid armour for seasoned fighters.  Uses
+  // char_pad as the primary impact buffer and demands wayfaring experience
+  // to equip safely.
+
+  {
+    id: 'patchplate_coif',
+    name: 'Patchplate Coif',
+    type: 'equipment',
+    stackable: false,
+    value: 40,
+    icon: 'items/patchplate_coif.png',
+    description:
+      'A padded coif of Char Pad panels stitched over a hide foundation and rimmed with mismatched iron strips. ' +
+      'Heavier and better-protecting than the hide hood — the preferred headwear when a hard fight is expected.',
+    equipMeta: { slot: 'head', defenceBonus: 5, requirements: { wayfaring: 2 } },
+  },
+
+  {
+    id: 'patchplate_vest',
+    name: 'Patchplate Vest',
+    type: 'equipment',
+    stackable: false,
+    value: 52,
+    icon: 'items/patchplate_vest.png',
+    description:
+      'A double-layered vest built from Char Pad sections stitched over rough binding, with iron-reinforced shoulder panels. ' +
+      'Absorbs more punishment than any soft-hide chest piece while remaining lighter than full plate.',
+    equipMeta: { slot: 'chest', defenceBonus: 8, requirements: { wayfaring: 2 } },
+  },
+
+  // ── Utility Clothing ──────────────────────────────────────────────────────
+  // Purpose-made garments for skilled practitioners of gathering and crafting.
+  // Each piece requires demonstrated mastery in its associated skill to equip;
+  // the fit and construction are optimised for the movements of that trade.
+
+  {
+    id: 'gatherer_wraps',
+    name: "Gatherer's Wraps",
+    type: 'equipment',
+    stackable: false,
+    value: 18,
+    icon: 'items/gatherer_wraps.png',
+    description:
+      'Lightweight hand wraps of Thornling hide, double-layered at the palm for grip and thorn-resistance. ' +
+      'Worn by foragers who spend long hours among briar and reed; the cut allows full finger movement for precise harvesting.',
+    equipMeta: { slot: 'hands', defenceBonus: 1, requirements: { foraging: 3 } },
+  },
+
+  {
+    id: 'woodcutter_smock',
+    name: "Woodcutter's Smock",
+    type: 'equipment',
+    stackable: false,
+    value: 22,
+    icon: 'items/woodcutter_smock.png',
+    description:
+      'A robust Thornling-hide smock with reinforced shoulders and a deep hood to shed wood chips. ' +
+      'Favoured by foresters who spend days in the canopy; the wide cut allows a full axe swing without binding.',
+    equipMeta: { slot: 'chest', defenceBonus: 2, requirements: { woodcutting: 3 } },
+  },
+
+  {
+    id: 'miner_gloves',
+    name: "Miner's Gloves",
+    type: 'equipment',
+    stackable: false,
+    value: 26,
+    icon: 'items/miner_gloves.png',
+    description:
+      'Thick Ember Ram hide gloves with a heat-hardened palm panel and reinforced cuff. ' +
+      'The mineral-treated hide absorbs repeated vibration from pick-strikes and repels rock dust — essential for deep-seam work.',
+    equipMeta: { slot: 'hands', defenceBonus: 2, requirements: { mining: 4 } },
+  },
 ]
