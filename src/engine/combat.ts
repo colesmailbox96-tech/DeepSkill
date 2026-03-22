@@ -74,8 +74,8 @@ export function setTarget(state: CombatState, creature: Creature | null): void {
  * @param playerPos    Current player world-space position.
  * @param equipAttack  Total attack bonus from currently equipped gear.
  * @param attackSpeed  Weapon cadence multiplier (1.0 = base; >1 swings faster,
- *                     <1 swings slower).  Derived from the equipped weapon's
- *                     `attackSpeed` field in EquipStats.
+ *                     <1 swings slower).  Derived from the aggregated
+ *                     `attackSpeed` values in EquipStats (via computeEquipStats()).
  * @param onHit        Callback when the player lands a hit; receives the target
  *                     and the final damage value.
  * @param onKill       Callback when a hit kills the target.

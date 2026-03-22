@@ -40,9 +40,9 @@ export interface EquipStats {
   totalAttack: number
   totalDefence: number
   /**
-   * Effective attack-speed multiplier from the equipped weapon.
-   * Derived from `equipMeta.attackSpeed` on each equipped item (product of all
-   * values; absent fields contribute 1.0).  Used in combat.ts to scale
+   * Effective attack-speed multiplier derived from all equipped items.
+   * Computed as the product of each item's `equipMeta.attackSpeed` value
+   * (absent fields contribute 1.0).  Used in combat.ts to scale
    * PLAYER_ATTACK_COOLDOWN — higher values swing faster.
    */
   attackSpeed: number

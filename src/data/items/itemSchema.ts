@@ -85,7 +85,7 @@ export interface ConsumableMeta {
  *
  * - 'blunt'  — clubs, hammers; strong stagger potential.
  * - 'slash'  — swords, daggers; reliable consistent damage.
- * - 'pierce' — spears, picks; narrower arc, high single-hit damage.
+ * - 'pierce' — spears, rapiers; narrower arc, high single-hit damage.
  */
 export type WeaponType = 'blunt' | 'slash' | 'pierce'
 
@@ -95,10 +95,11 @@ export type WeaponType = 'blunt' | 'slash' | 'pierce'
  * slot         — body slot this piece occupies.
  * attackBonus  — flat bonus to outgoing attack damage.
  * defenceBonus — flat damage reduction applied before HP loss.
- * attackSpeed  — multiplier on the base attack cooldown for weapons in the
- *                mainHand slot.  Values > 1.0 swing faster (e.g. 1.4 for a
- *                dagger); values < 1.0 swing slower (e.g. 0.75 for a war-
- *                hammer).  Defaults to 1.0 when absent.
+ * attackSpeed  — multiplier on the base attack cooldown.  The character's
+ *                final attack speed is the product of all equipped items'
+ *                attackSpeed values (defaulting to 1.0 when absent).  Values
+ *                > 1.0 swing faster (e.g. 1.4 for a dagger); values < 1.0
+ *                swing slower (e.g. 0.65 for a warhammer).
  * weaponType   — broad weapon archetype; only relevant for mainHand items.
  * requirements — minimum skill levels required to equip, keyed by skill id.
  */

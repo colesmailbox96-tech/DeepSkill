@@ -101,7 +101,7 @@ export function EquipmentPanel() {
           const statParts: string[] = []
           if (meta?.attackBonus)  statParts.push(`+${meta.attackBonus} ATK`)
           if (meta?.defenceBonus) statParts.push(`+${meta.defenceBonus} DEF`)
-          if (meta?.attackSpeed !== undefined && meta.attackSpeed !== 1)
+          if (meta?.attackSpeed !== undefined)
             statParts.push(`${meta.attackSpeed.toFixed(2)}× SPD`)
           if (meta?.weaponType)   statParts.push(meta.weaponType)
 
