@@ -604,11 +604,13 @@ function App() {
     allNpcs.push(...chapel.npcs)
 
     // Phase 57 — Ashfen Copse Zone
+    // Phase 58 — adds Duskiron Seam rock nodes; onMineStart callback needed.
     // Build the northeast advanced gathering-and-combat zone and merge results.
-    const ashfenCopse = buildAshfenCopse(scene, interactables, onChopStart, onForageStart)
+    const ashfenCopse = buildAshfenCopse(scene, interactables, onChopStart, onForageStart, onMineStart)
     collidables.push(...ashfenCopse.collidables)
     allTreeNodes.push(...ashfenCopse.treeNodes)
     allForageNodes.push(...ashfenCopse.forageNodes)
+    allRockNodes.push(...ashfenCopse.rockNodes)
 
     // Phase 22 — Cooking System Foundation
     // Cooking session: tracks which recipe is being cooked and elapsed cook time.
@@ -854,6 +856,19 @@ function App() {
         )
         useTinkeringStore.getState().openPanel()
         return
+      }
+      // Check secondary ingredient when present (Phase 58+)
+      if (chosen.secondaryIngredient) {
+        const sec = chosen.secondaryIngredient
+        const secSlot = inventory.slots.find((s) => s.id === sec.id)
+        if (!secSlot || secSlot.quantity < sec.qty) {
+          useNotifications.getState().push(
+            `You also need ${sec.qty}× ${sec.label} to assemble this.`,
+            'info',
+          )
+          useTinkeringStore.getState().openPanel()
+          return
+        }
       }
       useTinkeringStore.getState().openPanel()
       tinkerRef.current = { recipe: chosen, elapsed: 0 }
@@ -1909,7 +1924,7 @@ function App() {
             const { inventory, addItem, removeItem, grantSkillXp } = useGameStore.getState()
             const outputName = getItem(sess.recipe.outputId)?.name ?? sess.recipe.outputId
             const materialName = getItem(sess.recipe.materialId)?.name ?? sess.recipe.materialId
-            // Re-validate material at completion.
+            // Re-validate primary material at completion.
             const matSlot = inventory.slots.find((s) => s.id === sess.recipe.materialId)
             if (!matSlot || matSlot.quantity < sess.recipe.materialQty) {
               useNotifications.getState().push(
@@ -1917,6 +1932,18 @@ function App() {
                 'info',
               )
               return
+            }
+            // Re-validate secondary ingredient at completion (Phase 58+).
+            const sec = sess.recipe.secondaryIngredient
+            if (sec) {
+              const secSlot = inventory.slots.find((s) => s.id === sec.id)
+              if (!secSlot || secSlot.quantity < sec.qty) {
+                useNotifications.getState().push(
+                  `The ${sec.label.toLowerCase()} was used up — assembly cancelled.`,
+                  'info',
+                )
+                return
+              }
             }
             // Guard: ensure the output can be received before consuming materials.
             const hasExistingOutput = inventory.slots.some((s) => s.id === sess.recipe.outputId)
@@ -1929,6 +1956,9 @@ function App() {
               return
             }
             removeItem(sess.recipe.materialId, sess.recipe.materialQty)
+            if (sec) {
+              removeItem(sec.id, sec.qty)
+            }
             addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
             grantSkillXp('tinkering', sess.recipe.xp)
             useNotifications.getState().push(

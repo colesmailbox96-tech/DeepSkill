@@ -108,6 +108,8 @@ const BRON_DEF: VendorDef = {
     // Ores for resale
     { id: 'copper_ore',        stock: null },
     { id: 'iron_ore',          stock: null },
+    // Phase 58 — Duskiron Ore (limited — Bron sources it from Ashfen expeditions)
+    { id: 'duskiron_ore',      stock: 5 },
   ],
 }
 
@@ -160,13 +162,15 @@ export function getAllVendorDefs(): VendorDef[] {
 const TOOLSMITH_ACCEPTED_IDS = new Set<string>([
   // All tools are accepted (checked by item.type === 'tool' below)
   // Ores
-  'copper_ore', 'iron_ore', 'ore_chip',
+  'copper_ore', 'iron_ore', 'ore_chip', 'duskiron_ore',
   // Smelted bars
-  'copper_bar', 'iron_bar',
+  'copper_bar', 'iron_bar', 'duskiron_bar',
   // Wood used in smithing
   'ashwood_log', 'ironbark_log', 'ash_sapling_log',
   // Stone
   'rough_stone', 'small_stone', 'flint_shard',
+  // Higher-tier tinkering outputs
+  'dusk_lens_mount',
 ])
 
 /** Item IDs that Brin Salt (Fisher Supplier) will buy from the player. */

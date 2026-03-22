@@ -64,7 +64,10 @@ export interface ShorelineResult {
   collidables: THREE.Mesh[]
   /** Live fishing nodes at the bank for per-frame respawn ticking. */
   fishingNodes: FishingNode[]
-  /** Live forage nodes (reed clumps) for per-frame respawn ticking. */
+  /**
+   * Live forage nodes for per-frame respawn ticking.
+   * Includes all bank forage variants: reed_clump and marsh_glass_reed (Phase 58+).
+   */
   forageNodes: ForageNode[]
   /** Live NPC objects for per-frame ambient sway. */
   npcs: Npc[]
@@ -96,6 +99,17 @@ const REED_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: 'reed_clu
   { pos: [57,  -8], variant: 'reed_clump' },
 ]
 
+// ─── Marsh glass reed placements (Phase 58) ───────────────────────────────────
+
+/**
+ * Two marsh glass reed clusters growing in the mineral-rich shallows of
+ * Gloamwater Bank.  These shimmer faintly with prismatic light.
+ */
+const MARSH_GLASS_REED_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: 'marsh_glass_reed' }> = [
+  { pos: [50, -16], variant: 'marsh_glass_reed' },   // south-west shallows
+  { pos: [61,   8], variant: 'marsh_glass_reed' },   // north bank edge
+]
+
 // ─── Main builder ─────────────────────────────────────────────────────────────
 
 /**
@@ -107,7 +121,8 @@ const REED_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: 'reed_clu
  * @param scene         Three.js scene to add meshes to.
  * @param interactables Shared interactables array (mutated in place).
  * @param onCastStart   Fishing callback passed to each bank fishing node.
- * @param onForageStart Foraging callback passed to each reed clump node.
+ * @param onForageStart Foraging callback passed to all bank forage nodes
+ *                      (reed_clump and marsh_glass_reed variants).
  */
 export function buildShoreline(
   scene: THREE.Scene,
@@ -270,13 +285,24 @@ export function buildShoreline(
   )
 
   // ── Reed forage nodes along the Gloamwater Bank ─────────────────────────────
-  const forageNodes = buildForageNodesAt(
+  const reedForageNodes = buildForageNodesAt(
     scene,
     interactables,
     REED_PLACEMENTS,
     onForageStart,
     'shore_forage',
   )
+
+  // ── Marsh Glass Reed nodes (Phase 58) ────────────────────────────────────────
+  const glassReedForageNodes = buildForageNodesAt(
+    scene,
+    interactables,
+    MARSH_GLASS_REED_PLACEMENTS,
+    onForageStart,
+    'shore_glass_reed',
+  )
+
+  const forageNodes = [...reedForageNodes, ...glassReedForageNodes]
 
   return { collidables, fishingNodes, forageNodes, npcs }
 }

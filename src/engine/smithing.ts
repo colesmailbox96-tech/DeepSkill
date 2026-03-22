@@ -20,7 +20,7 @@ import { useGameStore } from '../store/useGameStore'
 // ─── Recipe configuration ─────────────────────────────────────────────────
 
 /** All smeltable ore IDs. */
-export type SmeltableId = 'copper_ore' | 'iron_ore'
+export type SmeltableId = 'copper_ore' | 'iron_ore' | 'duskiron_ore'
 
 export interface SmeltRecipeConfig {
   /** Human-readable ingredient name for notification messages. */
@@ -58,13 +58,24 @@ export const SMELT_RECIPE_CONFIG: Readonly<Record<SmeltableId, SmeltRecipeConfig
     smeltDuration: 6,
     xp: 30,
   },
+  // Phase 58 — Duskiron Ore: dense advanced ore from the Ashfen Copse.
+  // Requires level 10 Forging and consumes 5 ore per bar.
+  duskiron_ore: {
+    label: 'Duskiron Ore',
+    oreId: 'duskiron_ore',
+    oreQty: 5,
+    barId: 'duskiron_bar',
+    levelReq: 10,
+    smeltDuration: 8,
+    xp: 45,
+  },
 } as const
 
 /**
  * Priority order used by findSmeltableOre() when the player has multiple
  * smeltable ores — highest-value recipe preferred first.
  */
-const SMELT_PRIORITY: SmeltableId[] = ['iron_ore', 'copper_ore']
+const SMELT_PRIORITY: SmeltableId[] = ['duskiron_ore', 'iron_ore', 'copper_ore']
 
 // ─── Furnace station type ─────────────────────────────────────────────────
 
@@ -224,6 +235,8 @@ export interface ForgeRecipeConfig {
   label: string
   /** Registry ID of the tool produced. */
   toolId: string
+  /** Tool tier that the produced tool occupies (used by getToolSpeedFactor). */
+  toolTier: number
   /** All ingredients consumed during the forge. */
   ingredients: ForgeIngredient[]
   /** Minimum level of the associated gathering skill required to forge. */
@@ -236,7 +249,7 @@ export interface ForgeRecipeConfig {
   xp: number
   /**
    * Speed multiplier applied to gather actions when this tool (or better) is
-   * equipped.  1.0 = same as tier 1; 0.75 = 25 % faster.
+   * equipped.  1.0 = same as tier 1; 0.75 = 25 % faster; 0.60 = 40 % faster.
    */
   tierSpeedFactor: number
 }
@@ -246,6 +259,7 @@ export const FORGE_RECIPES: readonly ForgeRecipeConfig[] = [
   {
     label: 'Copper Hatchet',
     toolId: 'copper_hatchet',
+    toolTier: 2,
     ingredients: [
       { id: 'copper_bar',  label: 'Copper Bar',  qty: 2 },
       { id: 'ashwood_log', label: 'Ashwood Log', qty: 2 },
@@ -259,9 +273,11 @@ export const FORGE_RECIPES: readonly ForgeRecipeConfig[] = [
   {
     label: 'Iron Pick',
     toolId: 'iron_pick',
+    toolTier: 2,
     ingredients: [
-      { id: 'iron_bar',    label: 'Iron Bar',    qty: 2 },
-      { id: 'small_stone', label: 'Small Stone', qty: 4 },
+      { id: 'iron_bar',      label: 'Iron Bar',      qty: 2 },
+      { id: 'ironbark_log',  label: 'Ironbark Log',  qty: 1 },
+      { id: 'small_stone',   label: 'Small Stone',   qty: 4 },
     ],
     skillReq: { skill: 'mining', level: 5 },
     forgingLevelReq: 7,
@@ -272,6 +288,7 @@ export const FORGE_RECIPES: readonly ForgeRecipeConfig[] = [
   {
     label: 'Reinforced Rod',
     toolId: 'reinforced_rod',
+    toolTier: 2,
     ingredients: [
       { id: 'copper_bar', label: 'Copper Bar', qty: 1 },
       { id: 'reed_fiber', label: 'Reed Fiber', qty: 3 },
@@ -281,6 +298,23 @@ export const FORGE_RECIPES: readonly ForgeRecipeConfig[] = [
     forgeDuration: 5,
     xp: 20,
     tierSpeedFactor: 0.75,
+  },
+  // Phase 58 — Duskiron Hatchet: a high-grade cutting tool forged from duskiron
+  // bar and reinforced with dense ironbark hafting.  Requires serious skill to
+  // wield effectively but chops through even mineralwood with speed.
+  {
+    label: 'Duskiron Hatchet',
+    toolId: 'duskiron_hatchet',
+    toolTier: 3,
+    ingredients: [
+      { id: 'duskiron_bar',  label: 'Duskiron Bar',  qty: 2 },
+      { id: 'ironbark_log',  label: 'Ironbark Log',  qty: 2 },
+    ],
+    skillReq: { skill: 'woodcutting', level: 8 },
+    forgingLevelReq: 10,
+    forgeDuration: 10,
+    xp: 60,
+    tierSpeedFactor: 0.60,
   },
 ] as const
 
@@ -294,14 +328,19 @@ export function getAllForgeRecipes(): ForgeRecipeConfig[] {
 /**
  * Return the gather-speed multiplier that applies at the given tool tier.
  * Tier 1 (starter tools) → 1.0 (no bonus).
- * Tier 2+ → the `tierSpeedFactor` from the first recipe that produces a tier-2
- * tool, which is the canonical source of truth for the upgrade magnitude.
+ * Higher tiers → the best (lowest) `tierSpeedFactor` among all forge recipes
+ * whose `toolTier` is less than or equal to the player's current tier.
  * Falls back to 1.0 when tier < 2 or no matching recipe is found.
  */
 export function getToolSpeedFactor(tier: number): number {
   if (tier < 2) return 1.0
-  const recipe = FORGE_RECIPES.find(() => true) // all tier-2 recipes share the same factor
-  return recipe?.tierSpeedFactor ?? 1.0
+  let best = 1.0
+  for (const recipe of FORGE_RECIPES) {
+    if (recipe.toolTier <= tier && recipe.tierSpeedFactor < best) {
+      best = recipe.tierSpeedFactor
+    }
+  }
+  return best
 }
 
 /**

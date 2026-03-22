@@ -31,8 +31,8 @@ const PICKAXE_IDS = new Set(Object.keys(PICKAXE_TIERS))
 
 // ── Variant system ────────────────────────────────────────────────────────────
 
-/** The three beginner rock/ore variants introduced in Phase 17. */
-export type RockVariant = 'loose_stone' | 'copper' | 'iron'
+/** The three beginner rock/ore variants introduced in Phase 17, plus Duskiron (Phase 58). */
+export type RockVariant = 'loose_stone' | 'copper' | 'iron' | 'duskiron'
 
 /** Per-variant configuration used for gameplay and visual construction. */
 export interface RockVariantConfig {
@@ -91,6 +91,19 @@ export const ROCK_VARIANT_CONFIG: Readonly<Record<RockVariant, RockVariantConfig
     rockColor: 0x525252,
     oreColor: 0x7a3520,
     rockRadius: 0.85,
+    showOreVein: true,
+  },
+  // Phase 58 — Duskiron: dense dark ore with violet mineral veins,
+  // found only in the Ashfen Copse.  Requires level 10 mining.
+  duskiron: {
+    label: 'Duskiron Seam',
+    oreId: 'duskiron_ore',
+    mineDuration: 6.5,
+    xp: 50,
+    levelReq: 10,
+    rockColor: 0x2e2838,
+    oreColor: 0x7a5aaa,
+    rockRadius: 0.95,
     showOreVein: true,
   },
 }

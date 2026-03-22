@@ -23,10 +23,10 @@ import { useGameStore } from '../store/useGameStore'
 // ─── Recipe configuration ─────────────────────────────────────────────────
 
 /** All tinkerable material IDs. */
-export type TinkerableId = 'copper_bar' | 'iron_bar' | 'ashwood_shaft'
+export type TinkerableId = 'copper_bar' | 'iron_bar' | 'ashwood_shaft' | 'duskiron_bar'
 
 /** Union of every tinkering output ID. */
-export type TinkerOutputId = 'lantern_parts' | 'reinforced_hook' | 'bait_basket' | 'repair_clamp'
+export type TinkerOutputId = 'lantern_parts' | 'reinforced_hook' | 'bait_basket' | 'repair_clamp' | 'dusk_lens_mount'
 
 export interface TinkerRecipeConfig {
   /** Human-readable label for notifications. */
@@ -35,6 +35,12 @@ export interface TinkerRecipeConfig {
   materialId: TinkerableId
   /** How many material units are consumed per tinker. */
   materialQty: number
+  /**
+   * Optional secondary ingredient required in addition to the primary material.
+   * When present, both the primary and secondary must be in the player's
+   * inventory before assembly can start.
+   */
+  secondaryIngredient?: { id: string; qty: number; label: string }
   /** Registry ID of the output item produced. */
   outputId: TinkerOutputId
   /** Minimum Tinkering level required. */
@@ -82,6 +88,19 @@ export const TINKER_RECIPE_CONFIG: Readonly<Record<TinkerOutputId, TinkerRecipeC
     tinkerDuration: 10,
     xp: 22,
   },
+  // Phase 58 — Dusk Lens Mount: a precision duskiron ring fitted with a
+  // faceted marsh glass reed lens, used in advanced optical and surveying
+  // instruments.  Requires both duskiron_bar (frame) and marsh_glass_reed (lens).
+  dusk_lens_mount: {
+    label: 'Dusk Lens Mount',
+    materialId: 'duskiron_bar',
+    materialQty: 1,
+    secondaryIngredient: { id: 'marsh_glass_reed', qty: 2, label: 'Marsh Glass Reed' },
+    outputId: 'dusk_lens_mount',
+    levelReq: 8,
+    tinkerDuration: 12,
+    xp: 38,
+  },
 } as const
 
 /**
@@ -94,6 +113,7 @@ const TINKER_DISPLAY_ORDER: TinkerOutputId[] = [
   'reinforced_hook',
   'bait_basket',
   'repair_clamp',
+  'dusk_lens_mount',
 ]
 
 // ─── Tinkerer's bench station type ───────────────────────────────────────
