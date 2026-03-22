@@ -130,4 +130,15 @@ export const STARTER_SKILLS: Skill[] = [
     description:
       'Stitching hide, binding, and padded cloth into wearable protection and utility garments. A skilled tailor produces tighter seams, wastes less material, and unlocks more elaborate armour patterns.',
   },
+
+  // Phase 66 — Salvage System
+  {
+    id: 'salvaging',
+    name: 'Salvaging',
+    level: 1,
+    experience: 0,
+    experienceToNextLevel: xpToNextLevel(1),
+    description:
+      'Recovering usable materials from collapsed masonry, corroded fittings, and sealed chambers in ancient ruins. A skilled salvager identifies richer deposits faster and extracts rarer components missed by the untrained.',
+  },
 ]

@@ -1,5 +1,6 @@
 /**
  * Phase 46 — Warding Skill Foundation
+ * Phase 66 — Salvage System: vault_seal_ward added.
  *
  * Adds an occult utility skill to Veilmarch.  A warding altar is placed in
  * the Hushwood settlement; players interact with it (or press G while nearby)
@@ -12,8 +13,9 @@
  *      and causes them to avoid marked ground.
  *
  * Ward mark recipes:
- *   ashwood_log  ×2  → ashwillow_ward   (lvl 1, 12 s, 14 xp)
- *   reed_fiber   ×3  → thornward_mark   (lvl 2, 15 s, 18 xp)
+ *   ashwood_log    ×2 → ashwillow_ward   (lvl 1, 12 s, 14 xp)
+ *   reed_fiber     ×3 → thornward_mark   (lvl 2, 15 s, 18 xp)
+ *   vault_seal_wax ×2 → vault_seal_ward  (lvl 3, 18 s, 24 xp) [Phase 66]
  *
  * The caller (App.tsx) owns the level check, timed session, item swap, and XP
  * grant.  This module provides the data, station visual, and helpers.
@@ -26,10 +28,10 @@ import { useGameStore } from '../store/useGameStore'
 // ─── Recipe configuration ─────────────────────────────────────────────────
 
 /** All warding material IDs. */
-export type WardableId = 'ashwood_log' | 'reed_fiber'
+export type WardableId = 'ashwood_log' | 'reed_fiber' | 'vault_seal_wax'
 
 /** Union of every ward mark output ID. */
-export type WardOutputId = 'ashwillow_ward' | 'thornward_mark'
+export type WardOutputId = 'ashwillow_ward' | 'thornward_mark' | 'vault_seal_ward'
 
 export interface WardRecipeConfig {
   /** Human-readable label for notifications and the panel. */
@@ -71,6 +73,21 @@ export const WARD_RECIPE_CONFIG: Readonly<Record<WardOutputId, WardRecipeConfig>
     xp: 18,
     effectHint: 'Creature deterrence',
   },
+
+  // Phase 66 — Salvage System: vault seal wax from the Hollow Vault used as
+  // a binding medium for a stronger ward pattern.  The residual protective
+  // intention locked inside the wax amplifies the inscription, producing a
+  // seal effective against lesser spirits and ruin creatures.
+  vault_seal_ward: {
+    label: 'Vault Seal Ward',
+    materialId: 'vault_seal_wax',
+    materialQty: 2,
+    outputId: 'vault_seal_ward',
+    levelReq: 3,
+    wardDuration: 18,
+    xp: 24,
+    effectHint: 'Ruin spirit deterrence',
+  },
 } as const
 
 /**
@@ -78,7 +95,7 @@ export const WARD_RECIPE_CONFIG: Readonly<Record<WardOutputId, WardRecipeConfig>
  * Typed as `WardOutputId[]` so the compiler catches any key mismatch with
  * `WARD_RECIPE_CONFIG`.
  */
-const WARD_DISPLAY_ORDER: WardOutputId[] = ['ashwillow_ward', 'thornward_mark']
+const WARD_DISPLAY_ORDER: WardOutputId[] = ['ashwillow_ward', 'thornward_mark', 'vault_seal_ward']
 
 // ─── Interact radius ──────────────────────────────────────────────────────
 

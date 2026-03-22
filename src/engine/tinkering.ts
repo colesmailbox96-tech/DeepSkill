@@ -2,6 +2,7 @@
  * Phase 43 — Tinkering Skill Foundation
  * Phase 58 — Dusk Lens Mount added.
  * Phase 62 — Creature Loot Expansion: sealing_pitch, hide_wrap, char_pad added.
+ * Phase 66 — Salvage System: vault_mortar, relic_rivet added.
  *
  * Provides a tinkerer's bench station and the assembly interface for
  * Veilmarch.  A single bench is placed in the Hushwood settlement; players
@@ -9,14 +10,16 @@
  * devices.
  *
  * Tinkering recipes:
- *   copper_bar   ×2  → lantern_parts    (lvl 1,  8 s, 12 xp)
- *   iron_bar     ×1  → reinforced_hook  (lvl 2,  6 s, 15 xp)
- *   ashwood_shaft×2  → bait_basket      (lvl 3,  9 s, 18 xp)
- *   iron_bar     ×2  → repair_clamp     (lvl 4, 10 s, 22 xp)
- *   duskiron_bar ×1 + marsh_glass_reed ×2 → dusk_lens_mount (lvl 8, 12 s, 38 xp) [Phase 58]
- *   copper_bar   ×1 + resinous_organ   ×2 → sealing_pitch   (lvl 5, 10 s, 26 xp) [Phase 62]
- *   iron_bar     ×1 + hushfang_hide    ×2 → hide_wrap        (lvl 6, 11 s, 30 xp) [Phase 62]
- *   iron_bar     ×1 + ember_ram_hide   ×2 → char_pad         (lvl 7, 12 s, 34 xp) [Phase 62]
+ *   copper_bar          ×2 → lantern_parts    (lvl 1,  8 s, 12 xp)
+ *   iron_bar            ×1 → reinforced_hook  (lvl 2,  6 s, 15 xp)
+ *   ashwood_shaft       ×2 → bait_basket      (lvl 3,  9 s, 18 xp)
+ *   iron_bar            ×2 → repair_clamp     (lvl 4, 10 s, 22 xp)
+ *   duskiron_bar    ×1 + marsh_glass_reed ×2 → dusk_lens_mount (lvl 8, 12 s, 38 xp) [Phase 58]
+ *   copper_bar      ×1 + resinous_organ   ×2 → sealing_pitch   (lvl 5, 10 s, 26 xp) [Phase 62]
+ *   iron_bar        ×1 + hushfang_hide    ×2 → hide_wrap        (lvl 6, 11 s, 30 xp) [Phase 62]
+ *   iron_bar        ×1 + ember_ram_hide   ×2 → char_pad         (lvl 7, 12 s, 34 xp) [Phase 62]
+ *   crumbled_masonry×2                       → vault_mortar     (lvl 5, 11 s, 28 xp) [Phase 66]
+ *   iron_relic_fragment×1                    → relic_rivet      (lvl 6, 14 s, 32 xp) [Phase 66]
  *
  * The caller (App.tsx) owns the level check, timed session, item swap, and XP
  * grant.  This module provides the data, station visual, and helpers.
@@ -29,10 +32,10 @@ import { useGameStore } from '../store/useGameStore'
 // ─── Recipe configuration ─────────────────────────────────────────────────
 
 /** All tinkerable material IDs. */
-export type TinkerableId = 'copper_bar' | 'iron_bar' | 'ashwood_shaft' | 'duskiron_bar'
+export type TinkerableId = 'copper_bar' | 'iron_bar' | 'ashwood_shaft' | 'duskiron_bar' | 'crumbled_masonry' | 'iron_relic_fragment'
 
 /** Union of every tinkering output ID. */
-export type TinkerOutputId = 'lantern_parts' | 'reinforced_hook' | 'bait_basket' | 'repair_clamp' | 'dusk_lens_mount' | 'sealing_pitch' | 'hide_wrap' | 'char_pad'
+export type TinkerOutputId = 'lantern_parts' | 'reinforced_hook' | 'bait_basket' | 'repair_clamp' | 'dusk_lens_mount' | 'sealing_pitch' | 'hide_wrap' | 'char_pad' | 'vault_mortar' | 'relic_rivet'
 
 export interface TinkerRecipeConfig {
   /** Human-readable label for notifications. */
@@ -148,6 +151,34 @@ export const TINKER_RECIPE_CONFIG: Readonly<Record<TinkerOutputId, TinkerRecipeC
     tinkerDuration: 12,
     xp: 34,
   },
+
+  // Phase 66 — Salvage System: two new tinkering recipes that consume salvage
+  // materials gathered in the Hollow Vault, connecting the new salvaging loop
+  // to the broader crafting economy.
+
+  // Vault Mortar: crumbled masonry pulverised and pressed into a bonding compound.
+  // Used in structural repairs, sealed joins, and heavy armour construction.
+  vault_mortar: {
+    label: 'Vault Mortar',
+    materialId: 'crumbled_masonry',
+    materialQty: 2,
+    outputId: 'vault_mortar',
+    levelReq: 5,
+    tinkerDuration: 11,
+    xp: 28,
+  },
+
+  // Relic Rivet: worked from a single Iron Relic Fragment into a precision fastener.
+  // The pre-Veil iron grain makes these rivets unusually strong for mid-tier assembly.
+  relic_rivet: {
+    label: 'Relic Rivet',
+    materialId: 'iron_relic_fragment',
+    materialQty: 1,
+    outputId: 'relic_rivet',
+    levelReq: 6,
+    tinkerDuration: 14,
+    xp: 32,
+  },
 } as const
 
 /**
@@ -164,6 +195,8 @@ const TINKER_DISPLAY_ORDER: TinkerOutputId[] = [
   'sealing_pitch',
   'hide_wrap',
   'char_pad',
+  'vault_mortar',
+  'relic_rivet',
 ]
 
 // ─── Tinkerer's bench station type ───────────────────────────────────────
