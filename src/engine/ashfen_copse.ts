@@ -21,12 +21,12 @@
  *   3 × Ashfen Resin nodes     (level 5 foraging,    28 XP, ashfen_resin)
  *
  *  Creatures (spawned via creature.ts):
- *   2 × Hushfang  — sleek charcoal predator (hostile)
- *   2 × Ember Ram — stocky geothermal brute (hostile)
+ *   1 × Hushfang  — sleek charcoal predator (hostile)
+ *   1 × Ember Ram — stocky geothermal brute (hostile)
  *
  *  Atmosphere:
- *   A cool teal-grey ambient fill, a single deep-forest directional, and two
- *   low-intensity point lights (mineral glow seeping from root beds).
+ *   A cool teal-grey ambience provided by three low-intensity point lights
+ *   (one wide copse fill and two mineral-glow root-bed lights).
  *
  * Access:
  *   quarry.ts splits its east cliff at z = −70 → −76 to create the 6-unit

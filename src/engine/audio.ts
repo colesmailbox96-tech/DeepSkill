@@ -638,10 +638,12 @@ export const audioManager = new AudioManager()
 export function getAudioRegion(x: number, z: number): AudioRegion {
   if (x <= -32) return 'chapel'
   if (z >= 19)  return 'bog'
-  // Ashfen Copse must be checked before the quarry condition (x >= 12) because
-  // the copse lies at x >= 34, which also satisfies the quarry predicate.
+  // Ashfen Copse must be checked before the broader east/south region checks
+  // because it lies in the far-northeast corner of the map.
   if (x >= 34 && z <= -54 && z >= -92) return 'ashfen'
-  if (x >= 12)  return 'quarry'
-  if (z <= -15) return 'shoreline'
+  // Shoreline: eastern band, excluding the deep-north quarry strip.
+  if (x >= 19 && z > -19) return 'shoreline'
+  // Quarry: primarily identified by being sufficiently far north.
+  if (z <= -19) return 'quarry'
   return 'hushwood'
 }
