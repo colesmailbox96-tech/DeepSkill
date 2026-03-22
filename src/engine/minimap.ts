@@ -17,8 +17,9 @@
 /** Leftmost (west) world X used for canvas projection. */
 export const WORLD_MIN_X = -65
 /** Rightmost (east) world X used for canvas projection.
- *  Shoreline east boundary is x=+80 (shoreline.ts). */
-export const WORLD_MAX_X = 84
+ *  Shoreline zone extends to x=+80 (shoreline.ts), the true easternmost bound;
+ *  Ashfen Copse east boundary is x=+72 (ashfen_copse.ts). */
+export const WORLD_MAX_X = 80
 /** Northernmost (top) world Z used for canvas projection.
  *  Quarry north cliff is z=−96 (quarry.ts). */
 export const WORLD_MIN_Z = -100
@@ -61,6 +62,17 @@ export const MINIMAP_REGIONS: MinimapRegion[] = [
     contains: (_, z) => z >= 19,
     color: '#2e4a2e',
     borderColor: '#4a7a3a',
+  },
+  // Ashfen must be evaluated before quarry and shoreline because its
+  // coordinates (x≥+34, z∈[−92,−54]) satisfy both the quarry (z≤−19)
+  // and the shoreline (x≥+19) predicates; first match wins.
+  {
+    id: 'ashfen',
+    label: 'Ashfen Copse',
+    // Northeast zone: copse ground x≥+34, z from −92 (north) to −54 (south).
+    contains: (x, z) => x >= 34 && z <= -54 && z >= -92,
+    color: '#1e2a1e',
+    borderColor: '#3a5030',
   },
   {
     id: 'quarry',
@@ -140,6 +152,7 @@ export const MINIMAP_MARKERS: MinimapMarker[] = [
   { id: 'zone_chapel',     label: 'Chapel',          x: -46,    z:    0,   kind: 'zone' },
   { id: 'zone_quarry',     label: 'Quarry',          x:   0,    z:  -57,   kind: 'zone' },
   { id: 'zone_shoreline',  label: 'Shoreline',       x:  50,    z:    0,   kind: 'zone' },
+  { id: 'zone_ashfen',     label: 'Ashfen Copse',    x:  53,    z:  -73,   kind: 'zone' },
 ]
 
 // ─── Marker colour palette ────────────────────────────────────────────────────

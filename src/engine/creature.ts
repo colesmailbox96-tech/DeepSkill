@@ -413,6 +413,57 @@ const CREATURE_DEFS: CreatureDef[] = [
     dropItemId: 'wisp_ember',
     dropChance: 0.70,
   },
+
+  // ── Phase 57 — Ashfen Copse creatures ────────────────────────────────────
+
+  // 8. Hushfang — Phase 57 Ashfen Copse creature.  A sleek, low-slung predator
+  //    with mottled charcoal-grey hide that blends with the mineral bark.  Quick
+  //    and aggressive; drops a hollow fang on defeat.
+  {
+    id: 'hushfang',
+    name: 'Hushfang',
+    x: 48,
+    z: -70,
+    color: 0x2e2e34,
+    scale: 0.80,
+    roamRadius: 7,
+    pursuitRadius: 22,
+    leashRadius: 28,
+    speed: 3.0,
+    idleBase: 3.0,
+    aggroRadius: 8,
+    maxHp: 22,
+    attackDamage: 5,
+    attackCooldown: 1.6,
+    respawnDelay: 40,
+    dropItemId: 'hushfang_fang',
+    dropChance: 0.65,
+  },
+
+  // 9. Ember Ram — Phase 57 Ashfen Copse creature.  A stocky, thick-horned
+  //    beast with charred-rust fur and faintly glowing horn-tips fed by
+  //    geothermal trace.  Slower than the Hushfang but hits harder; drops a
+  //    warm horn shard on defeat.
+  {
+    id: 'ember_ram',
+    name: 'Ember Ram',
+    x: 58,
+    z: -78,
+    color: 0x7a3a18,
+    scale: 1.10,
+    roamRadius: 6,
+    pursuitRadius: 20,
+    leashRadius: 26,
+    speed: 2.2,
+    idleBase: 4.0,
+    aggroRadius: 7,
+    maxHp: 32,
+    attackDamage: 7,
+    attackCooldown: 2.2,
+    respawnDelay: 55,
+    dropItemId: 'ember_ram_horn',
+    dropChance: 0.60,
+  },
 ]
 
 /** Interaction radius for wildlife harvest. */
