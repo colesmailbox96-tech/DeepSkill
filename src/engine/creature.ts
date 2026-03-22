@@ -608,7 +608,8 @@ function _stepCreature(
     c.attackTimer = Math.max(0, c.attackTimer - delta)
   }
 
-  // ── Pursue-radius safety bounds (skip when in aggro/reset/return/dead) ───
+  // ── Pursue-radius safety bounds (skip when in aggro/reset/return; 'dead'
+  //    is already handled by the early return above) ────────────────────────
   if (c.state !== 'aggro' && c.state !== 'reset' && c.state !== 'return') {
     if (pos.distanceTo(c.spawnPos) > c.def.pursuitRadius) {
       _startReturn(c)
@@ -811,15 +812,14 @@ function _killCreature(c: Creature): void {
 /**
  * Phase 56 — Begin a smooth walk-home transition.
  *
- * Sets targetPos to the spawn origin and switches the creature to the
- * 'return' state.  The 'return' FSM case advances the creature toward spawn
- * at RETURN_SPEED_MULT × def.speed each frame until it arrives.
+ * Switches the creature to the 'return' state. The 'return' FSM case advances
+ * the creature toward its spawn origin (spawnPos) at RETURN_SPEED_MULT ×
+ * def.speed each frame until it arrives.
  *
  * Only the dead-respawn path still uses the instant teleport (_resetToSpawn)
  * because the creature is invisible during that countdown anyway.
  */
 function _startReturn(c: Creature): void {
-  c.targetPos.copy(c.spawnPos)
   c.state = 'return'
 }
 
@@ -838,16 +838,31 @@ function _applySeparation(c: Creature, creatures: Creature[], delta: number): vo
   let sx = 0
   let sz = 0
 
+  const sepRadSq = SEPARATION_RADIUS * SEPARATION_RADIUS
+
   for (const other of creatures) {
     if (other === c || other.state === 'dead') continue
     const dx = pos.x - other.mesh.position.x
     const dz = pos.z - other.mesh.position.z
-    const dist = Math.sqrt(dx * dx + dz * dz)
-    if (dist > 0 && dist < SEPARATION_RADIUS) {
-      // Overlap factor: 1 at dist=0, 0 at dist=SEPARATION_RADIUS.
-      const overlap = (SEPARATION_RADIUS - dist) / SEPARATION_RADIUS
-      sx += (dx / dist) * overlap
-      sz += (dz / dist) * overlap
+    const distSq = dx * dx + dz * dz
+
+    // Fast rejection: skip pairs outside the separation radius.
+    if (distSq >= sepRadSq) continue
+
+    const dist = Math.sqrt(distSq)
+    // Overlap factor: 1 at dist=0, 0 at dist=SEPARATION_RADIUS.
+    const overlap = (SEPARATION_RADIUS - dist) / SEPARATION_RADIUS
+
+    if (dist === 0) {
+      // Creatures are perfectly coincident: choose a random direction
+      // in the XZ plane to nudge them apart.
+      const angle = Math.random() * Math.PI * 2
+      sx += Math.cos(angle) * overlap
+      sz += Math.sin(angle) * overlap
+    } else {
+      const invDist = 1 / dist
+      sx += dx * invDist * overlap
+      sz += dz * invDist * overlap
     }
   }
 
