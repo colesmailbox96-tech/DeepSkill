@@ -315,6 +315,66 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
     currencyMin: 3,
     currencyMax: 8,
   },
+
+  // ── Phase 65 — Hollow Vault Steps creatures ────────────────────────────────
+
+  // Vault Crawler — fast arthropod; main drop is vault chitin; occasional bone shards.
+  vault_crawler: {
+    entries: [
+      {
+        itemId: 'vault_chitin',
+        chance: 0.80,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'common',
+      },
+      {
+        itemId: 'bone_shard',
+        chance: 0.45,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'common',
+      },
+      {
+        itemId: 'small_stone',
+        chance: 0.30,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'common',
+      },
+    ],
+    currencyMin: 1,
+    currencyMax: 4,
+  },
+
+  // Stone Wraith — spectral construct; drops wraith stone; rare resinous organ.
+  stone_wraith: {
+    entries: [
+      {
+        itemId: 'wraith_stone',
+        chance: 0.70,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'uncommon',
+      },
+      {
+        itemId: 'resinous_organ',
+        chance: 0.35,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'uncommon',
+      },
+      {
+        itemId: 'small_stone',
+        chance: 0.55,
+        minQty: 1,
+        maxQty: 3,
+        rarity: 'common',
+      },
+    ],
+    currencyMin: 4,
+    currencyMax: 10,
+  },
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

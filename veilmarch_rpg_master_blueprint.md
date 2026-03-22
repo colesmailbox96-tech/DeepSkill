@@ -1490,16 +1490,27 @@ Each phase below is deliberately narrow.
 
 ---
 
-## Phase 65 — Hollow Vault Steps Blockout
+## Phase 65 — Hollow Vault Steps Blockout ✓ COMPLETE
 
 **Goal:** add a more dangerous ruin-adjacent region.
 
 **Deliverables:**
-- descending terrain,
-- ruin doors,
-- creature population,
-- hidden surveying content,
-- progression gate.
+- descending terrain, ✓ (4-step descent to −2.0 m, x = −75 → −88)
+- ruin doors, ✓ (outer archway at x = −60, inner archway at x = −75)
+- creature population, ✓ (Vault Crawler + Stone Wraith in creature.ts / loot.ts)
+- hidden surveying content, ✓ (Cache G antechamber lvl3, Cache H lower vault lvl4)
+- progression gate. ✓ (stone slab at x = −62, unsealed by Ashwillow Ward)
+
+**Implementation files:**
+- `src/engine/hollow_vault.ts` — zone geometry builder
+- `src/engine/creature.ts` — vault_crawler + stone_wraith creature defs
+- `src/data/items/starterItems.ts` — vault_chitin + wraith_stone items
+- `src/engine/loot.ts` — loot tables for vault creatures
+- `src/engine/surveying.ts` — Cache G + Cache H survey caches
+- `src/engine/minimap.ts` — Hollow Vault region + markers
+- `src/engine/audio.ts` — hollow_vault audio region (deep drone)
+- `src/engine/tidemark_chapel.ts` — west wall split for vault passage
+- `src/App.tsx` — zone integration, gate unseal loop, explore trigger
 
 ---
 

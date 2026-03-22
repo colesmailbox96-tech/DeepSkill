@@ -48,6 +48,16 @@ export interface MinimapRegion {
 
 export const MINIMAP_REGIONS: MinimapRegion[] = [
   {
+    id: 'hollow_vault',
+    label: 'Hollow Vault Steps',
+    // West-of-chapel underground region: x ≤ −60, z ∈ [−10, +10].
+    // Must be checked before 'chapel' since the chapel region catch-all covers
+    // all x ≤ −32; hollow vault is a more specific sub-region within that band.
+    contains: (x, z) => x <= -60 && z >= -10 && z <= 10,
+    color: '#1e1a28',
+    borderColor: '#3a3060',
+  },
+  {
     id: 'chapel',
     label: 'Tidemark Chapel',
     // West zone: chapel grounds start at x=−32 (corridor from x=−19).
@@ -140,6 +150,10 @@ export const MINIMAP_MARKERS: MinimapMarker[] = [
   { id: 'nairn_dusk',      label: 'Nairn Dusk',      x: -34,    z:   -4,   kind: 'npc', icon: '🕯️' },
   { id: 'chapel_wisp',     label: 'Chapel Wisp',     x: -52,    z:   -4,   kind: 'npc', icon: '👻' },
 
+  // ── Hollow Vault encounters ─────────────────────────────────────────────────
+  { id: 'vault_crawler',   label: 'Vault Crawler',   x: -82,    z:   -3,   kind: 'npc', icon: '🦂' },
+  { id: 'stone_wraith',    label: 'Stone Wraith',    x: -93,    z:    3,   kind: 'npc', icon: '💀' },
+
   // ── Quarry NPC ─────────────────────────────────────────────────────────────
   { id: 'gorven',          label: 'Gorven',          x:   6,    z:  -55.5, kind: 'npc', icon: '⛏️' },
 
@@ -147,12 +161,13 @@ export const MINIMAP_MARKERS: MinimapMarker[] = [
   { id: 'brin_salt',       label: 'Brin Salt',       x:  53,    z:    3,   kind: 'npc', icon: '🎣' },
 
   // ── Zone labels (shown only in expanded overlay) ───────────────────────────
-  { id: 'zone_hushwood',   label: 'Hushwood',        x:   0,    z:    0,   kind: 'zone' },
-  { id: 'zone_bog',        label: 'Bog',             x:   0,    z:   50,   kind: 'zone' },
-  { id: 'zone_chapel',     label: 'Chapel',          x: -46,    z:    0,   kind: 'zone' },
-  { id: 'zone_quarry',     label: 'Quarry',          x:   0,    z:  -57,   kind: 'zone' },
-  { id: 'zone_shoreline',  label: 'Shoreline',       x:  50,    z:    0,   kind: 'zone' },
-  { id: 'zone_ashfen',     label: 'Ashfen Copse',    x:  53,    z:  -73,   kind: 'zone' },
+  { id: 'zone_hushwood',      label: 'Hushwood',        x:   0,    z:    0,   kind: 'zone' },
+  { id: 'zone_bog',           label: 'Bog',             x:   0,    z:   50,   kind: 'zone' },
+  { id: 'zone_chapel',        label: 'Chapel',          x: -46,    z:    0,   kind: 'zone' },
+  { id: 'zone_quarry',        label: 'Quarry',          x:   0,    z:  -57,   kind: 'zone' },
+  { id: 'zone_shoreline',     label: 'Shoreline',       x:  50,    z:    0,   kind: 'zone' },
+  { id: 'zone_ashfen',        label: 'Ashfen Copse',    x:  53,    z:  -73,   kind: 'zone' },
+  { id: 'zone_hollow_vault',  label: 'Hollow Vault',    x: -79,    z:    0,   kind: 'zone' },
 ]
 
 // ─── Marker colour palette ────────────────────────────────────────────────────
