@@ -588,6 +588,21 @@ export function triggerFlee(creature: Creature, fromPos: THREE.Vector3): void {
   _startFlee(creature, fromPos)
 }
 
+/**
+ * Phase 61 — Force a hostile creature into the 'aggro' state from outside its
+ * normal aggro radius.  Used when a ranged projectile strikes the creature so
+ * it responds to the shot regardless of proximity.
+ *
+ * No-op for non-hostile creatures (no aggroRadius / no maxHp), dead creatures,
+ * or creatures already pursuing / returning.
+ */
+export function triggerAggro(creature: Creature): void {
+  if (creature.state === 'dead') return
+  if (!_isHostile(creature.def)) return
+  if (creature.state === 'aggro') return
+  creature.state = 'aggro'
+}
+
 // ─── Private helpers ──────────────────────────────────────────────────────────
 
 /**

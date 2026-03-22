@@ -892,6 +892,39 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     equipMeta: { slot: 'hands', defenceBonus: 1, requirements: { wayfaring: 1 } },
   },
 
+  // ── Phase 61 — Ranged Combat Foundation ──────────────────────────────────
+
+  {
+    id: 'flint_arrow',
+    name: 'Flint Arrow',
+    type: 'material',
+    stackable: true,
+    value: 1,
+    icon: 'items/flint_arrow.png',
+    description:
+      'A straight reed shaft tipped with a knapped flint head and stabilised by split feather fletching. ' +
+      'Cheap to make and accurate enough at close range — the standard ammunition for a reed shortbow.',
+  },
+
+  {
+    id: 'reed_shortbow',
+    name: 'Reed Shortbow',
+    type: 'equipment',
+    stackable: false,
+    value: 22,
+    icon: 'items/reed_shortbow.png',
+    description:
+      'A recurved bow fashioned from dried marsh-reed, bound at the tips with sinew cord. ' +
+      'Fires flint arrows with enough force to strike at a distance — lets a careful fighter ' +
+      'thin out threats before they close in.',
+    equipMeta: {
+      slot: 'mainHand',
+      weaponType: 'ranged',
+      rangeBonus: 5,
+      ammoId: 'flint_arrow',
+    },
+  },
+
   // ── Phase 59 — Cooking Expansion ─────────────────────────────────────────
 
   {
