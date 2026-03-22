@@ -1,6 +1,7 @@
 /**
  * Phase 44 — Surveying Skill Foundation
  * Phase 45 — Hidden Cache System
+ * Phase 65 — Hollow Vault Steps survey caches
  *
  * Adds an original discovery skill to Veilmarch.  A survey stone is placed in
  * the Hushwood settlement; players interact with it (or press Y while nearby)
@@ -16,13 +17,18 @@
  *   - Two new buried cache locations (6 caches total).
  *   - Live cooldown status exported for the panel UI.
  *
+ * Phase 65 additions:
+ *   - Two new buried cache locations in the Hollow Vault Steps (8 caches total).
+ *
  * Survey caches:
- *   Cache A — near the eastern tree line    ( 6,  0,  8)  lvl 1   6 xp
- *   Cache B — south of the fishing dock     ( 3,  0, -4)  lvl 1   8 xp
- *   Cache C — behind the carving workbench  (-5,  0,  9)  lvl 2  10 xp
- *   Cache D — far north trail bend          ( 0,  0, 24)  lvl 3  18 xp
- *   Cache E — west camp edge (bog margin)   (-8,  0,  3)  lvl 1   7 xp  ← Phase 45
- *   Cache F — northeast ridge lookout       ( 8,  0, 18)  lvl 2  12 xp  ← Phase 45
+ *   Cache A — near the eastern tree line    ( 6,    0,   8)  lvl 1   6 xp
+ *   Cache B — south of the fishing dock     ( 3,    0,  -4)  lvl 1   8 xp
+ *   Cache C — behind the carving workbench  (-5,    0,   9)  lvl 2  10 xp
+ *   Cache D — far north trail bend          ( 0,    0,  24)  lvl 3  18 xp
+ *   Cache E — west camp edge (bog margin)   (-8,    0,   3)  lvl 1   7 xp  ← Phase 45
+ *   Cache F — northeast ridge lookout       ( 8,    0,  18)  lvl 2  12 xp  ← Phase 45
+ *   Cache G — vault antechamber             (-67, 0,   2)  lvl 3  16 xp  ← Phase 65
+ *   Cache H — lower vault floor             (-95, 0,  -4)  lvl 4  22 xp  ← Phase 65
  *
  * The caller (App.tsx) owns the survey timer, reveal loop, cache interaction,
  * item award, and XP grant.  This module provides the data, station visual,
@@ -149,6 +155,44 @@ export const SURVEY_CACHE_CONFIGS: Readonly<SurveyCacheConfig[]> = [
     levelReq: 2,
     xp: 12,
     cooldown: 150,
+  },
+
+  // ── Phase 65 — Hollow Vault Steps hidden caches ───────────────────────────
+
+  // Cache G — Vault Antechamber Cache
+  //   Buried just inside the vault entrance beneath loose rubble.
+  //   Level 3 required; rewards vault-adjacent materials.
+  {
+    id: 'cache_vault_antechamber',
+    label: 'Vault Antechamber Cache',
+    position: [-67, 0, 2],
+    rewardPool: [
+      { itemId: 'vault_chitin', qty: 2, weight: 4 },
+      { itemId: 'bone_shard',   qty: 2, weight: 3 },
+      { itemId: 'small_stone',  qty: 3, weight: 3 },
+      { itemId: 'raw_resin',    qty: 1, weight: 1 },
+    ],
+    levelReq: 3,
+    xp: 16,
+    cooldown: 180,
+  },
+
+  // Cache H — Lower Vault Cache
+  //   Concealed in a gap between collapsed masonry blocks at the deepest level.
+  //   Level 4 required; rewards rare vault and warding materials.
+  {
+    id: 'cache_vault_lower',
+    label: 'Lower Vault Cache',
+    position: [-95, 0, -4],
+    rewardPool: [
+      { itemId: 'wraith_stone',    qty: 1, weight: 3 },
+      { itemId: 'vault_chitin',    qty: 3, weight: 4 },
+      { itemId: 'resinous_organ',  qty: 1, weight: 2 },
+      { itemId: 'duskiron_ore',    qty: 1, weight: 1 },
+    ],
+    levelReq: 4,
+    xp: 22,
+    cooldown: 240,
   },
 ] as const
 

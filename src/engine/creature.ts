@@ -464,6 +464,56 @@ const CREATURE_DEFS: CreatureDef[] = [
     dropItemId: 'ember_ram_horn',
     dropChance: 0.60,
   },
+
+  // ── Phase 65 — Hollow Vault Steps creatures ────────────────────────────────
+
+  // 10. Vault Crawler — Phase 65 Hollow Vault creature.  A pale, skittering
+  //     arthropod that nests in collapsed masonry.  Fast and aggressive in
+  //     numbers; drops vault chitin on defeat.
+  {
+    id: 'vault_crawler',
+    name: 'Vault Crawler',
+    x: -82,
+    z: -3,
+    color: 0xc0b098,
+    scale: 0.60,
+    roamRadius: 6,
+    pursuitRadius: 18,
+    leashRadius: 24,
+    speed: 3.4,
+    idleBase: 2.5,
+    aggroRadius: 6,
+    maxHp: 14,
+    attackDamage: 4,
+    attackCooldown: 1.4,
+    respawnDelay: 28,
+    dropItemId: 'vault_chitin',
+    dropChance: 0.75,
+  },
+
+  // 11. Stone Wraith — Phase 65 Hollow Vault creature.  A slow, hulking
+  //     spectral construct that formed from collapsed warding-inscribed masonry.
+  //     High durability; hits hard.  Drops a wraith stone on defeat.
+  {
+    id: 'stone_wraith',
+    name: 'Stone Wraith',
+    x: -93,
+    z: 3,
+    color: 0x4a4858,
+    scale: 1.20,
+    roamRadius: 5,
+    pursuitRadius: 16,
+    leashRadius: 22,
+    speed: 1.8,
+    idleBase: 5.0,
+    aggroRadius: 8,
+    maxHp: 48,
+    attackDamage: 9,
+    attackCooldown: 2.8,
+    respawnDelay: 70,
+    dropItemId: 'wraith_stone',
+    dropChance: 0.60,
+  },
 ]
 
 /** Interaction radius for wildlife harvest. */

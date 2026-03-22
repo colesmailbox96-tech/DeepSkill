@@ -1271,4 +1271,32 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'The mineral-treated hide absorbs repeated vibration from pick-strikes and repels rock dust — essential for deep-seam work.',
     equipMeta: { slot: 'hands', defenceBonus: 2, requirements: { mining: 4 } },
   },
+
+  // ── Phase 65 — Hollow Vault Steps drop materials ──────────────────────────
+
+  {
+    id: 'vault_chitin',
+    name: 'Vault Chitin',
+    type: 'material',
+    stackable: true,
+    value: 6,
+    icon: 'items/vault_chitin.png',
+    description:
+      'A pale, interlocking chitinous plate shed by Vault Crawlers. ' +
+      'Lightweight and surprisingly rigid, the material holds a faint mineral sheen — ' +
+      'useful in light armour and insulating craft applications.',
+  },
+
+  {
+    id: 'wraith_stone',
+    name: 'Wraith Stone',
+    type: 'material',
+    stackable: true,
+    value: 14,
+    icon: 'items/wraith_stone.png',
+    description:
+      'A cold, porous stone fragment that formed inside the body of a Stone Wraith. ' +
+      'Residual warding resonance makes the surface faintly luminescent; ' +
+      'experienced warders believe it could be refined into higher-tier ward inscriptions.',
+  },
 ]

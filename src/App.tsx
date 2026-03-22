@@ -118,6 +118,7 @@ import { useWardingStore } from './store/useWardingStore'
 import { buildBrackroot } from './engine/brackroot'
 import { buildTidemarkChapel } from './engine/tidemark_chapel'
 import { buildAshfenCopse } from './engine/ashfen_copse'
+import { buildHollowVault, pollGateUnsealed } from './engine/hollow_vault'
 import {
   getHazardAtPosition,
   isProtectedFromHazard,
@@ -630,6 +631,13 @@ function App() {
     const chapel = buildTidemarkChapel(scene, interactables)
     collidables.push(...chapel.collidables)
     allNpcs.push(...chapel.npcs)
+
+    // Phase 65 — Hollow Vault Steps Zone
+    // Build the ruin-adjacent descending vault west of the chapel.
+    // The gate slab is a collidable until the player unseals it with a ward.
+    const hollowVault = buildHollowVault(scene, interactables)
+    collidables.push(...hollowVault.collidables)
+    let vaultGateSealed = true
 
     // Phase 57 — Ashfen Copse Zone
     // Phase 58 — adds Duskiron Seam rock nodes; onMineStart callback needed.
@@ -1188,6 +1196,10 @@ function App() {
     const collidableBoxes: THREE.Box3[] = collidables.map((m) =>
       new THREE.Box3().setFromObject(m),
     )
+
+    // Phase 65 — Index of the vault gate slab in both collidables and
+    // collidableBoxes.  Used to splice it out once the player unseals the gate.
+    let vaultGateSlabIdx = collidables.indexOf(hollowVault.gateMesh)
 
     // Phase 03 — player controller
     const player = createPlayer(scene)
@@ -2409,6 +2421,25 @@ function App() {
       // Phase 47 — Tidemark Chapel explore trigger.
       if (player.mesh.position.x <= -32) {
         triggerZoneExplore('tidemark_chapel')
+      }
+      // Phase 65 — Hollow Vault Steps explore trigger.
+      if (player.mesh.position.x <= -62 && player.mesh.position.z >= -10 && player.mesh.position.z <= 10) {
+        triggerZoneExplore('hollow_vault')
+      }
+      // Phase 65 — Vault gate unseal: hide gate mesh, remove its collidable, and
+      // unregister its interactable so the player can't target an invisible gate.
+      if (vaultGateSealed && pollGateUnsealed()) {
+        vaultGateSealed = false
+        hollowVault.gateMesh.visible = false
+        if (vaultGateSlabIdx >= 0) {
+          collidables.splice(vaultGateSlabIdx, 1)
+          collidableBoxes.splice(vaultGateSlabIdx, 1)
+          vaultGateSlabIdx = -1
+        }
+        const gateInteractableIdx = interactables.indexOf(hollowVault.gateInteractable)
+        if (gateInteractableIdx !== -1) {
+          interactables.splice(gateInteractableIdx, 1)
+        }
       }
       // Sync live target HP to the combat store so the React overlay stays current.
       // Cache the last values written to avoid redundant Zustand updates every frame.

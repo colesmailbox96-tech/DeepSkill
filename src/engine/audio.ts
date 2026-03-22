@@ -34,7 +34,7 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /** Unique identifier for an audio region. */
-export type AudioRegion = 'hushwood' | 'bog' | 'chapel' | 'quarry' | 'shoreline' | 'ashfen'
+export type AudioRegion = 'hushwood' | 'bog' | 'chapel' | 'quarry' | 'shoreline' | 'ashfen' | 'hollow_vault'
 
 /** Type of one-shot sound effect. */
 export type SfxType =
@@ -106,6 +106,15 @@ const REGION_CONFIG: Record<AudioRegion, RegionConfig> = {
     filterQ: 2.2,
     droneFreq: 68,
     droneLevel: 0.14,
+  },
+  // Phase 65 — Hollow Vault Steps: oppressive underground silence broken by
+  // a deep resonant drone from the warding inscriptions in the stone.
+  hollow_vault: {
+    filterType: 'lowpass',
+    filterFreq: 100,
+    filterQ: 3.5,
+    droneFreq: 45,
+    droneLevel: 0.22,
   },
 }
 
@@ -636,6 +645,8 @@ export const audioManager = new AudioManager()
  * This mirrors the zone layout established by the world-building phases.
  */
 export function getAudioRegion(x: number, z: number): AudioRegion {
+  // Hollow Vault Steps — deeper than the chapel; narrow z band within the chapel x range.
+  if (x <= -60 && z >= -10 && z <= 10) return 'hollow_vault'
   if (x <= -32) return 'chapel'
   if (z >= 19)  return 'bog'
   // Ashfen Copse must be checked before the broader east/south region checks

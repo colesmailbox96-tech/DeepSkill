@@ -26,6 +26,11 @@
  * Access:
  *   The Hushwood west boundary wall is split in hushwood.ts with a 6-unit gap
  *   at z = −3 → +3 so the player can walk west into this zone.
+ *
+ * Phase 65 modification:
+ *   The chapel west boundary wall (x = −60) is now split into two sections that
+ *   leave a 6-unit central gap (z = −3 → +3) so the player can continue west
+ *   into the Hollow Vault Steps zone.
  */
 
 import * as THREE from 'three'
@@ -120,8 +125,12 @@ export function buildTidemarkChapel(
   collidables.push(_addWall(scene, 28, 5, 0.4, -46, 2.5, -18, matBound))
   // South wall (z = +18)
   collidables.push(_addWall(scene, 28, 5, 0.4, -46, 2.5,  18, matBound))
-  // West wall (x = −60)
-  collidables.push(_addWall(scene, 0.4, 5, 36, -60, 2.5,   0, matBound))
+  // West wall (x = −60) — Phase 65: split into two sections to leave a 6-unit
+  // central gap (z = −3 → +3) that aligns with the Hollow Vault Steps entrance.
+  // West-north partial (z = −18 → −3)
+  collidables.push(_addWall(scene, 0.4, 5, 15, -60, 2.5, -10.5, matBound))
+  // West-south partial (z = +3 → +18)
+  collidables.push(_addWall(scene, 0.4, 5, 15, -60, 2.5,  10.5, matBound))
   // East wall opening: two partial walls leaving a 6-unit gap at the corridor entry
   // East-north partial (z = −18 → −3)
   collidables.push(_addWall(scene, 0.4, 5, 15, -32, 2.5, -10.5, matBound))
