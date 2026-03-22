@@ -63,6 +63,57 @@ p {
   opacity: 1;
 }
 
+/* ── Phase 67 — Gate Blocked HUD ─────────────────────────────────────────── */
+
+/**
+ * Persistent requirement panel that appears just above the interaction prompt
+ * when the player is blocked by a gate.  Shows what is needed to proceed.
+ */
+.gate-blocked-hud {
+  position: absolute;
+  bottom: calc(1.25rem + 2.5rem + 3rem);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: rgba(10, 6, 18, 0.82);
+  border: 1px solid rgba(120, 80, 160, 0.4);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.9rem 0.4rem 0.7rem;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: gate-blocked-in 0.2s ease forwards;
+}
+
+@keyframes gate-blocked-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0);   }
+}
+
+.gate-blocked-hud__icon {
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+
+.gate-blocked-hud__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.gate-blocked-hud__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(200, 170, 240, 0.95);
+  letter-spacing: 0.03em;
+}
+
+.gate-blocked-hud__detail {
+  font-size: 0.72rem;
+  color: rgba(175, 150, 205, 0.75);
+}
+
 /* ── Phase 09 — HUD Foundation ───────────────────────────────────────────── */
 
 /** Full-bleed overlay that sits above the canvas without intercepting pointer

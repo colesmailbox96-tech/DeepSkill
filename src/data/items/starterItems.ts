@@ -1386,4 +1386,20 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'The residual intention locked inside the wax amplifies the inscription, ' +
       'producing a seal strong enough to bar lesser spirits and deter ruin creatures.',
   },
+
+  // ── Phase 67 — Skill-gated vault inscription reward ───────────────────────
+
+  {
+    id: 'vault_inscription_fragment',
+    name: 'Vault Inscription Fragment',
+    type: 'material',
+    stackable: true,
+    value: 22,
+    icon: 'items/vault_inscription_fragment.png',
+    description:
+      'A careful transcription of the runic inscription carved into the south ' +
+      'wall of the Hollow Vault lower floor.  The glyphs predate the Veil and ' +
+      'record a partial ward-boundary survey — scholars and warders prize these ' +
+      'fragments for reconstructing the pre-Veil boundary map.',
+  },
 ]

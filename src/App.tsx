@@ -178,6 +178,7 @@ import { TailoringPanel } from './ui/hud/TailoringPanel'
 import { WardingPanel } from './ui/hud/WardingPanel'
 import { CookPanel } from './ui/hud/CookPanel'
 import { HazardWarningHud } from './ui/hud/HazardWarningHud'
+import { GateBlockedHud } from './ui/hud/GateBlockedHud'
 import { AudioSettingsPanel } from './ui/hud/AudioSettingsPanel'
 import { audioManager, getAudioRegion } from './engine/audio'
 import type { AudioRegion } from './engine/audio'
@@ -1243,6 +1244,10 @@ function App() {
     // Phase 65 — Index of the vault gate slab in both collidables and
     // collidableBoxes.  Used to splice it out once the player unseals the gate.
     let vaultGateSlabIdx = collidables.indexOf(hollowVault.gateMesh)
+
+    // Phase 67 — Index of the inner sanctum door in collidables.
+    // Spliced out once the player opens the door via the task-gated interaction.
+    let innerSanctumDoorIdx = collidables.indexOf(hollowVault.innerSanctumDoor.mesh)
 
     // Phase 03 — player controller
     const player = createPlayer(scene)
@@ -2487,6 +2492,18 @@ function App() {
           interactables.splice(gateInteractableIdx, 1)
         }
       }
+      // Phase 67 — Inner sanctum door: opened when the player satisfies the
+      // task requirement.  Remove collidable and interactable on open.
+      if (innerSanctumDoorIdx >= 0 && hollowVault.innerSanctumDoor.pollOpened()) {
+        hollowVault.innerSanctumDoor.mesh.visible = false
+        collidables.splice(innerSanctumDoorIdx, 1)
+        collidableBoxes.splice(innerSanctumDoorIdx, 1)
+        innerSanctumDoorIdx = -1
+        const doorInteractableIdx = interactables.indexOf(hollowVault.innerSanctumDoor.interactable)
+        if (doorInteractableIdx !== -1) {
+          interactables.splice(doorInteractableIdx, 1)
+        }
+      }
       // Sync live target HP to the combat store so the React overlay stays current.
       // Cache the last values written to avoid redundant Zustand updates every frame.
       const combatTarget = combatRef.current.target
@@ -2643,6 +2660,8 @@ function App() {
           />
           {/* Phase 48 — Environmental hazard warning banner */}
           <HazardWarningHud />
+          {/* Phase 67 — Gate requirement feedback panel */}
+          <GateBlockedHud />
           {/* Phase 49 — Audio settings panel */}
           <AudioSettingsPanel />
           {/* Phase 50 — Save / Load panel */}
