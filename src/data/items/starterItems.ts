@@ -1,5 +1,6 @@
 /**
  * Phase 12 — Starter Item Set
+ * Phase 58 — Resource Tier Expansion
  *
  * Defines the 8 Phase 12 starter item definitions.
  * This module only exports the definitions; registration is handled by
@@ -363,6 +364,22 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     toolMeta: { skill: 'fishing', tier: 2 },
   },
 
+  // ── Phase 58 — Tier 3 Woodcutting Tool ───────────────────────────────────
+
+  {
+    id: 'duskiron_hatchet',
+    name: 'Duskiron Hatchet',
+    type: 'tool',
+    stackable: false,
+    value: 85,
+    icon: 'items/duskiron_hatchet.png',
+    description:
+      'A hatchet forged from duskiron bar, hafted with dense ironbark hardwood. ' +
+      'The dark blade holds its edge far longer than copper or iron; it shears through ' +
+      'Mineral Ashwood and ironbark alike with swift, decisive blows.',
+    toolMeta: { skill: 'woodcutting', tier: 3 },
+  },
+
   // ── Phase 40 — Smithing bars ──────────────────────────────────────────────
 
   {
@@ -528,6 +545,21 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'An indispensable tool for mending cracked hafts, loose joints, and fractured fittings.',
   },
 
+  // ── Phase 58 — Tinkering Output ──────────────────────────────────────────
+
+  {
+    id: 'dusk_lens_mount',
+    name: 'Dusk Lens Mount',
+    type: 'material',
+    stackable: true,
+    value: 45,
+    icon: 'items/dusk_lens_mount.png',
+    description:
+      'A precision ring of duskiron fitted with a faceted marsh glass reed lens. ' +
+      'The dark metal frame holds the prismatic lens perfectly aligned — used in advanced ' +
+      'surveying instruments, signal lanterns, and high-grade optical assemblies.',
+  },
+
   // ── Phase 44 — Surveying Salvage Outputs ─────────────────────────────────
 
   {
@@ -656,6 +688,47 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'A spiralled horn broken from an Ember Ram, still faintly warm to the touch from its ' +
       'geothermal charge. Used in advanced smithing as a heat-draw agent, or ground into powder ' +
       'as a flux additive for high-grade iron work.',
+  },
+
+  // ── Phase 58 — Resource Tier Expansion ───────────────────────────────────
+
+  {
+    id: 'duskiron_ore',
+    name: 'Duskiron Ore',
+    type: 'material',
+    stackable: true,
+    value: 14,
+    icon: 'items/duskiron_ore.png',
+    description:
+      'A chunk of dark, iron-dense ore threaded with faint violet mineral veins. ' +
+      'Found only in the deepest seams of the Ashfen Copse, it is harder and denser ' +
+      'than common iron — smelting it requires a well-maintained furnace and a steady hand.',
+  },
+
+  {
+    id: 'duskiron_bar',
+    name: 'Duskiron Bar',
+    type: 'material',
+    stackable: true,
+    value: 32,
+    icon: 'items/duskiron_bar.png',
+    description:
+      'A heavy bar of refined duskiron, still faintly warm from the furnace. ' +
+      'Its dark surface holds a faint violet sheen under light — prized for high-grade ' +
+      'tools and advanced tinkering assemblies that must withstand serious punishment.',
+  },
+
+  {
+    id: 'marsh_glass_reed',
+    name: 'Marsh Glass Reed',
+    type: 'material',
+    stackable: true,
+    value: 10,
+    icon: 'items/marsh_glass_reed.png',
+    description:
+      'A tall, semi-translucent reed that grows only in mineral-rich marsh shallows. ' +
+      'Its hollow stalk refracts light with a faint prismatic shimmer. ' +
+      'Used in fine cordage, lens-work, and as a flux binder in high-temperature smeltwork.',
   },
 
   // ── Phase 47 — Tidemark Chapel Drops ─────────────────────────────────────

@@ -23,10 +23,10 @@ import { useGameStore } from '../store/useGameStore'
 // ─── Recipe configuration ─────────────────────────────────────────────────
 
 /** All tinkerable material IDs. */
-export type TinkerableId = 'copper_bar' | 'iron_bar' | 'ashwood_shaft'
+export type TinkerableId = 'copper_bar' | 'iron_bar' | 'ashwood_shaft' | 'duskiron_bar'
 
 /** Union of every tinkering output ID. */
-export type TinkerOutputId = 'lantern_parts' | 'reinforced_hook' | 'bait_basket' | 'repair_clamp'
+export type TinkerOutputId = 'lantern_parts' | 'reinforced_hook' | 'bait_basket' | 'repair_clamp' | 'dusk_lens_mount'
 
 export interface TinkerRecipeConfig {
   /** Human-readable label for notifications. */
@@ -82,6 +82,17 @@ export const TINKER_RECIPE_CONFIG: Readonly<Record<TinkerOutputId, TinkerRecipeC
     tinkerDuration: 10,
     xp: 22,
   },
+  // Phase 58 — Dusk Lens Mount: a precision assembly of duskiron and marsh
+  // glass reed, used in advanced optical and surveying instruments.
+  dusk_lens_mount: {
+    label: 'Dusk Lens Mount',
+    materialId: 'duskiron_bar',
+    materialQty: 1,
+    outputId: 'dusk_lens_mount',
+    levelReq: 8,
+    tinkerDuration: 12,
+    xp: 38,
+  },
 } as const
 
 /**
@@ -94,6 +105,7 @@ const TINKER_DISPLAY_ORDER: TinkerOutputId[] = [
   'reinforced_hook',
   'bait_basket',
   'repair_clamp',
+  'dusk_lens_mount',
 ]
 
 // ─── Tinkerer's bench station type ───────────────────────────────────────

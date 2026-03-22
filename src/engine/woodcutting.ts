@@ -30,6 +30,7 @@ export const RESPAWN_TIME = 30.0
 const HATCHET_TIERS: Readonly<Record<string, number>> = {
   rough_ash_hatchet: 1,
   copper_hatchet: 2,
+  duskiron_hatchet: 3,
 }
 
 /** Item IDs that count as a valid woodcutting hatchet. */

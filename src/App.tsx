@@ -604,11 +604,13 @@ function App() {
     allNpcs.push(...chapel.npcs)
 
     // Phase 57 — Ashfen Copse Zone
+    // Phase 58 — adds Duskiron Seam rock nodes; onMineStart callback needed.
     // Build the northeast advanced gathering-and-combat zone and merge results.
-    const ashfenCopse = buildAshfenCopse(scene, interactables, onChopStart, onForageStart)
+    const ashfenCopse = buildAshfenCopse(scene, interactables, onChopStart, onForageStart, onMineStart)
     collidables.push(...ashfenCopse.collidables)
     allTreeNodes.push(...ashfenCopse.treeNodes)
     allForageNodes.push(...ashfenCopse.forageNodes)
+    allRockNodes.push(...ashfenCopse.rockNodes)
 
     // Phase 22 — Cooking System Foundation
     // Cooking session: tracks which recipe is being cooked and elapsed cook time.

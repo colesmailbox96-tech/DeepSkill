@@ -26,7 +26,7 @@ import { useGameStore } from '../store/useGameStore'
 
 // ─── Variant configuration ────────────────────────────────────────────────────
 
-export type ForageVariant = 'reed_clump' | 'marsh_herb' | 'resin_glob' | 'ashfen_resin'
+export type ForageVariant = 'reed_clump' | 'marsh_herb' | 'resin_glob' | 'ashfen_resin' | 'marsh_glass_reed'
 
 export interface ForageVariantConfig {
   /** Interaction label shown when the node is ready. */
@@ -95,6 +95,19 @@ export const FORAGE_VARIANT_CONFIG: Readonly<Record<ForageVariant, ForageVariant
     respawnTime: 35,
     primaryColor: 0x6a3a10,
     secondaryColor: 0x2a1a08,
+  },
+  // Phase 58 — Marsh Glass Reed: semi-translucent reeds growing in mineral-rich
+  // shallows.  Their prismatic stalks shimmer with a pale green-white light.
+  marsh_glass_reed: {
+    label: 'Marsh Glass Reed',
+    quietLabel: 'Bare Reed Bed',
+    depletedMessage: 'These glass reeds have been stripped — wait for regrowth.',
+    itemId: 'marsh_glass_reed',
+    xp: 35,
+    levelReq: 7,
+    respawnTime: 40,
+    primaryColor: 0xa8d8c0,
+    secondaryColor: 0xd0f0e8,
   },
 } as const
 
@@ -240,6 +253,52 @@ function _buildResinGlobMesh(primaryColor: number, secondaryColor: number): THRE
   return group
 }
 
+/** Build the Three.js geometry for a marsh-glass-reed node. */
+function _buildMarshGlassReedMesh(primaryColor: number, secondaryColor: number): THREE.Group {
+  const group = new THREE.Group()
+  const matStalk = new THREE.MeshStandardMaterial({
+    color: primaryColor,
+    emissive: new THREE.Color(secondaryColor).multiplyScalar(0.22),
+    roughness: 0.30,
+    transparent: true,
+    opacity: 0.88,
+  })
+  const matTip = new THREE.MeshStandardMaterial({
+    color: secondaryColor,
+    emissive: new THREE.Color(secondaryColor).multiplyScalar(0.35),
+    roughness: 0.20,
+    transparent: true,
+    opacity: 0.75,
+  })
+
+  const offsets: Array<[number, number]> = [
+    [ 0.00,  0.00],
+    [ 0.22,  0.18],
+    [-0.20,  0.22],
+    [ 0.10, -0.25],
+    [-0.12, -0.12],
+  ]
+  for (const [ox, oz] of offsets) {
+    const height = 1.3 + Math.random() * 0.5
+    const stalk = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.025, 0.04, height, 6),
+      matStalk,
+    )
+    stalk.position.set(ox, height / 2, oz)
+    stalk.rotation.z = (Math.random() - 0.5) * 0.14
+    group.add(stalk)
+
+    // Prismatic tip — slightly faceted cone
+    const tip = new THREE.Mesh(
+      new THREE.ConeGeometry(0.055, 0.28, 6),
+      matTip,
+    )
+    tip.position.set(ox, height + 0.14, oz)
+    group.add(tip)
+  }
+  return group
+}
+
 // ─── Node builder ─────────────────────────────────────────────────────────────
 
 /** Build a single forage node at (x, z) and register its interactable. */
@@ -259,6 +318,8 @@ function _buildOneForageNode(
     clusterMesh = _buildReedClusterMesh(cfg.primaryColor, cfg.secondaryColor)
   } else if (variant === 'marsh_herb') {
     clusterMesh = _buildMarshHerbMesh(cfg.primaryColor, cfg.secondaryColor)
+  } else if (variant === 'marsh_glass_reed') {
+    clusterMesh = _buildMarshGlassReedMesh(cfg.primaryColor, cfg.secondaryColor)
   } else {
     clusterMesh = _buildResinGlobMesh(cfg.primaryColor, cfg.secondaryColor)
   }

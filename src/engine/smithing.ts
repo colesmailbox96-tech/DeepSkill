@@ -20,7 +20,7 @@ import { useGameStore } from '../store/useGameStore'
 // ─── Recipe configuration ─────────────────────────────────────────────────
 
 /** All smeltable ore IDs. */
-export type SmeltableId = 'copper_ore' | 'iron_ore'
+export type SmeltableId = 'copper_ore' | 'iron_ore' | 'duskiron_ore'
 
 export interface SmeltRecipeConfig {
   /** Human-readable ingredient name for notification messages. */
@@ -58,13 +58,24 @@ export const SMELT_RECIPE_CONFIG: Readonly<Record<SmeltableId, SmeltRecipeConfig
     smeltDuration: 6,
     xp: 30,
   },
+  // Phase 58 — Duskiron Ore: dense advanced ore from the Ashfen Copse.
+  // Requires level 10 Forging and consumes 5 ore per bar.
+  duskiron_ore: {
+    label: 'Duskiron Ore',
+    oreId: 'duskiron_ore',
+    oreQty: 5,
+    barId: 'duskiron_bar',
+    levelReq: 10,
+    smeltDuration: 8,
+    xp: 45,
+  },
 } as const
 
 /**
  * Priority order used by findSmeltableOre() when the player has multiple
  * smeltable ores — highest-value recipe preferred first.
  */
-const SMELT_PRIORITY: SmeltableId[] = ['iron_ore', 'copper_ore']
+const SMELT_PRIORITY: SmeltableId[] = ['duskiron_ore', 'iron_ore', 'copper_ore']
 
 // ─── Furnace station type ─────────────────────────────────────────────────
 
@@ -260,8 +271,9 @@ export const FORGE_RECIPES: readonly ForgeRecipeConfig[] = [
     label: 'Iron Pick',
     toolId: 'iron_pick',
     ingredients: [
-      { id: 'iron_bar',    label: 'Iron Bar',    qty: 2 },
-      { id: 'small_stone', label: 'Small Stone', qty: 4 },
+      { id: 'iron_bar',      label: 'Iron Bar',      qty: 2 },
+      { id: 'ironbark_log',  label: 'Ironbark Log',  qty: 1 },
+      { id: 'small_stone',   label: 'Small Stone',   qty: 4 },
     ],
     skillReq: { skill: 'mining', level: 5 },
     forgingLevelReq: 7,
@@ -281,6 +293,22 @@ export const FORGE_RECIPES: readonly ForgeRecipeConfig[] = [
     forgeDuration: 5,
     xp: 20,
     tierSpeedFactor: 0.75,
+  },
+  // Phase 58 — Duskiron Hatchet: a high-grade cutting tool forged from duskiron
+  // bar and reinforced with dense ironbark hafting.  Requires serious skill to
+  // wield effectively but chops through even mineralwood with speed.
+  {
+    label: 'Duskiron Hatchet',
+    toolId: 'duskiron_hatchet',
+    ingredients: [
+      { id: 'duskiron_bar',  label: 'Duskiron Bar',  qty: 2 },
+      { id: 'ironbark_log',  label: 'Ironbark Log',  qty: 2 },
+    ],
+    skillReq: { skill: 'woodcutting', level: 8 },
+    forgingLevelReq: 10,
+    forgeDuration: 10,
+    xp: 60,
+    tierSpeedFactor: 0.60,
   },
 ] as const
 

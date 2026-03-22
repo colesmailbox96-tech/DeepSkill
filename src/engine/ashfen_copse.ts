@@ -1,5 +1,6 @@
 /**
  * Phase 57 — Ashfen Copse Zone
+ * Phase 58 — Resource Tier Expansion (adds Duskiron Seam nodes)
  *
  * Introduces a visually distinct advanced gathering-and-combat area northeast
  * of Redwake Quarry, accessible through a gap in the quarry's east cliff wall.
@@ -19,6 +20,7 @@
  *  Resources:
  *   4 × Mineral Ashwood trees  (level 8 woodcutting, 55 XP, mineralwood_log)
  *   3 × Ashfen Resin nodes     (level 5 foraging,    28 XP, ashfen_resin)
+ *   3 × Duskiron Seam nodes    (level 10 mining,     50 XP, duskiron_ore)  [Phase 58]
  *
  *  Creatures (spawned via creature.ts):
  *   1 × Hushfang  — sleek charcoal predator (hostile)
@@ -39,6 +41,8 @@ import { buildTreeNodesAt } from './woodcutting'
 import type { TreeNode } from './woodcutting'
 import { buildForageNodesAt } from './foraging'
 import type { ForageNode } from './foraging'
+import { buildRockNodesAt } from './mining'
+import type { RockNode } from './mining'
 
 // ─── Shared materials ─────────────────────────────────────────────────────────
 
@@ -73,6 +77,8 @@ export interface AshfenCopseResult {
   treeNodes: TreeNode[]
   /** Live Ashfen Resin forage nodes for per-frame respawn ticking. */
   forageNodes: ForageNode[]
+  /** Live Duskiron ore rock nodes for per-frame respawn ticking. */
+  rockNodes: RockNode[]
 }
 
 // ─── Tree placements ──────────────────────────────────────────────────────────
@@ -106,23 +112,40 @@ const ASHFEN_RESIN_PLACEMENTS: ReadonlyArray<{
   { pos: [62, -88], variant: 'ashfen_resin' },   // deep north-east corner
 ]
 
+// ─── Duskiron seam placements (Phase 58) ─────────────────────────────────────
+
+/**
+ * Three Duskiron Seam nodes embedded in the copse's mineral-laden rock faces.
+ * World-space (x, z) absolute coordinates.
+ */
+const ASHFEN_DUSKIRON_PLACEMENTS: ReadonlyArray<{
+  pos: [number, number]
+  variant: 'duskiron'
+}> = [
+  { pos: [37, -58], variant: 'duskiron' },   // south-west near entrance
+  { pos: [68, -72], variant: 'duskiron' },   // east boulder cluster
+  { pos: [46, -88], variant: 'duskiron' },   // deep north corner
+]
+
 // ─── Main builder ─────────────────────────────────────────────────────────────
 
 /**
  * Populate `scene` with all Ashfen Copse geometry and return collidables,
- * tree nodes, and forage nodes.  Interactables are appended directly to the
- * shared `interactables` array passed in.
+ * tree nodes, forage nodes, and duskiron rock nodes.  Interactables are
+ * appended directly to the shared `interactables` array passed in.
  *
  * @param scene         Three.js scene to add meshes to.
  * @param interactables Shared interactables array (mutated in place).
  * @param onChopStart   Woodcutting callback passed to each tree node.
  * @param onForageStart Foraging callback passed to each resin node.
+ * @param onMineStart   Mining callback passed to each duskiron seam node.
  */
 export function buildAshfenCopse(
   scene: THREE.Scene,
   interactables: Interactable[],
   onChopStart: (node: TreeNode) => void,
   onForageStart: (node: ForageNode) => void,
+  onMineStart: (node: RockNode) => void,
 ): AshfenCopseResult {
   const collidables: THREE.Mesh[] = []
 
@@ -218,7 +241,16 @@ export function buildAshfenCopse(
     'ashfen_resin',
   )
 
-  return { collidables, treeNodes, forageNodes }
+  // ── Duskiron Seam mining nodes (Phase 58) ─────────────────────────────────
+  const rockNodes = buildRockNodesAt(
+    scene,
+    interactables,
+    ASHFEN_DUSKIRON_PLACEMENTS,
+    onMineStart,
+    'ashfen_rock',
+  )
+
+  return { collidables, treeNodes, forageNodes, rockNodes }
 }
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
