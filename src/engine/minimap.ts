@@ -14,8 +14,9 @@
 
 // ─── World bounds ─────────────────────────────────────────────────────────────
 
-/** Leftmost (west) world X used for canvas projection. */
-export const WORLD_MIN_X = -65
+/** Leftmost (west) world X used for canvas projection.
+ *  Hollow Vault Steps west boundary is x=−98 (hollow_vault.ts). */
+export const WORLD_MIN_X = -102
 /** Rightmost (east) world X used for canvas projection.
  *  Shoreline zone extends to x=+80 (shoreline.ts), the true easternmost bound;
  *  Ashfen Copse east boundary is x=+72 (ashfen_copse.ts). */

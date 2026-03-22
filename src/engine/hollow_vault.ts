@@ -8,24 +8,29 @@
  * ─────────────
  *  Layout:
  *   Vault antechamber    x = −60 → −75, z = −7 → +7   (connects to chapel west wall)
- *   Upper vault steps    x = −75 → −88, z = −10 → +10  (terrain descends in 4 steps)
- *   Lower vault floor    x = −88 → −98, z = −8 → +8    (deepest accessible level −2.0)
+ *   Upper vault steps    x = −75 → −88, z = −10 → +10  (stepped floor decoration)
+ *   Lower vault floor    x = −88 → −98, z = −8 → +8
  *
  *  Descending terrain:
- *   The vault floor drops in four stepped tiers as the player moves west.
- *   Each step is 0.5 m lower than the previous, reaching −2.0 m at the deepest
- *   accessible floor section.  Collidable riser faces prevent falling through.
+ *   The vault floor is expressed visually through progressively darker floor
+ *   slab colours and lowered ambient lighting.  The player controller operates
+ *   purely in XZ (no Y-based stepping), so all traversable surfaces are kept
+ *   at Y = 0.  Raised-edge boundary walls and side walls remain fully collidable
+ *   so the player cannot walk out of the zone.
  *
  *  Ruin doors:
  *   Two stone door frames — one at the chapel/antechamber threshold (x = −60)
- *   and one at the antechamber/steps threshold (x = −75).  Both are decorative
- *   collidables; the outer door (x = −60) also hosts the Progression Gate.
+ *   and one at the antechamber/steps threshold (x = −75).  Jambs are collidable.
+ *   Lintels are visual-only (not in collidables) so the 6-unit opening remains
+ *   fully passable regardless of the XZ-only collision system.
  *
  *  Progression gate:
  *   A heavy stone slab seals the vault entrance at x = −60 until the player
  *   carries an Ashwillow Ward in their inventory.  Interacting with the slab
  *   when warded removes the barrier; a notification explains the mechanism.
  *   Once lifted the slab is hidden and cannot reblock (session-persistent).
+ *   The gate interactable is also returned so App.tsx can remove it from the
+ *   shared interactables list after unsealing.
  *
  *  Creature population:
  *   Two creature types (defined in creature.ts) roam the vault:
@@ -66,17 +71,19 @@ export const HV_GATE_WARD_ITEM = 'ashwillow_ward'
 const GATE_X = -62
 const GATE_Z =  0
 
-// ─── Step geometry constants ──────────────────────────────────────────────────
+// ─── Step count (visual only — no Y-drop) ────────────────────────────────────
 
-/** Each step descends this many metres. */
-const STEP_DROP = 0.5
-/** Number of descent steps between antechamber and lower floor. */
+/** Number of visual step sections between antechamber and lower floor. */
 const STEP_COUNT = 4
 
 // ─── Shared materials ─────────────────────────────────────────────────────────
 
 const matVaultFloor  = new THREE.MeshStandardMaterial({ color: 0x383030, roughness: 0.96 })
-const matVaultStep   = new THREE.MeshStandardMaterial({ color: 0x2e2828, roughness: 0.97 })
+const matVaultStep0  = new THREE.MeshStandardMaterial({ color: 0x322a2a, roughness: 0.97 })
+const matVaultStep1  = new THREE.MeshStandardMaterial({ color: 0x2c2424, roughness: 0.97 })
+const matVaultStep2  = new THREE.MeshStandardMaterial({ color: 0x262020, roughness: 0.97 })
+const matVaultStep3  = new THREE.MeshStandardMaterial({ color: 0x201c1c, roughness: 0.97 })
+const STEP_MATS      = [matVaultStep0, matVaultStep1, matVaultStep2, matVaultStep3]
 const matRuinStone   = new THREE.MeshStandardMaterial({ color: 0x585050, roughness: 0.90 })
 const matRuinDark    = new THREE.MeshStandardMaterial({ color: 0x302828, roughness: 0.95 })
 const matGlyphFaint  = new THREE.MeshStandardMaterial({
@@ -94,16 +101,19 @@ export interface HollowVaultResult {
   collidables: THREE.Mesh[]
   /** The gate slab mesh — hidden by App.tsx once the player lifts the seal. */
   gateMesh: THREE.Mesh
+  /** The gate interactable — removed from the shared list by App.tsx on unseal. */
+  gateInteractable: Interactable
 }
 
 // ─── Public builder ───────────────────────────────────────────────────────────
 
 /**
- * Populate `scene` with all Hollow Vault Steps geometry and return collidables
- * and the gate mesh.  Interactables are appended to the shared array.
+ * Populate `scene` with all Hollow Vault Steps geometry and return collidables,
+ * the gate mesh, and the gate interactable.  Other interactables are appended
+ * directly to the shared `interactables` array.
  *
  * The caller (App.tsx) is responsible for:
- *  - hiding `gateMesh` once the player unseals the vault
+ *  - hiding `gateMesh` and splicing `gateInteractable` once the player unseals
  *  - spawning vault creatures
  *  - registering vault survey caches
  *
@@ -129,26 +139,26 @@ export function buildHollowVault(
   _addBox(scene, 15, 3.5, 0.3, -67.5, 1.75,  6.85, matRuinStone)
 
   // ── Outer archway at x = −60 (chapel/antechamber threshold) ──────────────
+  // Jambs are collidable; lintel is visual-only so the 6-unit opening stays passable.
   // Left jamb (z = −7 to −3)
   const archJambNorth = _addBox(scene, 0.5, 4, 4, -60, 2, -5, matRuinStone)
   collidables.push(archJambNorth)
   // Right jamb (z = +3 to +7)
   const archJambSouth = _addBox(scene, 0.5, 4, 4, -60, 2,  5, matRuinStone)
   collidables.push(archJambSouth)
-  // Lintel over the 6-unit gap
-  const archLintelOuter = _addBox(scene, 0.5, 0.6, 6, -60, 4.3, 0, matRuinStone)
-  collidables.push(archLintelOuter)
+  // Lintel over the 6-unit gap (visual only — not in collidables)
+  _addBox(scene, 0.5, 0.6, 6, -60, 4.3, 0, matRuinStone)
 
   // ── Inner archway at x = −75 (antechamber/steps threshold) ───────────────
+  // Jambs are collidable; lintel is visual-only.
   // Left jamb
   const innerJambN = _addBox(scene, 0.5, 4, 3.5, -75, 2, -4.25, matRuinStone)
   collidables.push(innerJambN)
   // Right jamb
   const innerJambS = _addBox(scene, 0.5, 4, 3.5, -75, 2,  4.25, matRuinStone)
   collidables.push(innerJambS)
-  // Lintel
-  const archLintelInner = _addBox(scene, 0.5, 0.6, 8, -75, 4.3, 0, matRuinStone)
-  collidables.push(archLintelInner)
+  // Lintel (visual only — not in collidables)
+  _addBox(scene, 0.5, 0.6, 8, -75, 4.3, 0, matRuinStone)
 
   // Glyph panels beside the inner archway (marking the old warding boundary)
   const glyphN = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.2, 1.2), matGlyphFaint)
@@ -158,73 +168,72 @@ export function buildHollowVault(
   glyphS.position.set(-74.8, 1.6,  4.25)
   scene.add(glyphS)
 
-  // ── Descending steps (x = −75 → −88) ────────────────────────────────────
-  // The steps are built west-to-east:
-  //   step 1 is the highest (at x = −76),
-  //   step STEP_COUNT is the lowest (at x = −76 − STEP_COUNT * 3.25)
-  // Each step is 3.25 m wide (x), 10 m deep (z), and 0.5 m tall.
-  // A thin invisible riser prevents the player from falling through the face.
+  // ── Visual step sections (x = −75 → −88) ─────────────────────────────────
+  // The player controller is XZ-only (no Y stepping) so all step floors sit at
+  // Y = 0.  The "descent" is expressed by progressively darker slab materials,
+  // dimming point-lights, and atmospheric rubble — not by actual height change.
+  // Risers are omitted because they would block XZ movement.
+  // Side walls keep the player inside the step corridor; they widen slightly
+  // from the inner archway opening (z = ±5) to match the lower vault (z = ±8).
   for (let i = 0; i < STEP_COUNT; i++) {
-    const stepTopY   = -(i + 1) * STEP_DROP        // top surface y
-    const stepCentreX = -76 - i * 3.25 - 1.625     // centre x of this step
-    const stepWidth  = 3.25
-    const stepDepth  = 10                           // z extent of the step floor
-    const stepH      = 0.1                          // floor slab thickness
+    const stepCentreX = -76 - i * 3.25 - 1.625   // centre X of this step section
+    const stepWidth   = 3.25
+    const stepDepth   = 10
 
-    // Step floor slab (visible, not a collidable — player walks on it directly)
-    _addBox(scene, stepWidth, stepH, stepDepth, stepCentreX, stepTopY + stepH / 2, 0, matVaultStep)
+    // Darker floor slab — each section uses a progressively darker material.
+    _addBox(scene, stepWidth, 0.06, stepDepth, stepCentreX, 0.01, 0, STEP_MATS[i])
 
-    // Riser (invisible collidable — prevents player from phasing through the drop face)
-    const riserX = stepCentreX - stepWidth / 2  // west face of this step
-    const riserH = STEP_DROP
-    const riser = _addWall(scene, 0.3, riserH, stepDepth, riserX, stepTopY - riserH / 2, 0, matBound)
-    collidables.push(riser)
-
-    // Rubble heaped at the base of each riser
+    // Decorative rubble at the leading edge of each section
     for (let j = 0; j < 3; j++) {
-      const rx = riserX - 0.1 - Math.random() * 0.5
+      const rx = stepCentreX - stepWidth / 2 + Math.random() * 0.4
       const rz = (Math.random() - 0.5) * (stepDepth - 2)
       const rubble = new THREE.Mesh(
-        new THREE.BoxGeometry(0.3 + Math.random() * 0.3, 0.15 + Math.random() * 0.1, 0.3 + Math.random() * 0.3),
+        new THREE.BoxGeometry(
+          0.3 + Math.random() * 0.3,
+          0.15 + Math.random() * 0.1,
+          0.3 + Math.random() * 0.3,
+        ),
         matRuinDark,
       )
-      rubble.position.set(rx, stepTopY - 0.05, rz)
+      rubble.position.set(rx, 0.08, rz)
       rubble.rotation.y = Math.random() * Math.PI
       scene.add(rubble)
     }
 
-    // Side slope walls along the steps (north and south)
-    // These keep the player from walking off the side of the staircase.
-    const sideWallN = _addWall(scene, stepWidth, 4, 0.4, stepCentreX, 2 - i * STEP_DROP, -5, matBound)
-    const sideWallS = _addWall(scene, stepWidth, 4, 0.4, stepCentreX, 2 - i * STEP_DROP,  5, matBound)
-    collidables.push(sideWallN, sideWallS)
-    _addBox(scene, stepWidth, 3.0, 0.3, stepCentreX, 1.5 - i * STEP_DROP, -4.85, matRuinStone)
-    _addBox(scene, stepWidth, 3.0, 0.3, stepCentreX, 1.5 - i * STEP_DROP,  4.85, matRuinStone)
+    // Side walls along the step sections (north and south)
+    collidables.push(_addWall(scene, stepWidth, 4, 0.4, stepCentreX, 2, -5, matBound))
+    collidables.push(_addWall(scene, stepWidth, 4, 0.4, stepCentreX, 2,  5, matBound))
+    _addBox(scene, stepWidth, 3.0, 0.3, stepCentreX, 1.5, -4.85, matRuinStone)
+    _addBox(scene, stepWidth, 3.0, 0.3, stepCentreX, 1.5,  4.85, matRuinStone)
+
+    // Dim point-lights to reinforce deepening atmosphere
+    const depthLight = new THREE.PointLight(0x182030, 0.3 + i * 0.15, 6)
+    depthLight.position.set(stepCentreX, 1.2, 0)
+    scene.add(depthLight)
   }
 
   // ── Lower vault floor (x = −88 → −98) ────────────────────────────────────
-  const lowerY    = -(STEP_COUNT) * STEP_DROP     // −2.0
   const lowerFloorCentreX = -93
-  _addBox(scene, 10, 0.1, 16, lowerFloorCentreX, lowerY + 0.05, 0, matVaultFloor)
+  _addBox(scene, 10, 0.06, 16, lowerFloorCentreX, 0.01, 0, matVaultFloor)
 
   // Lower vault boundary walls
-  collidables.push(_addWall(scene, 10, 4, 0.4, lowerFloorCentreX, lowerY + 2, -8, matBound))
-  collidables.push(_addWall(scene, 10, 4, 0.4, lowerFloorCentreX, lowerY + 2,  8, matBound))
-  collidables.push(_addWall(scene, 0.4, 4, 16,            -98,   lowerY + 2,  0, matBound))
-  _addBox(scene, 10, 3.0, 0.3, lowerFloorCentreX, lowerY + 1.5, -7.85, matRuinDark)
-  _addBox(scene, 10, 3.0, 0.3, lowerFloorCentreX, lowerY + 1.5,  7.85, matRuinDark)
-  _addBox(scene, 0.3, 3.0, 16, -97.9, lowerY + 1.5, 0, matRuinDark)
+  collidables.push(_addWall(scene, 10, 4, 0.4, lowerFloorCentreX, 2, -8, matBound))
+  collidables.push(_addWall(scene, 10, 4, 0.4, lowerFloorCentreX, 2,  8, matBound))
+  collidables.push(_addWall(scene, 0.4, 4, 16, -98, 2, 0, matBound))
+  _addBox(scene, 10, 3.0, 0.3, lowerFloorCentreX, 1.5, -7.85, matRuinDark)
+  _addBox(scene, 10, 3.0, 0.3, lowerFloorCentreX, 1.5,  7.85, matRuinDark)
+  _addBox(scene, 0.3, 3.0, 16, -97.9, 1.5, 0, matRuinDark)
 
-  // Ceiling fragments (visual — low overhead in the lower vault)
+  // Low overhead ceiling fragments (visual atmosphere — low clearance feel)
   const ceilMat = new THREE.MeshStandardMaterial({ color: 0x1a1818, roughness: 0.98 })
-  _addBox(scene, 8, 0.3, 12, lowerFloorCentreX, lowerY + 3.5, 0, ceilMat)
+  _addBox(scene, 8, 0.3, 12, lowerFloorCentreX, 3.5, 0, ceilMat)
 
-  // Ceiling drip stalactites (visual detail)
+  // Ceiling stalactites (visual detail)
   const stalactitePositions: [number, number, number][] = [
-    [-90, lowerY + 3.5, -2],
-    [-93, lowerY + 3.5,  3],
-    [-96, lowerY + 3.5, -4],
-    [-91, lowerY + 3.5,  5],
+    [-90, 3.5, -2],
+    [-93, 3.5,  3],
+    [-96, 3.5, -4],
+    [-91, 3.5,  5],
   ]
   for (const [sx, sy, sz] of stalactitePositions) {
     const stala = new THREE.Mesh(
@@ -238,14 +247,18 @@ export function buildHollowVault(
 
   // ── Collapsed masonry piles on lower floor ────────────────────────────────
   const masonryPiles: [number, number, number][] = [
-    [-89.5, lowerY, -5],
-    [-94,   lowerY,  6],
-    [-97,   lowerY, -3],
-    [-91,   lowerY,  2],
+    [-89.5, 0, -5],
+    [-94,   0,  6],
+    [-97,   0, -3],
+    [-91,   0,  2],
   ]
   for (const [px, py, pz] of masonryPiles) {
     const pile = new THREE.Mesh(
-      new THREE.BoxGeometry(0.9 + Math.random() * 0.8, 0.35 + Math.random() * 0.25, 0.7 + Math.random() * 0.6),
+      new THREE.BoxGeometry(
+        0.9 + Math.random() * 0.8,
+        0.35 + Math.random() * 0.25,
+        0.7 + Math.random() * 0.6,
+      ),
       matRuinDark,
     )
     pile.position.set(px, py + 0.2, pz)
@@ -254,9 +267,9 @@ export function buildHollowVault(
     collidables.push(pile)
   }
 
-  // Ambient deep-vault light (faint teal glow from below — occult residue)
+  // Ambient deep-vault light (faint teal glow — occult residue)
   const vaultLight = new THREE.PointLight(0x204840, 1.0, 22)
-  vaultLight.position.set(-93, lowerY + 1.5, 0)
+  vaultLight.position.set(-93, 1.5, 0)
   scene.add(vaultLight)
 
   // Faint glyph ring etched into the lower vault floor
@@ -265,14 +278,14 @@ export function buildHollowVault(
     matGlyphFaint,
   )
   lowerGlyph.rotation.x = -Math.PI / 2
-  lowerGlyph.position.set(-93, lowerY + 0.12, 0)
+  lowerGlyph.position.set(-93, 0.12, 0)
   scene.add(lowerGlyph)
 
   // ── Progression gate — sealing slab at vault entrance ─────────────────────
   // A heavy stone slab sits in the 6-unit gap between the outer archway jambs.
   // It is removed (hidden) when the player carries an Ashwillow Ward and
-  // interacts with it.  The collidable is removed from the physics list at
-  // that point by App.tsx.
+  // interacts with it.  The collidable is removed from the physics list and the
+  // interactable is removed from the shared list by App.tsx on unseal.
   const gateSlab = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4, 6), matGateSeal)
   gateSlab.position.set(GATE_X, 2, GATE_Z)
   scene.add(gateSlab)
@@ -289,7 +302,8 @@ export function buildHollowVault(
   gateLight.position.set(GATE_X + 1, 2.5, 0)
   scene.add(gateLight)
 
-  // Register the gate as an interactable
+  // Register the gate as an interactable; also return it so App.tsx can splice
+  // it from the shared list when the gate is unsealed.
   const gateInteractable: Interactable = {
     mesh: gateSlab,
     label: 'Sealed Vault Gate',
@@ -306,7 +320,7 @@ export function buildHollowVault(
         )
         return
       }
-      // Signal to App.tsx to unseal (App.tsx removes the interactable and hides the mesh)
+      // Signal to App.tsx to unseal (App.tsx removes the collidable and interactable).
       _gateUnsealed = true
       useNotifications.getState().push(
         'Your Ashwillow Ward resonates with the gate. The stone slab grinds aside.',
@@ -316,7 +330,7 @@ export function buildHollowVault(
   }
   interactables.push(gateInteractable)
 
-  return { collidables, gateMesh: gateSlab }
+  return { collidables, gateMesh: gateSlab, gateInteractable }
 }
 
 // ─── Gate unseal flag (read once per frame by App.tsx) ────────────────────────
@@ -365,3 +379,4 @@ function _addWall(
 ): THREE.Mesh {
   return _addBox(scene, w, h, d, x, y, z, mat)
 }
+

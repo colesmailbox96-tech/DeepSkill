@@ -27,8 +27,8 @@
  *   Cache D — far north trail bend          ( 0,    0,  24)  lvl 3  18 xp
  *   Cache E — west camp edge (bog margin)   (-8,    0,   3)  lvl 1   7 xp  ← Phase 45
  *   Cache F — northeast ridge lookout       ( 8,    0,  18)  lvl 2  12 xp  ← Phase 45
- *   Cache G — vault antechamber             (-67, -0.1,   2)  lvl 3  16 xp  ← Phase 65
- *   Cache H — lower vault floor             (-95, -2.0,  -4)  lvl 4  22 xp  ← Phase 65
+ *   Cache G — vault antechamber             (-67, 0,   2)  lvl 3  16 xp  ← Phase 65
+ *   Cache H — lower vault floor             (-95, 0,  -4)  lvl 4  22 xp  ← Phase 65
  *
  * The caller (App.tsx) owns the survey timer, reveal loop, cache interaction,
  * item award, and XP grant.  This module provides the data, station visual,
@@ -165,7 +165,7 @@ export const SURVEY_CACHE_CONFIGS: Readonly<SurveyCacheConfig[]> = [
   {
     id: 'cache_vault_antechamber',
     label: 'Vault Antechamber Cache',
-    position: [-67, -0.1, 2],
+    position: [-67, 0, 2],
     rewardPool: [
       { itemId: 'vault_chitin', qty: 2, weight: 4 },
       { itemId: 'bone_shard',   qty: 2, weight: 3 },
@@ -183,7 +183,7 @@ export const SURVEY_CACHE_CONFIGS: Readonly<SurveyCacheConfig[]> = [
   {
     id: 'cache_vault_lower',
     label: 'Lower Vault Cache',
-    position: [-95, -2.0, -4],
+    position: [-95, 0, -4],
     rewardPool: [
       { itemId: 'wraith_stone',    qty: 1, weight: 3 },
       { itemId: 'vault_chitin',    qty: 3, weight: 4 },

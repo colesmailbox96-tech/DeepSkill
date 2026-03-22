@@ -2426,7 +2426,8 @@ function App() {
       if (player.mesh.position.x <= -62 && player.mesh.position.z >= -10 && player.mesh.position.z <= 10) {
         triggerZoneExplore('hollow_vault')
       }
-      // Phase 65 — Vault gate unseal: hide gate mesh and remove its collidable.
+      // Phase 65 — Vault gate unseal: hide gate mesh, remove its collidable, and
+      // unregister its interactable so the player can't target an invisible gate.
       if (vaultGateSealed && pollGateUnsealed()) {
         vaultGateSealed = false
         hollowVault.gateMesh.visible = false
@@ -2434,6 +2435,10 @@ function App() {
           collidables.splice(vaultGateSlabIdx, 1)
           collidableBoxes.splice(vaultGateSlabIdx, 1)
           vaultGateSlabIdx = -1
+        }
+        const gateInteractableIdx = interactables.indexOf(hollowVault.gateInteractable)
+        if (gateInteractableIdx !== -1) {
+          interactables.splice(gateInteractableIdx, 1)
         }
       }
       // Sync live target HP to the combat store so the React overlay stays current.
