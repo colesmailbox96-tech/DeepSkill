@@ -41,6 +41,28 @@
  *
  *   Phase 31 will add target selection and player-side damage application using
  *   the exported damageCreature() helper added in this phase.
+ *
+ * Phase 56 — Creature Behavior Improvement Pass:
+ *   Leash logic:
+ *     Hostile creatures now track the player's distance from the creature's own
+ *     spawn origin (leashRadius).  When the player exits the leash boundary the
+ *     creature disengages immediately instead of chasing indefinitely.
+ *
+ *   Better return-to-spawn:
+ *     Instead of an instant teleport, disengaging creatures enter the new
+ *     'return' state and walk home at a brisk pace.  Only the dead-respawn path
+ *     still teleports (intentional invisibility during respawn).
+ *
+ *   Obstacle awareness / separation steering:
+ *     After each movement step, a lightweight separation force pushes nearby
+ *     creatures apart.  This prevents creatures from stacking on the same tile
+ *     and improves perceived obstacle awareness without requiring a navmesh.
+ *
+ *   Swarm jitter reduction:
+ *     The 'return' state is excluded from aggro/flee re-triggers so a creature
+ *     that has disengaged completes its walk home before re-entering combat.
+ *     Separation forces also prevent the oscillation that occurs when many
+ *     creatures converge on the same world point.
  */
 
 import * as THREE from 'three'
@@ -48,8 +70,14 @@ import type { Interactable } from './interactable'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
-/** State of the creature's finite-state machine. */
-export type CreatureState = 'idle' | 'roam' | 'flee' | 'reset' | 'aggro' | 'dead'
+/**
+ * State of the creature's finite-state machine.
+ *
+ * Phase 56 adds 'return': the creature walks back to its spawn origin after
+ * disengaging from pursuit (aggro leash broken or pursuit-radius exceeded).
+ * This replaces the instant teleport used by earlier phases.
+ */
+export type CreatureState = 'idle' | 'roam' | 'flee' | 'reset' | 'aggro' | 'dead' | 'return'
 
 /**
  * Static data schema for a creature type.
@@ -136,6 +164,18 @@ export interface CreatureDef {
    * (default: DEFAULT_RESPAWN_DELAY).
    */
   respawnDelay?: number
+  /**
+   * Phase 56 — Leash radius (metres from spawn origin).
+   *
+   * A hostile creature disengages from pursuit and enters the 'return' state
+   * when the *player* moves this far from the creature's spawn.  This prevents
+   * creatures from following the player across the entire map.
+   *
+   * Defaults to `pursuitRadius` when omitted, which preserves the existing
+   * "creature distance from spawn" cut-off behaviour while also adding the
+   * player-side check.
+   */
+  leashRadius?: number
 }
 
 /** A live creature instance in the world. */
@@ -192,6 +232,35 @@ const DEFAULT_ATTACK_COOLDOWN = 1.5
 
 /** Default seconds before a defeated creature respawns. */
 const DEFAULT_RESPAWN_DELAY = 30
+
+// ── Phase 56 constants ────────────────────────────────────────────────────────
+
+/**
+ * Speed multiplier applied while a creature walks back to its spawn origin
+ * in the 'return' state.  Slightly faster than normal roam speed so the
+ * return feels purposeful without being instant.
+ */
+const RETURN_SPEED_MULT = 1.3
+
+/**
+ * Distance threshold (metres) at which a returning creature considers itself
+ * home and re-enters the idle state.
+ */
+const RETURN_ARRIVAL_DIST = 0.4
+
+/**
+ * Minimum centre-to-centre distance (metres) below which the separation
+ * steering force activates between two creatures.  Sized to prevent creatures
+ * from occupying the same tile without being so large that they repel at
+ * visible ranges.
+ */
+const SEPARATION_RADIUS = 1.4
+
+/**
+ * Strength scalar for the separation steering force (metres/second).  Applied
+ * proportional to how deeply two creatures overlap within SEPARATION_RADIUS.
+ */
+const SEPARATION_STRENGTH = 2.5
 
 /**
  * Phase 29 wildlife: two non-aggressive species that roam the settlement
@@ -433,7 +502,7 @@ export function updateCreatures(
     if (creature.dropCooldown > 0) {
       creature.dropCooldown = Math.max(0, creature.dropCooldown - delta)
     }
-    _stepCreature(creature, delta, playerPos, onAttack)
+    _stepCreature(creature, delta, playerPos, creatures, onAttack)
   }
 }
 
@@ -484,12 +553,13 @@ function _isHostile(def: CreatureDef): boolean {
  * Run one FSM step for a single creature.
  *
  * States:
- *   idle  → decrement timer; check flee/aggro trigger; on expiry pick a roam target.
- *   roam  → translate toward targetPos; check flee/aggro trigger; on arrival → idle.
- *   flee  → sprint away from player; on arrival → idle (skittish pause).
- *   reset → teleport back to spawn; enter idle.
- *   aggro → (Phase 30) pursue player; attack on contact; give up when too far from spawn.
- *   dead  → (Phase 30) hidden; respawnTimer ticks down; restore and idle on expiry.
+ *   idle   → decrement timer; check flee/aggro trigger; on expiry pick a roam target.
+ *   roam   → translate toward targetPos; check flee/aggro trigger; on arrival → idle.
+ *   flee   → sprint away from player; on arrival → idle (skittish pause).
+ *   reset  → teleport back to spawn; enter idle.
+ *   return → (Phase 56) walk back to spawn; enter idle on arrival.
+ *   aggro  → (Phase 30) pursue player; attack on contact; disengage when leash breaks.
+ *   dead   → (Phase 30) hidden; respawnTimer ticks down; restore and idle on expiry.
  *
  * Flee logic:
  *   When the player is within `fleeRadius` the creature computes a flee target
@@ -498,19 +568,25 @@ function _isHostile(def: CreatureDef): boolean {
  *
  * Aggro logic (Phase 30):
  *   When the player is within `aggroRadius` the creature charges.  It pursues
- *   until the player moves beyond pursuitRadius from the creature's spawn, then
- *   resets.  When the player is within MELEE_RANGE and attackTimer is 0, the
- *   onAttack callback fires and attackTimer reloads.
+ *   until the leash breaks (Phase 56) or the creature itself strays beyond
+ *   pursuitRadius from spawn, then enters the 'return' state.  When the player
+ *   is within MELEE_RANGE and attackTimer is 0, the onAttack callback fires
+ *   and attackTimer reloads.
  *
- * Pursuit / safety bounds:
- *   Before the FSM runs (for non-aggro, non-dead states), if the creature is
- *   beyond pursuitRadius from its spawn position it is immediately snapped back
- *   and enters idle.
+ * Leash logic (Phase 56):
+ *   A disengaging creature enters 'return' and walks home at RETURN_SPEED_MULT
+ *   instead of teleporting.  The leash triggers when the *player's* distance
+ *   from the creature's spawn exceeds leashRadius (defaults to pursuitRadius).
+ *
+ * Separation steering (Phase 56):
+ *   After any movement step the _applySeparation helper applies a small push
+ *   force to prevent creatures from stacking.
  */
 function _stepCreature(
   c: Creature,
   delta: number,
   playerPos: THREE.Vector3,
+  creatures: Creature[],
   onAttack?: (creature: Creature, damage: number) => void,
 ): void {
   const pos = c.mesh.position
@@ -532,10 +608,11 @@ function _stepCreature(
     c.attackTimer = Math.max(0, c.attackTimer - delta)
   }
 
-  // ── Pursue-radius safety bounds (skip when already in aggro/reset) ───────
-  if (c.state !== 'aggro' && c.state !== 'reset') {
+  // ── Pursue-radius safety bounds (skip when in aggro/reset/return; 'dead'
+  //    is already handled by the early return above) ────────────────────────
+  if (c.state !== 'aggro' && c.state !== 'reset' && c.state !== 'return') {
     if (pos.distanceTo(c.spawnPos) > c.def.pursuitRadius) {
-      _resetToSpawn(c)
+      _startReturn(c)
       return
     }
   }
@@ -553,8 +630,8 @@ function _stepCreature(
     }
   }
 
-  // ── Flee trigger — overrides idle/roam but not flee/aggro/reset ──────────
-  if (c.state !== 'flee' && c.state !== 'reset' && c.state !== 'aggro') {
+  // ── Flee trigger — overrides idle/roam but not flee/aggro/reset/return ───
+  if (c.state !== 'flee' && c.state !== 'reset' && c.state !== 'aggro' && c.state !== 'return') {
     const fr = c.def.fleeRadius ?? 0
     if (fr > 0) {
       const dx = pos.x - playerPos.x
@@ -600,6 +677,7 @@ function _stepCreature(
         pos.x += dx * invDist * step
         pos.z += dz * invDist * step
         c.mesh.rotation.y = Math.atan2(dx * invDist, dz * invDist)
+        _applySeparation(c, creatures, delta)
       }
       break
     }
@@ -622,6 +700,7 @@ function _stepCreature(
         pos.x += dx * invDist * step
         pos.z += dz * invDist * step
         c.mesh.rotation.y = Math.atan2(dx * invDist, dz * invDist)
+        _applySeparation(c, creatures, delta)
       }
       break
     }
@@ -631,15 +710,41 @@ function _stepCreature(
       break
     }
 
+    // ── Phase 56: Return — walk home after disengaging ────────────────────
+    case 'return': {
+      const dx = c.spawnPos.x - pos.x
+      const dz = c.spawnPos.z - pos.z
+      const distToSpawn = Math.sqrt(dx * dx + dz * dz)
+
+      if (distToSpawn < RETURN_ARRIVAL_DIST) {
+        pos.x = c.spawnPos.x
+        pos.z = c.spawnPos.z
+        c.state = 'idle'
+        c.idleTimer = c.def.idleBase * (0.5 + Math.random())
+      } else {
+        const returnSpeed = c.def.speed * RETURN_SPEED_MULT
+        const step = Math.min(returnSpeed * delta, distToSpawn)
+        const invDist = 1 / distToSpawn
+        pos.x += dx * invDist * step
+        pos.z += dz * invDist * step
+        c.mesh.rotation.y = Math.atan2(dx * invDist, dz * invDist)
+        _applySeparation(c, creatures, delta)
+      }
+      break
+    }
+
     // ── Phase 30: Aggro — chase the player and attack on contact ──────────
     case 'aggro': {
       const dx = playerPos.x - pos.x
       const dz = playerPos.z - pos.z
       const distToPlayer = Math.sqrt(dx * dx + dz * dz)
 
-      // Give up if creature has wandered too far from its spawn origin.
-      if (pos.distanceTo(c.spawnPos) > c.def.pursuitRadius) {
-        _resetToSpawn(c)
+      // Phase 56 — Leash: disengage if the player moves too far from spawn
+      // (checks player distance from spawn, not creature distance from spawn).
+      const leash = c.def.leashRadius ?? c.def.pursuitRadius
+      const playerDistFromSpawn = playerPos.distanceTo(c.spawnPos)
+      if (playerDistFromSpawn > leash || pos.distanceTo(c.spawnPos) > c.def.pursuitRadius) {
+        _startReturn(c)
         break
       }
 
@@ -650,6 +755,7 @@ function _stepCreature(
         pos.x += dx * invDist * step
         pos.z += dz * invDist * step
         c.mesh.rotation.y = Math.atan2(dx * invDist, dz * invDist)
+        _applySeparation(c, creatures, delta)
       }
 
       // Attack when in melee range and the cooldown has elapsed.
@@ -701,6 +807,69 @@ function _killCreature(c: Creature): void {
   c.state = 'dead'
   c.mesh.visible = false
   c.respawnTimer = c.def.respawnDelay ?? DEFAULT_RESPAWN_DELAY
+}
+
+/**
+ * Phase 56 — Begin a smooth walk-home transition.
+ *
+ * Switches the creature to the 'return' state. The 'return' FSM case advances
+ * the creature toward its spawn origin (spawnPos) at RETURN_SPEED_MULT ×
+ * def.speed each frame until it arrives.
+ *
+ * Only the dead-respawn path still uses the instant teleport (_resetToSpawn)
+ * because the creature is invisible during that countdown anyway.
+ */
+function _startReturn(c: Creature): void {
+  c.state = 'return'
+}
+
+/**
+ * Phase 56 — Separation steering.
+ *
+ * Pushes `c` away from any other live creature that is within
+ * SEPARATION_RADIUS metres.  The force is proportional to overlap depth
+ * (strongest when creatures are perfectly coincident, zero at the boundary).
+ *
+ * Applied after each movement step in roam, flee, return, and aggro states so
+ * creatures cannot stack on top of each other or oscillate in a tight cluster.
+ */
+function _applySeparation(c: Creature, creatures: Creature[], delta: number): void {
+  const pos = c.mesh.position
+  let sx = 0
+  let sz = 0
+
+  const sepRadSq = SEPARATION_RADIUS * SEPARATION_RADIUS
+
+  for (const other of creatures) {
+    if (other === c || other.state === 'dead') continue
+    const dx = pos.x - other.mesh.position.x
+    const dz = pos.z - other.mesh.position.z
+    const distSq = dx * dx + dz * dz
+
+    // Fast rejection: skip pairs outside the separation radius.
+    if (distSq >= sepRadSq) continue
+
+    const dist = Math.sqrt(distSq)
+    // Overlap factor: 1 at dist=0, 0 at dist=SEPARATION_RADIUS.
+    const overlap = (SEPARATION_RADIUS - dist) / SEPARATION_RADIUS
+
+    if (dist === 0) {
+      // Creatures are perfectly coincident: choose a random direction
+      // in the XZ plane to nudge them apart.
+      const angle = Math.random() * Math.PI * 2
+      sx += Math.cos(angle) * overlap
+      sz += Math.sin(angle) * overlap
+    } else {
+      const invDist = 1 / dist
+      sx += dx * invDist * overlap
+      sz += dz * invDist * overlap
+    }
+  }
+
+  if (sx !== 0 || sz !== 0) {
+    pos.x += sx * SEPARATION_STRENGTH * delta
+    pos.z += sz * SEPARATION_STRENGTH * delta
+  }
 }
 
 /** Teleport the creature back to its spawn origin and restart idle. */
