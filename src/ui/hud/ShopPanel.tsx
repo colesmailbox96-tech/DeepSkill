@@ -38,9 +38,11 @@ import {
 type ShopTab = 'buy' | 'sell'
 
 export function ShopPanel() {
-  const isOpen    = useShopStore((s) => s.isOpen)
-  const vendorId  = useShopStore((s) => s.vendorId)
-  const closeShop = useShopStore((s) => s.closeShop)
+  const isOpen       = useShopStore((s) => s.isOpen)
+  const vendorId     = useShopStore((s) => s.vendorId)
+  const vendorStocks = useShopStore((s) => s.vendorStocks)
+  const closeShop    = useShopStore((s) => s.closeShop)
+  const decrementStock = useShopStore((s) => s.decrementStock)
 
   const coins       = useGameStore((s) => s.playerStats.coins)
   const slots       = useGameStore((s) => s.inventory.slots)
@@ -91,6 +93,18 @@ export function ShopPanel() {
     const { inventory } = useGameStore.getState()
     const alreadyHasItem = inventory.slots.some((s) => s.id === itemId)
 
+    // Defensive: verify remaining stock for finite-supply items.
+    // Only enter this block when the item is confirmed finite-supply (stock !== null).
+    const currentStocks = useShopStore.getState().vendorStocks
+    const vendorItemDef = vendor.stock.find((v) => v.id === itemId)
+    if (vendorItemDef && vendorItemDef.stock !== null) {
+      const remaining = currentStocks[vendorId]?.[itemId] ?? vendorItemDef.stock
+      if (remaining <= 0) {
+        useNotifications.getState().push('That item is out of stock.', 'info')
+        return
+      }
+    }
+
     const result = validatePurchase(
       price,
       coins,
@@ -107,6 +121,8 @@ export function ShopPanel() {
     // so spendCoins is guaranteed to succeed here.
     if (!spendCoins(price)) return  // defensive — should never fire
     addItem({ id: itemId, name: def.name, quantity: 1 })
+    // Decrement remaining stock for finite-supply items.
+    decrementStock(vendorId, itemId)
     useNotifications.getState().push(
       `Bought ${def.name} for ${price} ${price === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}.`,
       'success',
@@ -188,26 +204,35 @@ export function ShopPanel() {
       {/* ── Buy list ──────────────────────────────────────────────────────── */}
       {tab === 'buy' && (
         <ul className="shop-panel__list" role="list">
-          {vendor.stock.map(({ id, stock }) => {
+          {vendor.stock.map(({ id, stock: initialStock }) => {
             const def = getItem(id)
             if (!def) return null
             const price = getBuyPrice(def.value)
             const canAfford = coins >= price
+            // Determine remaining stock: if item is finite-supply, read the
+            // live count from the store; unlimited items have remaining = null.
+            const remaining: number | null =
+              initialStock !== null
+                ? (vendorStocks[vendorId]?.[id] ?? initialStock)
+                : null
+            const soldOut = remaining !== null && remaining <= 0
             return (
               <li key={id} className="shop-row" role="listitem">
                 <span className="shop-row__name">
                   {def.name}
-                  {stock !== null && (
-                    <span className="shop-row__stock"> ({stock} left)</span>
+                  {remaining !== null && (
+                    <span className={`shop-row__stock${soldOut ? ' shop-row__stock--out' : ''}`}>
+                      {soldOut ? ' (sold out)' : ` (${remaining} left)`}
+                    </span>
                   )}
                 </span>
-                <span className={`shop-row__price${canAfford ? '' : ' shop-row__price--insufficient'}`}>
+                <span className={`shop-row__price${canAfford && !soldOut ? '' : ' shop-row__price--insufficient'}`}>
                   {CURRENCY_SYMBOL} {price}
                 </span>
                 <button
                   className="shop-row__btn"
                   onClick={() => handleBuy(id)}
-                  disabled={!canAfford || stock === 0}
+                  disabled={!canAfford || soldOut}
                   aria-label={`Buy ${def.name} for ${price} ${price === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}`}
                 >
                   Buy

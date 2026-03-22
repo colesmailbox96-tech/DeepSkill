@@ -836,6 +836,10 @@ p {
   font-style: italic;
 }
 
+.shop-row__stock--out {
+  color: #8a5050;
+}
+
 .shop-row__price {
   font-size: 0.78rem;
   font-weight: 600;

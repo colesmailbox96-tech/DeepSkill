@@ -33,11 +33,14 @@ export {
 /**
  * A single line in the vendor's inventory.
  *
- * stock — maximum number the vendor can sell.  null = unlimited supply.
+ * stock — initial/maximum units available for sale.  null = unlimited supply.
+ * Remaining stock is tracked separately in useShopStore so that purchases
+ * actually decrement the available count and the runtime state stays in sync
+ * with what the player sees.
  */
 export interface VendorItem {
   id: string
-  /** null = unlimited. */
+  /** Initial/maximum units available.  null = unlimited. */
   stock: number | null
 }
 
@@ -141,6 +144,14 @@ const VENDOR_REGISTRY = new Map<string, VendorDef>([
  */
 export function getVendorDef(vendorId: string): VendorDef {
   return VENDOR_REGISTRY.get(vendorId) ?? TOMAS_DEF
+}
+
+/**
+ * Return all registered vendor definitions.
+ * Used by the shop store to initialise remaining-stock counters.
+ */
+export function getAllVendorDefs(): VendorDef[] {
+  return Array.from(VENDOR_REGISTRY.values())
 }
 
 // ── Sell constraint ───────────────────────────────────────────────────────────
