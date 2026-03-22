@@ -49,6 +49,8 @@ export interface CookRecipeConfig {
   xp: number
   /** HP restored when the cooked item is consumed (informational). */
   healsHp: number
+  /** Stamina restored when the cooked item is consumed (informational; optional). */
+  restoresStamina?: number
 }
 
 export const COOK_RECIPE_CONFIG: Readonly<Record<CookableId, CookRecipeConfig>> = {
@@ -117,20 +119,23 @@ export const COOK_RECIPE_CONFIG: Readonly<Record<CookableId, CookRecipeConfig>> 
     cookDuration: 5,
     xp: 20,
     healsHp: 12,
+    restoresStamina: 20,
   },
 } as const
 
 /**
  * Priority order used by findCookableIngredient() when the player has
  * multiple cookable items — highest-value recipe is preferred first.
+ * Ordered by overall restorative value; toad_gland yields less HP than perch
+ * so it sits below perch in the auto-select priority.
  */
 const COOK_PRIORITY: CookableId[] = [
   'ember_ram_meat',
   'hushfang_meat',
   'gloomfin',
   'cinderhare_meat',
-  'toad_gland',
   'perch',
+  'toad_gland',
   'minnow',
 ]
 

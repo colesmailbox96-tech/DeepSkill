@@ -301,9 +301,9 @@ export function getTinkeringLevel(): number {
 
 /**
  * Scan the player's inventory for the first recipe whose material requirement
- * is met (by quantity).  Recipes are checked in display order.  Returns the
- * matching recipe config or null when no tinkerable material is available in
- * sufficient quantity.
+ * is met (by quantity), including any secondary ingredient when the recipe
+ * requires one.  Recipes are checked in display order.  Returns the matching
+ * recipe config or null when no fully-satisfiable recipe is available.
  *
  * Note: this does **not** enforce level requirements — the caller is
  * responsible for checking `recipe.levelReq` against `getTinkeringLevel()`.
@@ -314,9 +314,13 @@ export function findTinkerableMaterial(
   for (const id of TINKER_DISPLAY_ORDER) {
     const cfg = TINKER_RECIPE_CONFIG[id]
     const slot = slots.find((s) => s.id === cfg.materialId)
-    if (slot && slot.quantity >= cfg.materialQty) {
-      return cfg
+    if (!slot || slot.quantity < cfg.materialQty) continue
+    // When a secondary ingredient is required, verify it is also present.
+    if (cfg.secondaryIngredient) {
+      const sec = slots.find((s) => s.id === cfg.secondaryIngredient!.id)
+      if (!sec || sec.quantity < cfg.secondaryIngredient.qty) continue
     }
+    return cfg
   }
   return null
 }

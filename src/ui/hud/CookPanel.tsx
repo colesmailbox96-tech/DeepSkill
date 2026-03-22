@@ -35,10 +35,13 @@ function CookRecipeRow({ recipe, ingredientQty, cookingLevel, onCook }: CookReci
   const hasIngredient = ingredientQty > 0
   const canCook      = meetsLevel && hasIngredient
 
-  // Buff line from cooked item definition
+  // Buff/restore lines from cooked item definition
   const cookedMeta   = cookedDef?.consumableMeta
   const buffLine     = cookedMeta?.buffAttack && cookedMeta.duration
     ? `+${cookedMeta.buffAttack} Attack for ${cookedMeta.duration} s`
+    : null
+  const staminaLine  = cookedMeta?.restoresStamina
+    ? `+${cookedMeta.restoresStamina} Stamina`
     : null
 
   return (
@@ -55,6 +58,7 @@ function CookRecipeRow({ recipe, ingredientQty, cookingLevel, onCook }: CookReci
       </div>
       <div className="cook-recipe__stats">
         <span className="cook-recipe__heal">+{recipe.healsHp} HP</span>
+        {staminaLine && <span className="cook-recipe__stamina">{staminaLine}</span>}
         {buffLine && <span className="cook-recipe__buff">{buffLine}</span>}
       </div>
       <div className="cook-recipe__meta">
