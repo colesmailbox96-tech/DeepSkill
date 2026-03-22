@@ -69,6 +69,7 @@ export interface LootResult {
  */
 const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
   // Thornling — slow, hard-hitting briar beast; drops durable organic fragments.
+  // Phase 62 — also yields thornling_hide, bone_shard, and resinous_organ.
   thornling: {
     entries: [
       {
@@ -92,12 +93,34 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
         maxQty: 1,
         rarity: 'uncommon',
       },
+      {
+        itemId: 'thornling_hide',
+        chance: 0.55,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'common',
+      },
+      {
+        itemId: 'bone_shard',
+        chance: 0.55,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'common',
+      },
+      {
+        itemId: 'resinous_organ',
+        chance: 0.30,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'uncommon',
+      },
     ],
     currencyMin: 0,
     currencyMax: 3,
   },
 
   // Mossback Toad — quick, marsh-dwelling amphibian; drops soft hide.
+  // Phase 62 — also yields toad_gland used in the new marsh_tonic cooking recipe.
   mossback_toad: {
     entries: [
       {
@@ -114,12 +137,20 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
         maxQty: 2,
         rarity: 'common',
       },
+      {
+        itemId: 'toad_gland',
+        chance: 0.50,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'uncommon',
+      },
     ],
     currencyMin: 0,
     currencyMax: 2,
   },
 
   // Snarl Whelp — scrappy trail creature; drops rough fur pelt.
+  // Phase 62 — also yields bone_shard.
   snarl_whelp: {
     entries: [
       {
@@ -136,12 +167,20 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
         maxQty: 2,
         rarity: 'common',
       },
+      {
+        itemId: 'bone_shard',
+        chance: 0.45,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'common',
+      },
     ],
     currencyMin: 0,
     currencyMax: 2,
   },
 
   // Brackroot Crawler — chitinous insect; drops shell segments.
+  // Phase 62 — also yields resinous_organ.
   brackroot_crawler: {
     entries: [
       {
@@ -158,6 +197,13 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
         maxQty: 1,
         rarity: 'uncommon',
       },
+      {
+        itemId: 'resinous_organ',
+        chance: 0.40,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'uncommon',
+      },
     ],
     currencyMin: 0,
     currencyMax: 3,
@@ -167,6 +213,8 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
   // linking combat progression to the new resource tier.
   // Phase 59 — Hushfang and Ember Ram also drop their respective raw meats
   // so players have ingredients for the new Cooking Expansion recipes.
+  // Phase 62 — Hushfang and Ember Ram gain hide and bone_shard drops,
+  // feeding the new tinkering and carving craft routes.
 
   // Hushfang — sleek charcoal predator; reliably drops its fang; rare duskiron ore.
   hushfang: {
@@ -198,6 +246,20 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
         minQty: 1,
         maxQty: 2,
         rarity: 'rare',
+      },
+      {
+        itemId: 'hushfang_hide',
+        chance: 0.65,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'common',
+      },
+      {
+        itemId: 'bone_shard',
+        chance: 0.60,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'common',
       },
     ],
     currencyMin: 2,
@@ -234,6 +296,20 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
         minQty: 1,
         maxQty: 2,
         rarity: 'rare',
+      },
+      {
+        itemId: 'ember_ram_hide',
+        chance: 0.60,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'common',
+      },
+      {
+        itemId: 'bone_shard',
+        chance: 0.50,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'common',
       },
     ],
     currencyMin: 3,

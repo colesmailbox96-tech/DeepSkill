@@ -1,15 +1,18 @@
 /**
  * Phase 42 — Carving Skill Foundation
+ * Phase 62 — Creature Loot Expansion: two new carving recipes added.
  *
  * Provides a carving workbench station and the handheld carving interface for
  * Veilmarch.  A single workbench is placed in the Hushwood settlement; players
  * interact with it to shape raw wood and bone into utility components.
  *
  * Carving recipes:
- *   ashwood_log ×1  → whittled_peg   (lvl 1, 5 s, 10 xp)
- *   ashwood_log ×2  → carved_bowl    (lvl 2, 7 s, 15 xp)
- *   ashwood_log ×2  → ashwood_shaft  (lvl 3, 6 s, 18 xp)
- *   crawler_chitin ×1 → chitin_pin   (lvl 4, 8 s, 20 xp)
+ *   ashwood_log    ×1 → whittled_peg   (lvl 1, 5 s, 10 xp)
+ *   ashwood_log    ×2 → carved_bowl    (lvl 2, 7 s, 15 xp)
+ *   ashwood_log    ×2 → ashwood_shaft  (lvl 3, 6 s, 18 xp)
+ *   crawler_chitin ×1 → chitin_pin     (lvl 4, 8 s, 20 xp)
+ *   thornling_hide ×1 → rough_binding  (lvl 4, 6 s, 16 xp)  [Phase 62]
+ *   bone_shard     ×2 → bone_needle    (lvl 5, 8 s, 22 xp)  [Phase 62]
  *
  * The caller (App.tsx) owns the level check, timed session, item swap, and XP
  * grant.  This module provides the data, station visual, and helpers.
@@ -22,10 +25,10 @@ import { useGameStore } from '../store/useGameStore'
 // ─── Recipe configuration ─────────────────────────────────────────────────
 
 /** All carvable material IDs. */
-export type CarvableId = 'ashwood_log' | 'crawler_chitin'
+export type CarvableId = 'ashwood_log' | 'crawler_chitin' | 'thornling_hide' | 'bone_shard'
 
 /** Union of every carving output ID — mirrors `SmeltableId` in smithing.ts. */
-export type CarveOutputId = 'whittled_peg' | 'carved_bowl' | 'ashwood_shaft' | 'chitin_pin'
+export type CarveOutputId = 'whittled_peg' | 'carved_bowl' | 'ashwood_shaft' | 'chitin_pin' | 'rough_binding' | 'bone_needle'
 
 export interface CarveRecipeConfig {
   /** Human-readable label for notifications. */
@@ -81,6 +84,27 @@ export const CARVE_RECIPE_CONFIG: Readonly<Record<CarveOutputId, CarveRecipeConf
     carveDuration: 8,
     xp: 20,
   },
+  // Phase 62 — Creature Loot Expansion: new carving recipes for creature drops.
+  // rough_binding and bone_needle feed the hide-armour and fine-stitching routes
+  // that will be expanded in Phase 63.
+  rough_binding: {
+    label: 'Rough Binding',
+    materialId: 'thornling_hide',
+    materialQty: 1,
+    outputId: 'rough_binding',
+    levelReq: 4,
+    carveDuration: 6,
+    xp: 16,
+  },
+  bone_needle: {
+    label: 'Bone Needle',
+    materialId: 'bone_shard',
+    materialQty: 2,
+    outputId: 'bone_needle',
+    levelReq: 5,
+    carveDuration: 8,
+    xp: 22,
+  },
 } as const
 
 /**
@@ -93,6 +117,8 @@ const CARVE_DISPLAY_ORDER: CarveOutputId[] = [
   'carved_bowl',
   'ashwood_shaft',
   'chitin_pin',
+  'rough_binding',
+  'bone_needle',
 ]
 
 // ─── Workbench station type ───────────────────────────────────────────────

@@ -68,35 +68,55 @@ export const useFoodStore = create<FoodState>((set, get) => ({
     if (inCombat && cooldownRemaining > 0) return false
 
     // Guard: item must exist in inventory before we look up its definition.
-    const { playerStats, setHealth, removeItem, inventory } = useGameStore.getState()
+    const { playerStats, setHealth, setStamina, removeItem, inventory } = useGameStore.getState()
     if (!inventory.slots.some((s) => s.id === itemId)) return false
 
     const def = getItem(itemId)
     if (!def || def.type !== 'consumable' || !def.consumableMeta?.healsHp) return false
 
-    // Don't waste food when already at full health.
-    if (playerStats.health >= playerStats.maxHealth) {
+    const { healsHp, restoresStamina, buffAttack, duration } = def.consumableMeta
+
+    // Don't waste food when already at full health AND the item has nothing
+    // else to restore (e.g. stamina).  A tonic that restores stamina is still
+    // useful even when the player is at full HP.
+    const hpFull = playerStats.health >= playerStats.maxHealth
+    const staminaFull =
+      !restoresStamina || playerStats.stamina >= playerStats.maxStamina
+    if (hpFull && staminaFull) {
       useNotifications.getState().push('Already at full health.', 'info')
       return false
     }
 
-    const healsHp = def.consumableMeta.healsHp
     const newHp = Math.min(playerStats.maxHealth, playerStats.health + healsHp)
     const actualHeal = newHp - playerStats.health
-
     setHealth(newHp)
+
+    // Restore stamina if the item carries a stamina value.
+    let staminaPart = ''
+    if (restoresStamina) {
+      const newStamina = Math.min(
+        playerStats.maxStamina,
+        playerStats.stamina + restoresStamina,
+      )
+      const actualStamina = newStamina - playerStats.stamina
+      setStamina(newStamina)
+      if (actualStamina > 0) staminaPart = `+${actualStamina} Stamina`
+    }
+
     removeItem(itemId, 1)
 
     // Apply attack buff if the food carries one.
-    const { buffAttack, duration } = def.consumableMeta
-    const buffMsg =
+    const buffPart =
       buffAttack && duration
-        ? ` · +${buffAttack} Attack for ${duration} s`
+        ? `+${buffAttack} Attack for ${duration} s`
         : ''
+
+    const healPart = actualHeal > 0 ? `restored ${actualHeal} HP` : ''
+    const parts = [healPart, staminaPart, buffPart].filter(Boolean)
 
     useNotifications
       .getState()
-      .push(`Ate ${def.name} — restored ${actualHeal} HP.${buffMsg}`, 'success')
+      .push(`Ate ${def.name} — ${parts.join(' · ')}.`, 'success')
 
     if (buffAttack && duration) {
       set({ buffAttackBonus: buffAttack, buffAttackRemaining: duration })
