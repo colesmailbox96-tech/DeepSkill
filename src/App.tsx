@@ -120,6 +120,14 @@ import { buildTidemarkChapel } from './engine/tidemark_chapel'
 import { buildAshfenCopse } from './engine/ashfen_copse'
 import { buildHollowVault, pollGateUnsealed } from './engine/hollow_vault'
 import {
+  buildSalvageNodes,
+  updateSalvageNodes,
+  depleteSalvageNode,
+  getSalvagingLevel,
+  SALVAGE_VARIANT_CONFIG,
+} from './engine/salvage'
+import type { SalvageNode } from './engine/salvage'
+import {
   getHazardAtPosition,
   isProtectedFromHazard,
 } from './engine/hazard'
@@ -638,6 +646,41 @@ function App() {
     const hollowVault = buildHollowVault(scene, interactables)
     collidables.push(...hollowVault.collidables)
     let vaultGateSealed = true
+
+    // Phase 66 — Salvage System
+    // Salvage nodes placed inside the Hollow Vault.  Uses the 'salvaging' skill;
+    // the callback pattern mirrors onForageStart.
+    const onSalvageStart = (node: SalvageNode) => {
+      const cfg = SALVAGE_VARIANT_CONFIG[node.variant]
+      if (getSalvagingLevel() < cfg.levelReq) {
+        useNotifications.getState().push(
+          `You need level ${cfg.levelReq} Salvaging to extract from this.`,
+          'info',
+        )
+        return
+      }
+      const { addItem, grantSkillXp } = useGameStore.getState()
+      const itemName = getItem(cfg.itemId)?.name ?? cfg.itemId
+      const added = addItem({ id: cfg.itemId, name: itemName, quantity: 1 })
+      if (!added) {
+        useNotifications.getState().push(
+          `Your inventory is too full to salvage ${itemName.toLowerCase()}.`,
+          'info',
+        )
+        return
+      }
+      grantSkillXp('salvaging', cfg.xp)
+      advanceGatherObjectives(cfg.itemId)
+      audioManager.playSfx('forage')
+      audioManager.playSfx('collect')
+      useNotifications.getState().push(
+        `You salvage ${article(itemName)} ${itemName.toLowerCase()}.`,
+        'success',
+      )
+      depleteSalvageNode(node)
+    }
+
+    const allSalvageNodes = buildSalvageNodes(scene, interactables, onSalvageStart)
 
     // Phase 57 — Ashfen Copse Zone
     // Phase 58 — adds Duskiron Seam rock nodes; onMineStart callback needed.
@@ -1871,6 +1914,9 @@ function App() {
 
       // Phase 21 — tick forage node respawn timers
       updateForageNodes(allForageNodes, delta)
+
+      // Phase 66 — tick salvage node respawn timers
+      updateSalvageNodes(allSalvageNodes, delta)
 
       // Phase 22 — tick cooking session
       if (cookingRef.current) {

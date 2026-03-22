@@ -85,6 +85,12 @@ const TOMAS_DEF: VendorDef = {
     { id: 'ash_twig',      stock: null },
     { id: 'rough_stone',   stock: null },
     { id: 'marsh_herb',    stock: null },
+
+    // Phase 66 — Salvage System: limited stock of raw salvage materials so
+    // players can bootstrap early recipes before unlocking the vault.
+    { id: 'crumbled_masonry',     stock: 8 },
+    { id: 'iron_relic_fragment',  stock: 5 },
+    { id: 'vault_seal_wax',       stock: 3 },
   ],
 }
 
@@ -171,6 +177,8 @@ const TOOLSMITH_ACCEPTED_IDS = new Set<string>([
   'rough_stone', 'small_stone', 'flint_shard',
   // Higher-tier tinkering outputs
   'dusk_lens_mount',
+  // Phase 66 — Salvage System: raw salvage materials and crafted outputs
+  'crumbled_masonry', 'iron_relic_fragment', 'vault_mortar', 'relic_rivet',
 ])
 
 /** Item IDs that Brin Salt (Fisher Supplier) will buy from the player. */

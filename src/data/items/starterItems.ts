@@ -1299,4 +1299,91 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'Residual warding resonance makes the surface faintly luminescent; ' +
       'experienced warders believe it could be refined into higher-tier ward inscriptions.',
   },
+
+  // ── Phase 66 — Salvage System ─────────────────────────────────────────────
+  // Ruin-derived raw materials gathered from salvage nodes in the Hollow Vault.
+  // Each material connects to a downstream crafting recipe in tinkering or
+  // warding so salvaging has an immediately meaningful loop.
+
+  {
+    id: 'crumbled_masonry',
+    name: 'Crumbled Masonry',
+    type: 'material',
+    stackable: true,
+    value: 4,
+    icon: 'items/crumbled_masonry.png',
+    description:
+      'Loose chunks of pre-Veil stonework knocked free from vault walls and floor slabs. ' +
+      'The mineral density is higher than ordinary rough stone; skilled tinkerers can ' +
+      'reduce it into a dense bonding compound used in structural repair.',
+  },
+
+  {
+    id: 'iron_relic_fragment',
+    name: 'Iron Relic Fragment',
+    type: 'material',
+    stackable: true,
+    value: 9,
+    icon: 'items/iron_relic_fragment.png',
+    description:
+      'A corroded but solid iron shard broken from an ancient fixture or fitting deep ' +
+      'inside the vault. Despite heavy oxidation the metal core holds its temper — ' +
+      'a tinkerer can work it into precision fasteners or reinforcing pieces.',
+  },
+
+  {
+    id: 'vault_seal_wax',
+    name: 'Vault Seal Wax',
+    type: 'material',
+    stackable: true,
+    value: 12,
+    icon: 'items/vault_seal_wax.png',
+    description:
+      'Dark residue scraped from the wax seals that once bound the vault\'s inner chambers. ' +
+      'Saturated with old ward-craft, the material still resonates faintly with protective ' +
+      'intention — warders prize it for inscribing higher-tier seal patterns.',
+  },
+
+  // ── Phase 66 — Tinkering outputs from salvage ─────────────────────────────
+
+  {
+    id: 'vault_mortar',
+    name: 'Vault Mortar',
+    type: 'material',
+    stackable: true,
+    value: 14,
+    icon: 'items/vault_mortar.png',
+    description:
+      'A dense grey compound pressed from pulverised Crumbled Masonry and mineral binder. ' +
+      'Sets harder than common lime mortar and resists moisture — used in structural ' +
+      'repairs, sealed joins, and as a filler in heavy armour construction.',
+  },
+
+  {
+    id: 'relic_rivet',
+    name: 'Relic Rivet',
+    type: 'material',
+    stackable: true,
+    value: 20,
+    icon: 'items/relic_rivet.png',
+    description:
+      'A short, precisely-formed rivet worked from Iron Relic Fragment stock. ' +
+      'The pre-Veil iron holds a finer grain than modern smelts, making these ' +
+      'rivets unusually strong — used in mid-tier armour assembly and secure bindings.',
+  },
+
+  // ── Phase 66 — Warding output from salvage ────────────────────────────────
+
+  {
+    id: 'vault_seal_ward',
+    name: 'Vault Seal Ward',
+    type: 'material',
+    stackable: true,
+    value: 28,
+    icon: 'items/vault_seal_ward.png',
+    description:
+      'A ward mark inscribed using Vault Seal Wax as the binding medium. ' +
+      'The residual intention locked inside the wax amplifies the inscription, ' +
+      'producing a seal strong enough to bar lesser spirits and deter ruin creatures.',
+  },
 ]
