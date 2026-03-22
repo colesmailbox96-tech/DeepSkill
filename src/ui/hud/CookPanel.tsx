@@ -13,7 +13,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useCookPanelStore } from '../../store/useCookPanelStore'
 import { useGameStore } from '../../store/useGameStore'
 import { getItem } from '../../data/items/itemRegistry'
-import { getAllCookRecipes, getCookingLevel } from '../../engine/cooking'
+import { getAllCookRecipes } from '../../engine/cooking'
 import type { CookRecipeConfig } from '../../engine/cooking'
 
 // ─── Recipe row ───────────────────────────────────────────────────────────
@@ -91,8 +91,10 @@ interface CookPanelProps {
 export function CookPanel({ onCookSelect }: CookPanelProps) {
   const isOpen     = useCookPanelStore((s) => s.isOpen)
   const closePanel = useCookPanelStore((s) => s.closePanel)
-  const slots      = useGameStore((s) => s.inventory.slots)
-  const cookingLevel = getCookingLevel()
+  const slots        = useGameStore((s) => s.inventory.slots)
+  const cookingLevel = useGameStore(
+    (s) => s.skills.skills.find((sk) => sk.id === 'hearthcraft')?.level ?? 1,
+  )
 
   const isOpenRef = useRef(false)
   useEffect(() => { isOpenRef.current = isOpen }, [isOpen])
@@ -130,7 +132,7 @@ export function CookPanel({ onCookSelect }: CookPanelProps) {
       ref={panelRef}
       className="cook-panel"
       role="dialog"
-      aria-modal="true"
+      aria-modal="false"
       aria-label="Hearthfire — Cooking"
       tabIndex={-1}
     >
