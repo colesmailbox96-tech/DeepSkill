@@ -233,8 +233,8 @@ function App() {
   // be marked as complete when the player speaks to the target NPC.
   const openDialogueNpcName = useDialogueStore((s) => s.activeTree?.npcName ?? null)
 
-  // Auto-accept the introductory task once at game start (runs once because
-  // the dependency array is empty; acceptTask is idempotent for known tasks).
+  // Auto-accept all tasks once at game start (runs once because the dependency
+  // array is empty; acceptTask is idempotent for known tasks).
   useEffect(() => {
     useTaskStore.getState().acceptTask('word_from_the_elder')
     useTaskStore.getState().acceptTask('warm_runoff')
@@ -242,6 +242,11 @@ function App() {
     useTaskStore.getState().acceptTask('haul_for_the_hearth')
     useTaskStore.getState().acceptTask('stock_the_camp_stores')
     useTaskStore.getState().acceptTask('stone_from_the_quarry')
+    // Phase 64 — Tidemark Storyline Arc
+    useTaskStore.getState().acceptTask('tidemark_word')
+    useTaskStore.getState().acceptTask('tidemark_ward_proof')
+    useTaskStore.getState().acceptTask('tidemark_mist_born')
+    useTaskStore.getState().acceptTask('tidemark_sealed_shaft')
   }, [])
 
   // Advance 'talk' objectives and handle 'deliver' objectives when the player
@@ -1235,6 +1240,24 @@ function App() {
         'success',
       )
 
+      // Phase 64 — Advance any active 'kill' task objectives matching this creature.
+      {
+        const { active, updateObjective } = useTaskStore.getState()
+        for (const record of active) {
+          const def = getTask(record.taskId)
+          if (!def) continue
+          for (const obj of def.objectives) {
+            if (
+              obj.type === 'kill' &&
+              obj.targetId === target.def.id &&
+              (record.progress[obj.id] ?? 0) < obj.required
+            ) {
+              updateObjective(record.taskId, obj.id, 1)
+            }
+          }
+        }
+      }
+
       // Phase 32 — roll loot table and award results.
       const { items, currency } = rollLoot(target.def.id)
       const { addItem, addCoins, inventory } = useGameStore.getState()
@@ -1262,6 +1285,10 @@ function App() {
           awarded.push({ name, qty: drop.qty })
           if (!mergesIntoStack) {
             freeSlots--
+          }
+          // Advance any active gather objectives that match this drop item.
+          for (let i = 0; i < drop.qty; i++) {
+            advanceGatherObjectives(drop.itemId)
           }
         }
         // else: inventory full — item silently skipped, not announced.
@@ -2194,6 +2221,7 @@ function App() {
                 removeItem(sess.recipe.materialId, sess.recipe.materialQty)
                 addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
                 grantSkillXp('warding', sess.recipe.xp)
+                advanceGatherObjectives(sess.recipe.outputId)
                 useNotifications.getState().push(
                   `Ward mark inscribed: ${outputName}! (+${sess.recipe.xp} warding xp)`,
                   'success',

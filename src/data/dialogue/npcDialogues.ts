@@ -276,7 +276,7 @@ const tomasTree = {
   },
 }
 
-// ─── Nairn Dusk — Ward-Adept (Phase 47) ──────────────────────────────────────
+// ─── Nairn Dusk — Ward-Adept (Phase 47 + Phase 64) ───────────────────────────
 
 const nairnDuskTree = {
   npcName: 'Nairn Dusk (Ward-Adept)',
@@ -323,7 +323,25 @@ const nairnDuskTree = {
       text: "This was a tidal shrine, built when the Reach was still young. The founders believed the shaft connected to something they called the Tidemark — a boundary beneath the ground where the Veil runs thin. They sealed it, eventually. Whatever they saw down there convinced them the boundary should stay closed.",
       choices: [
         { label: 'What is the mist?', nextNode: 'mist' },
+        { label: 'Tell me about the Chapel Wisps.', nextNode: 'wisps' },
         { label: 'Unsettling. Farewell.', nextNode: null },
+      ],
+    },
+    wisps: {
+      key: 'wisps',
+      text: "They are not true creatures. I believe they are the mist given unstable form — condensed fragments of whatever energy the shaft vents. When they dissolve they shed a cold light I call a Wisp Ember. I have been trying to collect three of these fragments to map the Tidemark boundary precisely. The wisps reform quickly, but their embers persist.",
+      choices: [
+        { label: 'I can gather the Wisp Embers for you.', nextNode: 'task_embers' },
+        { label: 'What is the mist?', nextNode: 'mist' },
+        { label: 'Understood. Farewell.', nextNode: null },
+      ],
+    },
+    task_embers: {
+      key: 'task_embers',
+      text: "If you are willing to enter the inner shrine, I would be grateful. Carry a ward — do not go in without one. Defeat the wisps and gather three embers from what they leave behind. Bring them back to me and I can finally triangulate the Tidemark boundary. It may be the only way to understand how to properly seal this shaft for good.",
+      choices: [
+        { label: 'I will do it. Farewell.', nextNode: null },
+        { label: 'How do I protect myself?', nextNode: 'protection' },
       ],
     },
     repeat: {
@@ -332,6 +350,7 @@ const nairnDuskTree = {
       choices: [
         { label: 'Tell me about the mist again.', nextNode: 'mist' },
         { label: 'How do I protect myself?', nextNode: 'protection' },
+        { label: 'Tell me about the Chapel Wisps.', nextNode: 'wisps' },
         { label: 'Farewell.', nextNode: null },
       ],
     },
