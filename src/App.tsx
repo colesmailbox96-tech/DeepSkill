@@ -2117,10 +2117,9 @@ function App() {
             // their stacks are fully depleted, so account for both when calculating
             // available space.
             const hasExistingOutput = inventory.slots.some((s) => s.id === sess.recipe.outputId)
-            const secSlotForCount = inventory.slots.find((s) => s.id === sec.id)
             let slotsAfterRemove = inventory.slots.length
             if (matSlot.quantity <= sess.recipe.materialQty) slotsAfterRemove -= 1
-            if (secSlotForCount && secSlotForCount.quantity <= sec.qty) slotsAfterRemove -= 1
+            if (secSlot.quantity <= sec.qty) slotsAfterRemove -= 1
             const canAdd = hasExistingOutput || slotsAfterRemove < inventory.maxSlots
             if (!canAdd) {
               useNotifications.getState().push("Your inventory is full — make room before stitching.", 'info')
