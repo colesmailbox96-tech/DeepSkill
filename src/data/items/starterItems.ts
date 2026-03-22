@@ -604,6 +604,60 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'Its acrid scent and latent ward pattern unsettles most creatures of the Reach, causing them to avoid the marked ground.',
   },
 
+  // ── Phase 57 — Ashfen Copse resources & drops ────────────────────────────
+
+  {
+    id: 'mineralwood_log',
+    name: 'Mineralwood Log',
+    type: 'material',
+    stackable: true,
+    value: 20,
+    icon: 'items/mineralwood_log.png',
+    description:
+      'A dense log hewn from a Mineral Ashwood — a rare tree species whose heartwood is laced ' +
+      'with iron-trace deposits, giving the grain a dark, glinting streak. ' +
+      'Harder to work than ordinary timber but prized for durable hafts and reinforced furnishings.',
+  },
+
+  {
+    id: 'ashfen_resin',
+    name: 'Ashfen Resin',
+    type: 'material',
+    stackable: true,
+    value: 16,
+    icon: 'items/ashfen_resin.png',
+    description:
+      'A thick, dark amber resin that seeps from the wounded bark of Mineral Ashwood. ' +
+      'Its mineral content makes it harder and more heat-resistant than ordinary resin — ' +
+      'sought after for blade coatings, waterproofing, and ward-craft binding.',
+  },
+
+  {
+    id: 'hushfang_fang',
+    name: 'Hushfang Fang',
+    type: 'material',
+    stackable: true,
+    value: 18,
+    icon: 'items/hushfang_fang.png',
+    description:
+      'A curved, hollow fang pulled from a defeated Hushfang — a sleek predator of the Ashfen Copse. ' +
+      'The inner channel once carried a trace venom; now drained, the fang is prized as a ' +
+      'piercing component in arrowheads and bladed grips.',
+  },
+
+  {
+    id: 'ember_ram_horn',
+    name: 'Ember Ram Horn',
+    type: 'material',
+    stackable: true,
+    value: 22,
+    icon: 'items/ember_ram_horn.png',
+    description:
+      'A spiralled horn broken from an Ember Ram, still faintly warm to the touch from its ' +
+      'geothermal charge. Used in advanced smithing as a heat-draw agent, or ground into powder ' +
+      'as a flux additive for high-grade iron work.',
+  },
+
   // ── Phase 47 — Tidemark Chapel Drops ─────────────────────────────────────
 
   {

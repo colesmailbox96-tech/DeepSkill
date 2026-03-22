@@ -13,6 +13,10 @@
  * The Hushwood north boundary wall has a 6-unit gap at x = 0 (see hushwood.ts)
  * that lines up with the 6-unit-wide trail built here.
  *
+ * Phase 57 — Ashfen Copse access:
+ *   The east cliff wall is split into two sections with a 6-unit gap centred at
+ *   z = −73 (z = −70 → −76) so the player can walk east toward Ashfen Copse.
+ *
  * Spatial layout (top-down, z increases southward in Three.js):
  *
  *   Hushwood settlement    z = 0    (centre)
@@ -21,6 +25,7 @@
  *   Quarry entrance        z = −52
  *   Quarry basin           z = −52  →  z = −96  (44 units deep)
  *   Quarry north cliff     z = −96
+ *   Ashfen Copse gate      z = −70  →  −76  (6-unit gap in east cliff at x = +20)
  */
 
 import * as THREE from 'three'
@@ -140,9 +145,14 @@ export function buildQuarry(
   const cliffN = _addBox(scene, 40, 10, 4, 0, 5, -98, matCliff)
   collidables.push(cliffN)
 
-  // East cliff — right face of the basin
-  const cliffE = _addBox(scene, 4, 10, 44, 22, 5, -74, matCliff)
-  collidables.push(cliffE)
+  // East cliff — right face of the basin.
+  // Phase 57: split into two sections with a 6-unit gap at z = −70 → −76
+  // (centered at z = −73) to allow passage east into Ashfen Copse.
+  //   South section: z = −52 → −70 (18 units deep, center z = −61)
+  //   North section: z = −76 → −96 (20 units deep, center z = −86)
+  const cliffES = _addBox(scene, 4, 10, 18, 22, 5, -61, matCliff)
+  const cliffEN = _addBox(scene, 4, 10, 20, 22, 5, -86, matCliff)
+  collidables.push(cliffES, cliffEN)
 
   // West cliff — left face of the basin
   const cliffW = _addBox(scene, 4, 10, 44, -22, 5, -74, matCliff)
@@ -150,8 +160,9 @@ export function buildQuarry(
 
   // Cliff ledge detail — a slightly darker narrow shelf along the east and west
   // inner faces, purely visual, adds visual depth.
-  // (_addBox already calls scene.add — no extra add needed.)
-  _addBox(scene, 0.8, 1.2, 44, 19.6, 1.5, -74, matCliffDark)
+  // East ledge: also split around the Ashfen gap.
+  _addBox(scene, 0.8, 1.2, 18, 19.6, 1.5, -61, matCliffDark)
+  _addBox(scene, 0.8, 1.2, 20, 19.6, 1.5, -86, matCliffDark)
   _addBox(scene, 0.8, 1.2, 44, -19.6, 1.5, -74, matCliffDark)
 
   // ── Set pieces — entrance area ───────────────────────────────────────────

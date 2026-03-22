@@ -34,7 +34,7 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /** Unique identifier for an audio region. */
-export type AudioRegion = 'hushwood' | 'bog' | 'chapel' | 'quarry' | 'shoreline'
+export type AudioRegion = 'hushwood' | 'bog' | 'chapel' | 'quarry' | 'shoreline' | 'ashfen'
 
 /** Type of one-shot sound effect. */
 export type SfxType =
@@ -98,6 +98,14 @@ const REGION_CONFIG: Record<AudioRegion, RegionConfig> = {
     filterQ: 1.0,
     droneFreq: null,
     droneLevel: 0,
+  },
+  // Phase 57 — Ashfen Copse: deep forest stillness with a low mineral resonance.
+  ashfen: {
+    filterType: 'lowpass',
+    filterFreq: 160,
+    filterQ: 2.2,
+    droneFreq: 68,
+    droneLevel: 0.14,
   },
 }
 
@@ -630,6 +638,9 @@ export const audioManager = new AudioManager()
 export function getAudioRegion(x: number, z: number): AudioRegion {
   if (x <= -32) return 'chapel'
   if (z >= 19)  return 'bog'
+  // Ashfen Copse must be checked before the quarry condition (x >= 12) because
+  // the copse lies at x >= 34, which also satisfies the quarry predicate.
+  if (x >= 34 && z <= -54 && z >= -92) return 'ashfen'
   if (x >= 12)  return 'quarry'
   if (z <= -15) return 'shoreline'
   return 'hushwood'

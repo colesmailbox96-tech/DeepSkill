@@ -5,9 +5,15 @@
  * variants that differ in level requirement, chop timing, XP reward, log
  * output, and visual appearance:
  *
- *   Ash Sapling       — level 1, 2 s chop, 15 XP, ash_sapling_log
- *   Ashwood Tree      — level 1, 3 s chop, 25 XP, ashwood_log
+ *   Ash Sapling        — level 1, 2 s chop, 15 XP, ash_sapling_log
+ *   Ashwood Tree       — level 1, 3 s chop, 25 XP, ashwood_log
  *   Ironbark Youngling — level 5, 4 s chop, 40 XP, ironbark_log
+ *
+ * Phase 57 — Ashfen Copse Zone:
+ *   Mineral Ashwood    — level 8, 5 s chop, 55 XP, mineralwood_log
+ *     A rare tree whose heartwood is threaded with iron-trace deposits.
+ *     The bark is dark, almost charcoal-grey, with faint metallic glints.
+ *     Found only in the Ashfen Copse northeast of Redwake Quarry.
  */
 
 import * as THREE from 'three'
@@ -31,8 +37,8 @@ const HATCHET_IDS = new Set(Object.keys(HATCHET_TIERS))
 
 // ── Variant system ────────────────────────────────────────────────────────────
 
-/** The three beginner tree variants introduced in Phase 16. */
-export type TreeVariant = 'sapling' | 'ashwood' | 'ironbark'
+/** The three beginner tree variants introduced in Phase 16, plus Mineral Ashwood (Phase 57). */
+export type TreeVariant = 'sapling' | 'ashwood' | 'ironbark' | 'mineralwood'
 
 /** Per-variant configuration used for gameplay and visual construction. */
 export interface VariantConfig {
@@ -102,6 +108,21 @@ export const VARIANT_CONFIG: Readonly<Record<TreeVariant, VariantConfig>> = {
     trunkY: 1.1,
     canopyGeo: [1.4, 2.8, 8],
     canopyY: 3.4,
+  },
+  // Phase 57 — Mineral Ashwood: dark, iron-laced bark with a slightly metallic
+  // canopy tint.  Taller and sturdier than ironbark.
+  mineralwood: {
+    label: 'Mineral Ashwood',
+    logId: 'mineralwood_log',
+    chopDuration: 5.0,
+    xp: 55,
+    levelReq: 8,
+    trunkColor: 0x2a2a30,
+    canopyColor: 0x1e3a20,
+    trunkGeo: [0.26, 0.36, 2.8, 8],
+    trunkY: 1.4,
+    canopyGeo: [1.6, 3.2, 8],
+    canopyY: 4.2,
   },
 }
 

@@ -111,6 +111,7 @@ import type { WardRecipeConfig } from './engine/warding'
 import { useWardingStore } from './store/useWardingStore'
 import { buildBrackroot } from './engine/brackroot'
 import { buildTidemarkChapel } from './engine/tidemark_chapel'
+import { buildAshfenCopse } from './engine/ashfen_copse'
 import {
   getHazardAtPosition,
   isProtectedFromHazard,
@@ -601,6 +602,13 @@ function App() {
     const chapel = buildTidemarkChapel(scene, interactables)
     collidables.push(...chapel.collidables)
     allNpcs.push(...chapel.npcs)
+
+    // Phase 57 — Ashfen Copse Zone
+    // Build the northeast advanced gathering-and-combat zone and merge results.
+    const ashfenCopse = buildAshfenCopse(scene, interactables, onChopStart, onForageStart)
+    collidables.push(...ashfenCopse.collidables)
+    allTreeNodes.push(...ashfenCopse.treeNodes)
+    allForageNodes.push(...ashfenCopse.forageNodes)
 
     // Phase 22 — Cooking System Foundation
     // Cooking session: tracks which recipe is being cooked and elapsed cook time.

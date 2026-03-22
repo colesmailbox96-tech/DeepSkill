@@ -5,9 +5,13 @@
  * Veilmarch zones (Hushwood area, Gloamwater Bank, etc.).
  *
  * Three variants are available:
- *   - reed_clump : dense cattail reeds near water          → reed_fiber  (lvl 1,  8 xp)
- *   - marsh_herb : moisture-loving plants near waterways   → marsh_herb  (lvl 1, 12 xp)
- *   - resin_glob : amber resin on stressed ironbark bark   → resin_glob  (lvl 3, 18 xp)
+ *   - reed_clump  : dense cattail reeds near water          → reed_fiber  (lvl 1,  8 xp)
+ *   - marsh_herb  : moisture-loving plants near waterways   → marsh_herb  (lvl 1, 12 xp)
+ *   - resin_glob  : amber resin on stressed ironbark bark   → resin_glob  (lvl 3, 18 xp)
+ *
+ * Phase 57 — Ashfen Copse Zone adds:
+ *   - ashfen_resin: dark mineral resin seeping from Mineral Ashwood bark
+ *                   → ashfen_resin (lvl 5, 28 xp)
  *
  * Unlike woodcutting / mining / fishing, foraging is instant — there is no
  * cast or chop timer.  The caller (App.tsx) receives an onForageStart
@@ -22,7 +26,7 @@ import { useGameStore } from '../store/useGameStore'
 
 // ─── Variant configuration ────────────────────────────────────────────────────
 
-export type ForageVariant = 'reed_clump' | 'marsh_herb' | 'resin_glob'
+export type ForageVariant = 'reed_clump' | 'marsh_herb' | 'resin_glob' | 'ashfen_resin'
 
 export interface ForageVariantConfig {
   /** Interaction label shown when the node is ready. */
@@ -78,6 +82,19 @@ export const FORAGE_VARIANT_CONFIG: Readonly<Record<ForageVariant, ForageVariant
     respawnTime: 25,
     primaryColor: 0xc88820,
     secondaryColor: 0x7a4a18,
+  },
+  // Phase 57 — Ashfen Copse mineral resin: dark amber seeping from Mineral
+  // Ashwood bark.  Harder and more valuable than ordinary resin.
+  ashfen_resin: {
+    label: 'Ashfen Resin Node',
+    quietLabel: 'Scraped Bark',
+    depletedMessage: 'The mineral resin has been fully scraped — it will seep again in time.',
+    itemId: 'ashfen_resin',
+    xp: 28,
+    levelReq: 5,
+    respawnTime: 35,
+    primaryColor: 0x6a3a10,
+    secondaryColor: 0x2a1a08,
   },
 } as const
 
