@@ -57,7 +57,6 @@ import {
 import type { ForageNode } from './engine/foraging'
 import {
   buildCookStation,
-  findCookableIngredient,
   getCookingLevel,
 } from './engine/cooking'
 import type { CookRecipeConfig } from './engine/cooking'
@@ -120,6 +119,7 @@ import { useHazardStore } from './store/useHazardStore'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
 import { useFoodStore } from './store/useFoodStore'
+import { useCookPanelStore } from './store/useCookPanelStore'
 import { getItem } from './data/items/itemRegistry'
 import { PlayerStrip } from './ui/hud/PlayerStrip'
 import { NotificationFeed } from './ui/hud/NotificationFeed'
@@ -151,6 +151,7 @@ import { SmithingPanel } from './ui/hud/SmithingPanel'
 import { CarvingPanel } from './ui/hud/CarvingPanel'
 import { TinkeringPanel } from './ui/hud/TinkeringPanel'
 import { WardingPanel } from './ui/hud/WardingPanel'
+import { CookPanel } from './ui/hud/CookPanel'
 import { HazardWarningHud } from './ui/hud/HazardWarningHud'
 import { AudioSettingsPanel } from './ui/hud/AudioSettingsPanel'
 import { audioManager, getAudioRegion } from './engine/audio'
@@ -373,6 +374,8 @@ function App() {
   const startSurveyFromPanelRef = useRef<() => void>(() => {})
   /** Ward callback set by the game loop, called by WardingPanel recipe buttons. */
   const wardFromPanelRef = useRef<(recipe: WardRecipeConfig) => void>(() => {})
+  /** Cook callback set by the game loop, called by CookPanel recipe buttons. */
+  const cookFromPanelRef = useRef<(recipe: CookRecipeConfig) => void>(() => {})
   /** Accumulator for throttling cache-status updates to ~1 Hz (Phase 45). */
   const surveyStatusAccumRef = useRef(0)
 
@@ -613,25 +616,35 @@ function App() {
     allRockNodes.push(...ashfenCopse.rockNodes)
 
     // Phase 22 — Cooking System Foundation
+    // Phase 59 — Panel-based recipe selection replaces auto-cook.
     // Cooking session: tracks which recipe is being cooked and elapsed cook time.
     const cookingRef = { current: null as CookingSession | null }
 
+    // Opening the panel is now the campfire interaction; actual cooking starts
+    // when the player selects a recipe inside the panel (cookFromPanelRef below).
     const onCookStart = () => {
-      // Already cooking — do nothing.
+      // Already cooking — do nothing (session is in progress).
+      if (cookingRef.current) return
+      useCookPanelStore.getState().openPanel()
+    }
+
+    buildCookStation(scene, interactables, onCookStart)
+
+    // Called by CookPanel when the player selects a recipe to cook.
+    cookFromPanelRef.current = (recipe: CookRecipeConfig) => {
       if (cookingRef.current) return
 
-      const { inventory } = useGameStore.getState()
-      const recipe = findCookableIngredient(inventory.slots)
-
-      if (!recipe) {
-        useNotifications.getState().push('You have nothing to cook here.', 'info')
-        return
-      }
       if (getCookingLevel() < recipe.levelReq) {
         useNotifications.getState().push(
           `You need level ${recipe.levelReq} Hearthcraft to cook this.`,
           'info',
         )
+        return
+      }
+
+      const { inventory } = useGameStore.getState()
+      if (!inventory.slots.some((s) => s.id === recipe.rawId && s.quantity > 0)) {
+        useNotifications.getState().push('You have nothing to cook here.', 'info')
         return
       }
 
@@ -641,8 +654,6 @@ function App() {
         'info',
       )
     }
-
-    buildCookStation(scene, interactables, onCookStart)
 
     // Phase 40 — Smithing Foundation
     // Smelt session: tracks which recipe is being smelted and elapsed time.
@@ -2118,7 +2129,8 @@ function App() {
         combatRef.current,
         delta,
         player.mesh.position,
-        useGameStore.getState().equipStats.totalAttack,
+        useGameStore.getState().equipStats.totalAttack +
+          useFoodStore.getState().buffAttackBonus,
         onPlayerHit,
         onPlayerKill,
       )
@@ -2298,6 +2310,10 @@ function App() {
           {/* Phase 46 — Warding panel */}
           <WardingPanel
             onWard={(recipe) => wardFromPanelRef.current(recipe)}
+          />
+          {/* Phase 59 — Cook panel */}
+          <CookPanel
+            onCookSelect={(recipe) => cookFromPanelRef.current(recipe)}
           />
           {/* Phase 48 — Environmental hazard warning banner */}
           <HazardWarningHud />

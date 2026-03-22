@@ -27,6 +27,8 @@ export type CookableId =
   | 'perch'
   | 'gloomfin'
   | 'cinderhare_meat'
+  | 'hushfang_meat'
+  | 'ember_ram_meat'
 
 export interface CookRecipeConfig {
   /** Human-readable ingredient name for notification messages. */
@@ -82,6 +84,24 @@ export const COOK_RECIPE_CONFIG: Readonly<Record<CookableId, CookRecipeConfig>> 
     xp: 15,
     healsHp: 18,
   },
+  hushfang_meat: {
+    label: 'Hushfang Meat',
+    rawId: 'hushfang_meat',
+    cookedId: 'hushfang_steak',
+    levelReq: 5,
+    cookDuration: 4,
+    xp: 35,
+    healsHp: 32,
+  },
+  ember_ram_meat: {
+    label: 'Ember Ram Meat',
+    rawId: 'ember_ram_meat',
+    cookedId: 'ember_roast',
+    levelReq: 8,
+    cookDuration: 5,
+    xp: 50,
+    healsHp: 22,
+  },
 } as const
 
 /**
@@ -89,6 +109,8 @@ export const COOK_RECIPE_CONFIG: Readonly<Record<CookableId, CookRecipeConfig>> 
  * multiple cookable items — highest-value recipe is preferred first.
  */
 const COOK_PRIORITY: CookableId[] = [
+  'ember_ram_meat',
+  'hushfang_meat',
   'gloomfin',
   'cinderhare_meat',
   'perch',
@@ -231,4 +253,14 @@ export function findCookableIngredient(
 export function getCookingLevel(): number {
   const { skills } = useGameStore.getState()
   return skills.skills.find((s) => s.id === 'hearthcraft')?.level ?? 1
+}
+
+/**
+ * All cook recipes in display order (lowest level-req first, then by heal
+ * value).  Use this to populate the CookPanel recipe list.
+ */
+export function getAllCookRecipes(): CookRecipeConfig[] {
+  return (Object.values(COOK_RECIPE_CONFIG) as CookRecipeConfig[]).sort(
+    (a, b) => a.levelReq - b.levelReq || a.healsHp - b.healsHp,
+  )
 }

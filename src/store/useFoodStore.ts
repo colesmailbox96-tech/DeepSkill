@@ -4,6 +4,11 @@
  * Tracks the per-player food-use cooldown and exposes the consume action.
  * The game loop (App.tsx) calls tickCooldown(delta) each frame so the timer
  * stays accurate without needing React renders or setInterval.
+ *
+ * Phase 59 — Buff tracking
+ * Eating a food with `consumableMeta.buffAttack` activates a timed attack
+ * bonus.  `buffAttackRemaining` counts down each frame; `buffAttackBonus`
+ * returns the active bonus (0 when no buff is active).
  */
 
 import { create } from 'zustand'
@@ -16,8 +21,14 @@ export interface FoodState {
   /** Seconds remaining on the eat cooldown; 0 means ready to eat. */
   cooldownRemaining: number
 
+  /** Seconds remaining on the active attack buff (0 = no buff). */
+  buffAttackRemaining: number
+
+  /** The flat attack bonus granted by the active food buff (0 = no buff). */
+  buffAttackBonus: number
+
   /**
-   * Advance the cooldown timer by delta seconds.
+   * Advance both the eat cooldown and the attack-buff timer by delta seconds.
    * Call once per frame from the game loop.
    */
   tickCooldown: (delta: number) => void
@@ -34,11 +45,21 @@ export interface FoodState {
 
 export const useFoodStore = create<FoodState>((set, get) => ({
   cooldownRemaining: 0,
+  buffAttackRemaining: 0,
+  buffAttackBonus: 0,
 
   tickCooldown: (delta) =>
     set((state) => {
-      if (state.cooldownRemaining <= 0) return state
-      return { cooldownRemaining: Math.max(0, state.cooldownRemaining - delta) }
+      const next: Partial<FoodState> = {}
+      if (state.cooldownRemaining > 0) {
+        next.cooldownRemaining = Math.max(0, state.cooldownRemaining - delta)
+      }
+      if (state.buffAttackRemaining > 0) {
+        const remaining = Math.max(0, state.buffAttackRemaining - delta)
+        next.buffAttackRemaining = remaining
+        if (remaining === 0) next.buffAttackBonus = 0
+      }
+      return Object.keys(next).length > 0 ? { ...state, ...next } : state
     }),
 
   eat: (itemId, inCombat) => {
@@ -66,9 +87,20 @@ export const useFoodStore = create<FoodState>((set, get) => ({
     setHealth(newHp)
     removeItem(itemId, 1)
 
+    // Apply attack buff if the food carries one.
+    const { buffAttack, duration } = def.consumableMeta
+    const buffMsg =
+      buffAttack && duration
+        ? ` · +${buffAttack} Attack for ${duration} s`
+        : ''
+
     useNotifications
       .getState()
-      .push(`Ate ${def.name} — restored ${actualHeal} HP.`, 'success')
+      .push(`Ate ${def.name} — restored ${actualHeal} HP.${buffMsg}`, 'success')
+
+    if (buffAttack && duration) {
+      set({ buffAttackBonus: buffAttack, buffAttackRemaining: duration })
+    }
 
     // Apply cooldown only during combat so out-of-combat eating is frictionless.
     if (inCombat) {

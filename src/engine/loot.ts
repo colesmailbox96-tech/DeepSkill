@@ -165,6 +165,8 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
 
   // Phase 58 — Ashfen Copse creatures now drop duskiron ore as a rare reward,
   // linking combat progression to the new resource tier.
+  // Phase 59 — Hushfang and Ember Ram also drop their respective raw meats
+  // so players have ingredients for the new Cooking Expansion recipes.
 
   // Hushfang — sleek charcoal predator; reliably drops its fang; rare duskiron ore.
   hushfang: {
@@ -172,6 +174,13 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
       {
         itemId: 'hushfang_fang',
         chance: 0.90,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'common',
+      },
+      {
+        itemId: 'hushfang_meat',
+        chance: 0.75,
         minQty: 1,
         maxQty: 1,
         rarity: 'common',
@@ -201,6 +210,13 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
       {
         itemId: 'ember_ram_horn',
         chance: 0.85,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'common',
+      },
+      {
+        itemId: 'ember_ram_meat',
+        chance: 0.70,
         minQty: 1,
         maxQty: 1,
         rarity: 'common',
