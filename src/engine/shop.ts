@@ -98,8 +98,9 @@ const TOMAS_DEF: VendorDef = {
   role: 'general',
   tagline: 'General provisions & sundries',
   stock: [
-    // Consumables
-    { id: 'camp_rations',  stock: null },
+    // Consumables — limited stock per session to prevent infinite healing purchases.
+    // Phase 85 — camp_rations capped at 20 units; restocks each session load.
+    { id: 'camp_rations',  stock: 20 },
 
     // Basic materials
     { id: 'reed_fiber',    stock: null },
@@ -311,9 +312,13 @@ export function getBuyPrice(itemValue: number): number {
 /**
  * Returns the sell price for an item (what the vendor pays the player).
  * Always at least 1 coin so every item is sellable.
+ *
+ * Phase 85 — consumables (food, tonics) sell for 1/4 of their value instead
+ * of the standard 1/3 to reduce the profitability of cook-and-sell loops.
  */
-export function getSellPrice(itemValue: number): number {
-  return Math.max(1, Math.floor(itemValue / 3))
+export function getSellPrice(itemValue: number, isConsumable = false): number {
+  const divisor = isConsumable ? 4 : 3
+  return Math.max(1, Math.floor(itemValue / divisor))
 }
 
 // ── Faction sell bonus (Phase 77) ─────────────────────────────────────────────

@@ -60,7 +60,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     name: 'Camp Rations',
     type: 'consumable',
     stackable: true,
-    value: 5,
+    value: 8,
     icon: 'items/camp_rations.png',
     description:
       'A cloth-wrapped bundle of dried meat strips, hard bread, and pressed fruit. ' +
@@ -250,7 +250,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     name: 'Cooked Minnow',
     type: 'consumable',
     stackable: true,
-    value: 4,
+    value: 3,
     icon: 'items/cooked_minnow.png',
     description:
       'A tiny minnow crisped over hearthfire coals. ' +
@@ -263,7 +263,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     name: 'Cooked Perch',
     type: 'consumable',
     stackable: true,
-    value: 10,
+    value: 8,
     icon: 'items/cooked_perch.png',
     description:
       'A perch fillet cooked through over an open fire, skin lightly charred. ' +
@@ -276,7 +276,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     name: 'Cooked Gloomfin',
     type: 'consumable',
     stackable: true,
-    value: 22,
+    value: 16,
     icon: 'items/cooked_gloomfin.png',
     description:
       'A gloomfin steak rendered over hearthfire until its bioluminescent oils seep into the flesh. ' +
@@ -289,7 +289,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     name: 'Cooked Cinderhare',
     type: 'consumable',
     stackable: true,
-    value: 8,
+    value: 6,
     icon: 'items/cooked_cinderhare.png',
     description:
       'A haunched loin of Cinderhare, properly fire-roasted until the sinew falls loose. ' +
@@ -949,7 +949,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     name: 'Hushfang Meat',
     type: 'material',
     stackable: true,
-    value: 6,
+    value: 4,
     icon: 'items/hushfang_meat.png',
     description:
       'A lean strip of dark meat cut from a defeated Hushfang. ' +
@@ -961,7 +961,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     name: 'Ember Ram Meat',
     type: 'material',
     stackable: true,
-    value: 8,
+    value: 5,
     icon: 'items/ember_ram_meat.png',
     description:
       'A dense, ruddy cut of meat from an Ember Ram, still faintly warm from geothermal heat. ' +
@@ -973,7 +973,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     name: 'Hushfang Steak',
     type: 'consumable',
     stackable: true,
-    value: 18,
+    value: 14,
     icon: 'items/hushfang_steak.png',
     description:
       'A Hushfang cut seared over hearthfire until the sinew crisps and the dark juices seal in. ' +
@@ -986,7 +986,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     name: 'Ember Roast',
     type: 'consumable',
     stackable: true,
-    value: 26,
+    value: 20,
     icon: 'items/ember_roast.png',
     description:
       'An Ember Ram haunch slow-roasted over a banked hearthfire, basted in its own mineral-rich fat. ' +
@@ -1108,7 +1108,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     name: 'Marsh Tonic',
     type: 'consumable',
     stackable: true,
-    value: 14,
+    value: 10,
     icon: 'items/marsh_tonic.png',
     description:
       'A cloudy amber tonic rendered from a Mossback Toad gland over a hearthfire. ' +
