@@ -8,6 +8,7 @@
  *     boundaries and giving the basin its "exposed quarry" feel,
  *   - 8 mining nodes (2 loose stone, 3 copper, 3 iron — iron-rich per lore),
  *   - one foreman NPC: Gorven (Quarry Foreman),
+ *   - one union trader NPC: Olen (Union Trader) — Phase 77,
  *   - invisible boundary walls for the connecting corridor.
  *
  * The Hushwood north boundary wall has a 6-unit gap at x = 0 (see hushwood.ts)
@@ -272,6 +273,52 @@ export function buildQuarry(
     ambientTime: 0,
   }
   npcs.push(foremanNpc)
+
+  // ── Phase 77 — Olen (Union Trader) ───────────────────────────────────────
+  // Positioned just west of the quarry entrance, facing east toward the basin.
+  // Handles union-exclusive goods; requires Acquainted standing with the
+  // Quarry Union to trade.
+  const olenGroup = new THREE.Group()
+  olenGroup.position.set(-5, 0, -56)
+  olenGroup.rotation.y = Math.PI / 2  // facing east (+X)
+
+  const olenBodyMat = new THREE.MeshStandardMaterial({ color: 0x3a4a5a, roughness: 0.7 })
+  const olenBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.9, 4, 8), olenBodyMat)
+  olenBody.position.y = 0.7
+  olenGroup.add(olenBody)
+
+  const olenDiscMat = new THREE.MeshStandardMaterial({
+    color: 0xffe080,
+    emissive: new THREE.Color(0xffe080),
+    emissiveIntensity: 0.4,
+    roughness: 0.5,
+  })
+  const olenDisc = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.12, 0.06, 8),
+    olenDiscMat,
+  )
+  olenDisc.position.y = 1.85
+  olenGroup.add(olenDisc)
+
+  scene.add(olenGroup)
+
+  const olenInteractable: Interactable = {
+    mesh: olenGroup,
+    label: 'Olen (Union Trader)',
+    interactRadius: 2.2,
+    onInteract: () => {
+      useDialogueStore.getState().openDialogue('Olen (Union Trader)')
+    },
+  }
+  interactables.push(olenInteractable)
+
+  const olenNpc: Npc = {
+    mesh: olenGroup,
+    idleAngle: Math.PI / 2,
+    ambientPhase: 1.4,
+    ambientTime: 0,
+  }
+  npcs.push(olenNpc)
 
   // ── Phase 75 — Locked supply cache alcove (deep north wall) ──────────────
   // A wooden storage alcove sealed with a plank door.  Requires completing

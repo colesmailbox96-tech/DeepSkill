@@ -901,6 +901,22 @@ p {
   font-style: italic;
 }
 
+/* Phase 77 — faction standing indicator in the shop header */
+.shop-panel__faction-standing {
+  font-size: 0.68rem;
+  color: #8fa8a0;
+  margin-top: 0.1rem;
+}
+
+.shop-panel__faction-tier {
+  font-weight: 600;
+}
+
+.shop-panel__faction-tier--neutral    { color: #6b7280; }
+.shop-panel__faction-tier--acquainted { color: #60a5fa; }
+.shop-panel__faction-tier--trusted    { color: #34d399; }
+.shop-panel__faction-tier--honored    { color: #fbbf24; }
+
 .shop-panel__coins {
   display: flex;
   align-items: center;
@@ -1055,6 +1071,46 @@ p {
 .shop-row__btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* Phase 77 — faction-locked shop rows */
+.shop-row--faction-locked {
+  opacity: 0.65;
+}
+
+.shop-row__faction-lock {
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.shop-row__faction-lock-hint {
+  font-style: italic;
+}
+
+/* Phase 77 — faction sell bonus */
+.shop-row--faction-bonus {
+  background: rgba(52, 211, 153, 0.08);
+  border-bottom: 1px solid rgba(52, 211, 153, 0.2);
+  cursor: default;
+}
+
+.shop-row__faction-bonus-msg {
+  font-size: 0.72rem;
+  color: #34d399;
+  font-style: italic;
+  padding: 0.1rem 0;
+}
+
+.shop-row__price--bonus {
+  color: #34d399;
+}
+
+.shop-row__price-base {
+  font-size: 0.68rem;
+  color: #8fa8a0;
+  margin-left: 0.2rem;
+  text-decoration: line-through;
+  text-decoration-color: #6b7280;
 }
 
 /* ── HUD coin display (PlayerStrip addition) ─────────────────────────────── */
@@ -5017,6 +5073,28 @@ p {
 
 .faction-row__rep {
   color: #7a8090;
+}
+
+/* Phase 77 — Faction perk hints */
+.faction-row__perks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-top: 0.2rem;
+}
+
+.faction-row__perk {
+  font-size: 0.65rem;
+  padding-left: 0.1rem;
+}
+
+.faction-row__perk--earned {
+  color: #34d399;
+}
+
+.faction-row__perk--next {
+  color: #8fa8a0;
+  font-style: italic;
 }
 
 /* ── Hint bar ────────────────────────────────────────────────────────────── */

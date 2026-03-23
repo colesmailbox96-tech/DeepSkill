@@ -380,6 +380,23 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     toolMeta: { skill: 'woodcutting', tier: 3, maxDurability: 150 },
   },
 
+  // ── Phase 77 — Tier-3 Mining Tool ────────────────────────────────────────
+
+  {
+    id: 'duskiron_pick',
+    name: 'Duskiron Pick',
+    type: 'tool',
+    stackable: false,
+    value: 95,
+    icon: 'items/duskiron_pick.png',
+    description:
+      'A pick forged from duskiron bar stock, precision-balanced for deep-seam work. ' +
+      'The dark iron head bites through mineral rock faster than any copper or iron tool, ' +
+      'and its hardened edge rarely dulls even in Redwake\'s notorious quartzite layers. ' +
+      'Issued exclusively through the Quarry Union to trusted workers.',
+    toolMeta: { skill: 'mining', tier: 3, maxDurability: 150 },
+  },
+
   // ── Phase 40 — Smithing bars ──────────────────────────────────────────────
 
   {
