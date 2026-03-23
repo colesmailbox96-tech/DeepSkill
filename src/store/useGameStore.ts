@@ -55,11 +55,16 @@ const DEFAULT_PLAYER_STATS: PlayerStats = {
  * including type, value, icon, and metadata.  The `name` field is kept for
  * backward-compatibility and is auto-populated from the registry when an item
  * is added via addItem().
+ *
+ * Phase 73: `durability` tracks remaining uses for tool items.  Absent means
+ * the tool is at full durability (equals the item's maxDurability).
  */
 export interface InventoryItem {
   id: string
   name: string
   quantity: number
+  /** Phase 73 — remaining uses for tool-type items.  Absent = full durability. */
+  durability?: number
 }
 
 export interface InventoryState {
@@ -202,6 +207,17 @@ export interface GameState {
    * before starting a fresh session.
    */
   resetToDefaults: () => void
+
+  /**
+   * Phase 73 — Degrade the highest-tier tool for the given skill by one use.
+   *
+   * Finds the best (highest tier) tool in inventory that matches `skill`,
+   * decrements its durability by 1 (treating absent durability as max), and
+   * removes it with a notification when it breaks.  If the slot has
+   * quantity > 1 the broken copy is consumed and the remainder is restored
+   * to full durability.
+   */
+  degradeTool: (skill: string) => void
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -484,5 +500,64 @@ export const useGameStore = create<GameState>((set, get) => ({
       equipment:   structuredClone(DEFAULT_EQUIPMENT),
       equipStats:  { totalAttack: 0, totalDefence: 0, attackSpeed: 1 },
     })
+  },
+
+  // Phase 73 — degrade the active tool for the given skill by one use.
+  degradeTool: (skill: string) => {
+    const { inventory } = get()
+    // Find the highest-tier tool in inventory that matches this skill.
+    let bestSlot: InventoryItem | undefined
+    let bestTier = 0
+    for (const s of inventory.slots) {
+      const def = getItem(s.id)
+      if (def?.type === 'tool' && def.toolMeta?.skill === skill) {
+        const tier = def.toolMeta.tier
+        if (tier > bestTier) {
+          bestTier = tier
+          bestSlot = s
+        }
+      }
+    }
+    if (!bestSlot) return
+
+    const def = getItem(bestSlot.id)!
+    const maxDur = def.toolMeta!.maxDurability
+    const current = bestSlot.durability ?? maxDur
+    const next = current - 1
+
+    if (next <= 0) {
+      // Tool copy breaks.
+      if (bestSlot.quantity > 1) {
+        // Consume one copy; remaining copies reset to full durability.
+        set((s) => ({
+          inventory: {
+            ...s.inventory,
+            slots: s.inventory.slots.map((sl) =>
+              sl.id === bestSlot!.id
+                ? { ...sl, quantity: sl.quantity - 1, durability: undefined }
+                : sl,
+            ),
+          },
+        }))
+      } else {
+        // Remove the broken tool entirely.
+        set((s) => ({
+          inventory: {
+            ...s.inventory,
+            slots: s.inventory.slots.filter((sl) => sl.id !== bestSlot!.id),
+          },
+        }))
+      }
+      useNotifications.getState().push(`Your ${def.name} has broken!`, 'warning')
+    } else {
+      set((s) => ({
+        inventory: {
+          ...s.inventory,
+          slots: s.inventory.slots.map((sl) =>
+            sl.id === bestSlot!.id ? { ...sl, durability: next } : sl,
+          ),
+        },
+      }))
+    }
   },
 }))

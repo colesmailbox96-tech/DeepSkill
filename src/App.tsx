@@ -1882,6 +1882,8 @@ function App() {
               audioManager.playSfx('collect')
               useNotifications.getState().push(`You cut ${article(logName)} ${logName.toLowerCase()}.`, 'success')
               fellTree(sess.node)
+              // Phase 73 — degrade the active hatchet by one use.
+              useGameStore.getState().degradeTool('woodcutting')
             } else {
               useNotifications.getState().push('Your inventory is full — you cannot carry any more logs.', 'warning')
             }
@@ -1917,6 +1919,8 @@ function App() {
               audioManager.playSfx('collect')
               useNotifications.getState().push(`You mine ${article(oreName)} ${oreName.toLowerCase()}.`, 'success')
               depleteRock(sess.node)
+              // Phase 73 — degrade the active pickaxe by one use.
+              useGameStore.getState().degradeTool('mining')
             } else {
               useNotifications.getState().push('Your inventory is full — you cannot carry any more ore.', 'warning')
             }
@@ -1952,6 +1956,8 @@ function App() {
               audioManager.playSfx('collect')
               useNotifications.getState().push(`You catch ${article(fishName)} ${fishName.toLowerCase()}!`, 'success')
               depleteFishSpot(sess.node)
+              // Phase 73 — degrade the active rod by one use.
+              useGameStore.getState().degradeTool('fishing')
             } else {
               useNotifications.getState().push('Your inventory is full — you cannot carry any more fish.', 'warning')
             }
