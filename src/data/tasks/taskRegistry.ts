@@ -688,7 +688,44 @@ const surveyReport: TaskDefinition = {
     "With all three samples in hand I should return to Aldric and let him draw his conclusions. The duskiron ore, the fen spore, and the wisp ember — between the three of them the settlement researchers should be able to map the Veil disturbances and figure out what's connecting the frontier zones. Aldric mentioned waystone fragments as part of the payment. Those will be useful.",
 }
 
-/** Complete list of all task definitions (Phase 37 + Phase 38 + Phase 64 + Phase 75). */
+// ─── Phase 84 — Boss Task: The Vault-Heart ───────────────────────────────────
+
+/**
+ * "The Vault-Heart" — the capstone boss encounter task.
+ *
+ * Triggered when the player first opens the Sanctum Resonance Seal inside the
+ * Belowglass Vaults.  The player must defeat the ancient guardian that holds
+ * the innermost chamber.
+ */
+const theVaultHeart: TaskDefinition = {
+  id: 'vault_heart',
+  title: 'The Vault-Heart',
+  description:
+    'An ancient guardian — the Vault-Heart Warden — seals the innermost sanctum of the Belowglass Vaults. Destroy it.',
+  giverName: 'Sanctum Resonance Seal',
+  objectives: [
+    {
+      id: 'defeat_vault_heart_warden',
+      description: 'Defeat the Vault-Heart Warden',
+      type: 'kill',
+      targetId: 'vault_heart_warden',
+      required: 1,
+    },
+  ],
+  reward: {
+    coins: 150,
+    items: [],
+    xp: [
+      { skill: 'wayfaring', amount: 60 },
+      { skill: 'salvaging', amount: 40 },
+    ],
+    factionRep: [{ factionId: 'tidebound_keepers', amount: 50 }],
+  },
+  journalEntry:
+    "The resonance seal inside the Belowglass Vaults finally yielded to my salvaging skill. Beyond it the Inner Sanctum stretches out — a vast chamber lit by deep vaultglass glow. At its centre, on a raised altar, something massive and ancient stirs. Nairn warned me that the Deep Hearts left guardians behind when their maintenance cycles broke down. This is one of them. I don't think I can slip past it.",
+}
+
+/** Complete list of all task definitions (Phase 37 + Phase 38 + Phase 64 + Phase 75 + Phase 84). */
 export const ALL_TASKS: TaskDefinition[] = [
   wordFromTheElder,
   warmRunoff,
@@ -712,6 +749,8 @@ export const ALL_TASKS: TaskDefinition[] = [
   surveyReach,
   surveySamples,
   surveyReport,
+  // Phase 84 — First Boss Encounter
+  theVaultHeart,
 ]
 
 // ─── Initialiser ─────────────────────────────────────────────────────────────

@@ -1700,4 +1700,34 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'Capable of cutting nodes that resist all lesser picks.',
     toolMeta: { skill: 'mining', tier: 4, maxDurability: 200 },
   },
+
+  // ── Phase 84 — First Boss Encounter: Vault-Heart Warden ──────────────────
+
+  {
+    id: 'warden_heartstone',
+    name: 'Warden Heartstone',
+    type: 'material',
+    stackable: true,
+    value: 320,
+    icon: 'items/warden_heartstone.png',
+    description:
+      'The pulsing resonance core extracted from the chest cavity of the Vault-Heart Warden. ' +
+      'Still faintly warm to the touch; the faint blue-white light within it shifts and ' +
+      'rotates slowly, as if the machine still dreams. No living smith has worked this ' +
+      'material before — it awaits someone with the craft to use it.',
+  },
+
+  {
+    id: 'prismatic_vault_shard',
+    name: 'Prismatic Vault Shard',
+    type: 'material',
+    stackable: true,
+    value: 110,
+    icon: 'items/prismatic_vault_shard.png',
+    description:
+      'A triangular fragment of deeply-charged vaultglass recovered from the inner sanctum ' +
+      'of the Belowglass Vaults. Unlike ordinary vault glass, prismatic shards refract ' +
+      'ambient light into slow-shifting hues — the result of centuries of saturation by the ' +
+      'Warden\'s resonance field. Highly valued by tinkers and artificers.',
+  },
 ]

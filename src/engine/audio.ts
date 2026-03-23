@@ -1,3 +1,5 @@
+import { BV_MIN_Z, BV_MAX_Z } from './belowglass_vaults'
+
 /**
  * Phase 49 — Audio Foundation
  * Phase 69 — Region-Specific Music and Ambience Pass
@@ -836,7 +838,8 @@ export const audioManager = new AudioManager()
  */
 export function getAudioRegion(x: number, z: number): AudioRegion {
   // Belowglass Vaults — further west than the Hollow Vault; checked first.
-  if (x < -98 && z >= -10 && z <= 10) return 'belowglass_vaults'
+  // z-bounds match BV_MIN_Z / BV_MAX_Z (±14) so the Inner Sanctum shares the same audio region.
+  if (x < -98 && z >= BV_MIN_Z && z <= BV_MAX_Z) return 'belowglass_vaults'
   // Hollow Vault Steps — deeper than the chapel; narrow z band within the chapel x range.
   if (x <= -60 && z >= -10 && z <= 10) return 'hollow_vault'
   if (x <= -32) return 'chapel'

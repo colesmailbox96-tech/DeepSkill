@@ -15,8 +15,9 @@
 // ─── World bounds ─────────────────────────────────────────────────────────────
 
 /** Leftmost (west) world X used for canvas projection.
- *  Belowglass Vaults west boundary is x=−128 (belowglass_vaults.ts). */
-export const WORLD_MIN_X = -132
+ *  Phase 84 Inner Sanctum west boundary is x=−154 (belowglass_vaults.ts BV_MIN_X).
+ *  Padded to −158 so the sanctum walls don't clip the minimap edge. */
+export const WORLD_MIN_X = -158
 /** Rightmost (east) world X used for canvas projection.
  *  Shoreline zone extends to x=+80 (shoreline.ts), the true easternmost bound;
  *  Ashfen Copse east boundary is x=+72 (ashfen_copse.ts). */
@@ -51,9 +52,11 @@ export const MINIMAP_REGIONS: MinimapRegion[] = [
   {
     id: 'belowglass_vaults',
     label: 'Belowglass Vaults',
-    // Western crystalline threshold: x < −98, z ∈ [−10, +10].
+    // Phase 78 threshold: x < −98, z ∈ [−10, +10].
+    // Phase 84 Inner Sanctum extends z to [−14, +14] and x to −154.
+    // Bounds match BV_MIN_Z = −14 / BV_MAX_Z = +14 in belowglass_vaults.ts.
     // Must be checked before 'hollow_vault' since belowglass is further west.
-    contains: (x, z) => x < -98 && z >= -10 && z <= 10,
+    contains: (x, z) => x < -98 && z >= -14 && z <= 14,
     color: '#1a2a38',
     borderColor: '#3a6888',
   },
@@ -198,6 +201,8 @@ export const MINIMAP_MARKERS: MinimapMarker[] = [
   { id: 'zone_hollow_vault',  label: 'Hollow Vault',    x: -79,    z:    0,   kind: 'zone' },
   { id: 'zone_marrowfen',     label: 'Marrowfen',       x:   0,    z:   82,   kind: 'zone' },
   { id: 'zone_belowglass',    label: 'Belowglass Vaults', x: -113, z:    0,   kind: 'zone' },
+  // Phase 84 — Inner Sanctum boss chamber label
+  { id: 'zone_inner_sanctum', label: 'Inner Sanctum',   x: -141,   z:    0,   kind: 'zone' },
 ]
 
 // ─── Phase 80 — Shortcut / secret-passage markers ────────────────────────────
