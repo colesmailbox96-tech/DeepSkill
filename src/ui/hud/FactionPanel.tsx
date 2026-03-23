@@ -93,8 +93,15 @@ function FactionRow({ factionId, name, description }: FactionRowProps) {
 export function FactionPanel() {
   const [isOpen, setIsOpen] = useState(false)
   const isOpenRef = useRef(false)
+  const panelRef  = useRef<HTMLDivElement>(null)
 
   useEffect(() => { isOpenRef.current = isOpen }, [isOpen])
+
+  // Focus the panel when it opens so keyboard / screen-reader users are taken
+  // into the dialog, matching the pattern used by JournalPanel / SkillsPanel.
+  useEffect(() => {
+    if (isOpen) panelRef.current?.focus()
+  }, [isOpen])
 
   const handleClose = useCallback(() => setIsOpen(false), [])
 
@@ -116,7 +123,14 @@ export function FactionPanel() {
   const factions = getAllFactions()
 
   return (
-    <div className="faction-panel" role="dialog" aria-label="Faction standings">
+    <div
+      ref={panelRef}
+      className="faction-panel"
+      role="dialog"
+      aria-modal="false"
+      aria-label="Faction standings"
+      tabIndex={-1}
+    >
       {/* Header */}
       <div className="faction-panel__header">
         <span className="faction-panel__title">Factions</span>

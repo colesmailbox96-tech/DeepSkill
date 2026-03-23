@@ -141,12 +141,21 @@ export function useLoadGame(): () => void {
 
       // Phase 76 — restore faction rep if present.
       // Absent in saves from before Phase 76; the store will use its defaults.
+      // Only restore rep for faction ids that exist in the registry; this
+      // prevents a crafted or corrupt save from injecting arbitrary keys into
+      // the runtime rep map.
       if (snapshot.factionRep && typeof snapshot.factionRep === 'object') {
+        const knownRep = useFactionStore.getState().rep
         const validatedRep: Record<string, number> = {}
         for (const [factionId, amount] of Object.entries(snapshot.factionRep)) {
           // Allow 0 here (exact restore semantics); gainRep rejects <= 0
           // because it is an incremental add, not a restoration.
-          if (typeof amount === 'number' && Number.isFinite(amount) && amount >= 0) {
+          if (
+            factionId in knownRep &&
+            typeof amount === 'number' &&
+            Number.isFinite(amount) &&
+            amount >= 0
+          ) {
             validatedRep[factionId] = Math.floor(amount)
           }
         }

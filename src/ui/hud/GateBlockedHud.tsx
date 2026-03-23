@@ -1,5 +1,14 @@
 import { useEffect } from 'react'
 import { useGatingStore } from '../../store/useGatingStore'
+import type { FactionTier } from '../../store/useFactionStore'
+
+/** Display labels for faction trust tiers. */
+const FACTION_TIER_LABELS: Record<FactionTier, string> = {
+  neutral:    'Neutral',
+  acquainted: 'Acquainted',
+  trusted:    'Trusted',
+  honored:    'Honored',
+}
 
 /** How long (ms) the gate requirement panel stays visible. */
 const DISPLAY_TTL_MS = 7000
@@ -49,7 +58,7 @@ export function GateBlockedHud() {
     case 'faction':
       icon = '⚜'
       label = `${blockedRequirement.factionName} Standing Required`
-      detail = `Reach ${blockedRequirement.minTier} standing with ${blockedRequirement.factionName}.`
+      detail = `Reach ${FACTION_TIER_LABELS[blockedRequirement.minTier]} standing with ${blockedRequirement.factionName}.`
       break
   }
 
