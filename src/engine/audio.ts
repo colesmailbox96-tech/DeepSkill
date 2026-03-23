@@ -1,5 +1,6 @@
 /**
  * Phase 49 — Audio Foundation
+ * Phase 69 — Region-Specific Music and Ambience Pass
  *
  * A procedural audio engine built on the Web Audio API.  No external asset
  * files are needed — all sounds are synthesised via oscillators and noise
@@ -8,9 +9,13 @@
  * Features
  * ────────
  *  • Ambient loops that morph per world region (hushwood, bog, chapel,
- *    quarry, shoreline).
+ *    quarry, shoreline, ashfen, hollow_vault).
+ *  • Per-region LFO modulation (lfoFreq / lfoDepth) for distinct filter motion.
+ *  • Secondary high-pass air-noise layer (airLevel) giving each region an
+ *    upper-frequency character (forest air, sea spray, quarry dust, …).
+ *  • Per-region peaceful music motifs — distinct melodic phrases keyed to the
+ *    current AudioRegion; combat sequence is shared.
  *  • One-shot SFX for gathering, crafting, and interaction events.
- *  • A simple music scheduler with peaceful and combat modes.
  *  • Per-channel gain nodes (master / music / sfx / ambient) that sync
  *    with useAudioStore for live volume / mute adjustment.
  *
@@ -61,43 +66,79 @@ interface RegionConfig {
   droneFreq: number | null
   /** Gain of the drone relative to the ambient gain node (0–1). */
   droneLevel: number
+  /**
+   * Phase 69 — LFO modulation frequency (Hz) applied to the noise filter
+   * cutoff.  Gives each region a distinct motion (waves, wind gusts, …).
+   * Set to 0 for a static filter.
+   */
+  lfoFreq: number
+  /**
+   * Phase 69 — Depth of the LFO modulation in Hz (how much the filter
+   * cutoff swings above and below its base value).
+   */
+  lfoDepth: number
+  /**
+   * Phase 69 — Level (0–1) of the secondary high-pass air-noise layer.
+   * Adds upper-frequency character: forest air, sea spray, stone dust, etc.
+   */
+  airLevel: number
 }
 
 const REGION_CONFIG: Record<AudioRegion, RegionConfig> = {
+  // Hushwood: bright forest air with a gentle, sighing wind.
   hushwood: {
     filterType: 'bandpass',
     filterFreq: 600,
     filterQ: 0.8,
     droneFreq: null,
     droneLevel: 0,
+    lfoFreq: 0.05,   // very slow sway — a languid breath through the canopy
+    lfoDepth: 45,
+    airLevel: 0.15,  // airy high-frequency rustle
   },
+  // Bog: heavy, humid stillness with a deep sub-bass rumble.
   bog: {
     filterType: 'lowpass',
     filterFreq: 200,
     filterQ: 2.5,
     droneFreq: 55,
     droneLevel: 0.12,
+    lfoFreq: 0.08,   // slow ripple across the water surface
+    lfoDepth: 22,
+    airLevel: 0.05,  // thick, damp air — barely any high-frequency content
   },
+  // Chapel: reverberant stone chamber with a resonant ceremonial drone.
   chapel: {
     filterType: 'bandpass',
     filterFreq: 300,
     filterQ: 1.2,
     droneFreq: 60,
     droneLevel: 0.18,
+    lfoFreq: 0.03,   // almost imperceptible swell — like torches breathing
+    lfoDepth: 60,
+    airLevel: 0.08,  // dusty stone chamber
   },
+  // Quarry: oppressive, grinding low-end with mechanical flutter.
   quarry: {
     filterType: 'lowpass',
     filterFreq: 140,
     filterQ: 3.0,
     droneFreq: 80,
     droneLevel: 0.08,
+    lfoFreq: 0.12,   // irregular machine-like flutter
+    lfoDepth: 18,
+    airLevel: 0.20,  // heavy rock-dust in the air
   },
+  // Shoreline: open coastal soundscape with rolling wave motion.
   shoreline: {
     filterType: 'bandpass',
     filterFreq: 350,
     filterQ: 1.0,
     droneFreq: null,
     droneLevel: 0,
+    lfoFreq: 0.15,   // ~6-second wave cycle (unchanged from Phase 49)
+    lfoDepth: 120,   // wide sweep for surf character
+    airLevel: 0.22,  // sea spray and open sky
   },
   // Phase 57 — Ashfen Copse: deep forest stillness with a low mineral resonance.
   ashfen: {
@@ -106,6 +147,9 @@ const REGION_CONFIG: Record<AudioRegion, RegionConfig> = {
     filterQ: 2.2,
     droneFreq: 68,
     droneLevel: 0.14,
+    lfoFreq: 0.06,   // slow, ancient forest pulse
+    lfoDepth: 32,
+    airLevel: 0.10,  // damp undergrowth vapour
   },
   // Phase 65 — Hollow Vault Steps: oppressive underground silence broken by
   // a deep resonant drone from the warding inscriptions in the stone.
@@ -115,6 +159,9 @@ const REGION_CONFIG: Record<AudioRegion, RegionConfig> = {
     filterQ: 3.5,
     droneFreq: 45,
     droneLevel: 0.22,
+    lfoFreq: 0.02,   // near-static — the vault barely breathes
+    lfoDepth: 10,
+    airLevel: 0.03,  // almost no high-frequency content underground
   },
 }
 
@@ -132,6 +179,57 @@ const COMBAT_SEQ: [number, number][] = [
   [0, 0.25], [2, 0.2 ], [4, 0.3 ], [2, 0.2 ],
   [3, 0.25], [4, 0.2 ], [3, 0.3 ], [0, 0.2 ],
 ]
+
+/**
+ * Phase 69 — Per-region peaceful music motifs.
+ *
+ * Each region has a distinct melodic phrase using the C-major pentatonic
+ * scale (indices 0–4 → C4 D4 E4 G4 A4).  The global PEACEFUL_SEQ is kept
+ * as a fallback but is no longer scheduled directly.
+ */
+const REGION_PEACEFUL_SEQ: Record<AudioRegion, [number, number][]> = {
+  // Hushwood: airy and sparse — upper notes with long gaps between them,
+  // evoking birdsong drifting through a canopy.
+  hushwood: [
+    [4, 0.6], [3, 0.5], [4, 0.7], [2, 0.45],
+    [3, 0.55], [4, 0.5], [0, 0.9],
+  ],
+  // Bog: slow and murky — low notes with heavy rests; things move reluctantly
+  // here.
+  bog: [
+    [0, 0.8], [1, 0.6], [0, 1.0], [2, 0.5],
+    [1, 0.7], [0, 0.9],
+  ],
+  // Chapel: solemn and reverberant — step-wise ascending and descending
+  // phrases, like a simple chant echoing off stone walls.
+  chapel: [
+    [0, 1.0], [2, 0.75], [3, 0.85], [4, 0.65],
+    [3, 0.85], [2, 0.7], [0, 1.2],
+  ],
+  // Quarry: earthy and rhythmic — mid-range notes in a steady, work-song
+  // pulse.
+  quarry: [
+    [2, 0.3], [0, 0.35], [1, 0.3], [2, 0.4],
+    [1, 0.3], [0, 0.45],
+  ],
+  // Shoreline: flowing and arpeggic — a rising-then-falling phrase that
+  // mirrors the motion of waves.
+  shoreline: [
+    [0, 0.4], [2, 0.35], [4, 0.45], [3, 0.35],
+    [2, 0.4], [1, 0.35], [0, 0.6],
+  ],
+  // Ashfen: brooding and minor-tinged — lower notes with irregular pacing,
+  // suggesting unseen movement in the deep forest.
+  ashfen: [
+    [1, 0.55], [0, 0.75], [2, 0.5], [1, 0.65],
+    [0, 0.85],
+  ],
+  // Hollow Vault: ominous and sparse — only three very slow, low notes;
+  // long silences between them heighten unease.
+  hollow_vault: [
+    [0, 1.1], [2, 0.9], [0, 1.3],
+  ],
+}
 
 // ─── AudioManager ─────────────────────────────────────────────────────────────
 
@@ -154,9 +252,14 @@ class AudioManager {
   private droneOsc: OscillatorNode | null = null
   private droneGain: GainNode | null = null
 
-  // LFO for the shoreline wave effect
+  // LFO for filter modulation (frequency and depth per region — Phase 69)
   private lfoOsc: OscillatorNode | null = null
   private lfoGain: GainNode | null = null
+
+  // Phase 69 — Secondary high-pass air-noise layer (sea spray, dust, forest air, …)
+  private airSource: AudioBufferSourceNode | null = null
+  private airFilter: BiquadFilterNode | null = null
+  private airGain: GainNode | null = null
 
   // State
   private currentRegion: AudioRegion | null = null
@@ -229,15 +332,27 @@ class AudioManager {
     this.droneGain.gain.value = 0
     this.droneGain.connect(this.ambientGain)
 
-    // LFO for filter modulation (shoreline waves)
+    // LFO for filter modulation (Phase 69: per-region freq + depth)
     this.lfoOsc = this.ctx.createOscillator()
     this.lfoOsc.type = 'sine'
-    this.lfoOsc.frequency.value = 0.15 // ~6-second cycle
+    this.lfoOsc.frequency.value = 0.05 // default; overridden per region
     this.lfoGain = this.ctx.createGain()
     this.lfoGain.gain.value = 0
     this.lfoOsc.connect(this.lfoGain)
     this.lfoGain.connect(this.noiseFilter.frequency)
     this.lfoOsc.start()
+
+    // Phase 69 — Secondary air-noise layer: highpass-filtered noise giving
+    // each region an upper-frequency texture (spray, dust, rustling leaves, …).
+    this.airFilter = this.ctx.createBiquadFilter()
+    this.airFilter.type = 'highpass'
+    this.airFilter.frequency.value = 3000
+    this.airFilter.Q.value = 0.5
+    this.airGain = this.ctx.createGain()
+    this.airGain.gain.value = 0
+    this.airFilter.connect(this.airGain)
+    this.airGain.connect(this.ambientGain)
+    this._startAirNoise()
 
     // Start noise loop
     this._startNoise()
@@ -275,31 +390,36 @@ class AudioManager {
    * Update the ambient soundscape to match the current world region.
    * Should be called each frame (or whenever the player crosses a zone
    * boundary); the method is cheap when the region has not changed.
+   *
+   * Phase 69: transitions now apply per-region LFO (frequency + depth) and
+   * the secondary air-noise layer, and reset the music motif.
    */
   setRegion(region: AudioRegion): void {
-    if (!this.ctx || !this.noiseFilter || !this.noiseNodeGain || !this.droneGain || !this.lfoGain) return
+    if (!this.ctx || !this.noiseFilter || !this.noiseNodeGain || !this.droneGain || !this.lfoGain || !this.lfoOsc || !this.airGain) return
     if (region === this.currentRegion) return
     this.currentRegion = region
 
     const cfg = REGION_CONFIG[region]
     const now = this.ctx.currentTime
+    // Use a slightly longer time constant for smoother region crossfades (Phase 69).
+    const crossfadeTau = 1.5
 
     // Apply noise filter settings
     this.noiseFilter.type = cfg.filterType
-    this.noiseFilter.frequency.setTargetAtTime(cfg.filterFreq, now, 0.8)
-    this.noiseFilter.Q.setTargetAtTime(cfg.filterQ, now, 0.8)
+    this.noiseFilter.frequency.setTargetAtTime(cfg.filterFreq, now, crossfadeTau)
+    this.noiseFilter.Q.setTargetAtTime(cfg.filterQ, now, crossfadeTau)
 
     // Fade in noise if this is the first region
-    this.noiseNodeGain.gain.setTargetAtTime(0.25, now, 0.8)
+    this.noiseNodeGain.gain.setTargetAtTime(0.25, now, crossfadeTau)
 
     // Drone
     if (cfg.droneFreq !== null) {
       this._ensureDrone(cfg.droneFreq)
-      this.droneGain.gain.setTargetAtTime(cfg.droneLevel, now, 1.0)
+      this.droneGain.gain.setTargetAtTime(cfg.droneLevel, now, crossfadeTau)
     } else {
       // Fade the drone out, then stop and disconnect its oscillator to avoid
       // keeping it running silently and wasting CPU.
-      this.droneGain.gain.setTargetAtTime(0, now, 0.8)
+      this.droneGain.gain.setTargetAtTime(0, now, crossfadeTau)
       if (this.droneOsc) {
         const stopAt = now + 4.0 // allow gain to reach ~0 before stopping
         try {
@@ -312,9 +432,19 @@ class AudioManager {
       }
     }
 
-    // LFO modulation depth (shoreline gets wave motion on the filter)
-    const lfoDepth = region === 'shoreline' ? 120 : 0
-    this.lfoGain.gain.setTargetAtTime(lfoDepth, now, 0.8)
+    // Phase 69 — Per-region LFO: update both frequency and modulation depth.
+    if (cfg.lfoFreq > 0 && cfg.lfoDepth > 0) {
+      this.lfoOsc.frequency.setTargetAtTime(cfg.lfoFreq, now, crossfadeTau)
+      this.lfoGain.gain.setTargetAtTime(cfg.lfoDepth, now, crossfadeTau)
+    } else {
+      this.lfoGain.gain.setTargetAtTime(0, now, crossfadeTau)
+    }
+
+    // Phase 69 — Secondary air-noise layer level.
+    this.airGain.gain.setTargetAtTime(cfg.airLevel, now, crossfadeTau)
+
+    // Phase 69 — Reset music motif so the region's phrase starts fresh.
+    this.noteIndex = 0
   }
 
   // ── Music mode ──────────────────────────────────────────────────────────────
@@ -364,6 +494,7 @@ class AudioManager {
       this.noiseSource?.stop()
       this.droneOsc?.stop()
       this.lfoOsc?.stop()
+      this.airSource?.stop()
     } catch { /* ignore stop-before-start errors */ }
     void this.ctx?.close()
     this.ctx = null
@@ -379,6 +510,9 @@ class AudioManager {
     this.droneGain = null
     this.lfoOsc = null
     this.lfoGain = null
+    this.airSource = null
+    this.airFilter = null
+    this.airGain = null
     this.currentRegion = null
   }
 
@@ -419,6 +553,21 @@ class AudioManager {
     this.noiseSource = src
   }
 
+  /**
+   * Phase 69 — Start the secondary air-noise source (looping, highpass).
+   * Uses the same white-noise buffer as the primary ambient layer.
+   */
+  private _startAirNoise(): void {
+    if (!this.ctx || !this.noiseBuffer || !this.airFilter) return
+    this.airSource?.stop()
+    const src = this.ctx.createBufferSource()
+    src.buffer = this.noiseBuffer
+    src.loop = true
+    src.connect(this.airFilter)
+    src.start()
+    this.airSource = src
+  }
+
   /** Ensure a drone oscillator is running at the given frequency. */
   private _ensureDrone(freq: number): void {
     if (!this.ctx || !this.droneGain) return
@@ -446,7 +595,10 @@ class AudioManager {
     if (!this.ctx || !this.musicGain) return
     // Look-ahead window: 200 ms
     const lookAhead = 0.2
-    const seq = this.currentMusicMode === 'combat' ? COMBAT_SEQ : PEACEFUL_SEQ
+    // Phase 69 — Use the region-specific peaceful motif when not in combat.
+    const seq = this.currentMusicMode === 'combat'
+      ? COMBAT_SEQ
+      : (this.currentRegion ? REGION_PEACEFUL_SEQ[this.currentRegion] : PEACEFUL_SEQ)
 
     while (this.nextNoteTime < this.ctx.currentTime + lookAhead) {
       this._scheduleSingleNote(seq)
