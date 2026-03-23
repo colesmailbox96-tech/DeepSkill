@@ -46,6 +46,11 @@ export function GateBlockedHud() {
       label = 'Item Required'
       detail = `Carry ${blockedRequirement.itemName} to pass.`
       break
+    case 'faction':
+      icon = '⚜'
+      label = `${blockedRequirement.factionName} Standing Required`
+      detail = `Reach ${blockedRequirement.minTier} standing with ${blockedRequirement.factionName}.`
+      break
   }
 
   return (

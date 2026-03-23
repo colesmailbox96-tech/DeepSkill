@@ -72,6 +72,7 @@ const wordFromTheElder: TaskDefinition = {
   reward: {
     coins: 5,
     xp: [{ skill: 'wayfaring', amount: 15 }],
+    factionRep: [{ factionId: 'hushwrights', amount: 10 }],
   },
   journalEntry:
     'The elder flagged me down near the settlement hall. His face was drawn — more than the usual frontier weariness. He said the Veil has been shifting and that strange tracks have been found on the Brackroot Trail. He wants to brief me in person before I wander further south.',
@@ -140,6 +141,7 @@ const haulForTheHearth: TaskDefinition = {
   reward: {
     coins: 15,
     xp: [{ skill: 'woodcutting', amount: 35 }],
+    factionRep: [{ factionId: 'hushwrights', amount: 20 }],
   },
   journalEntry:
     "Bron stopped me outside the smithy — the forge fire is running low and he's too busy mending tools to head out himself. He needs ashwood logs, five of them, to keep the heat through the night. I should head to the roadside trees, cut what he needs, and bring them back.",
@@ -176,6 +178,7 @@ const stockTheCampStores: TaskDefinition = {
     coins: 10,
     items: [{ itemId: 'cooked_perch', qty: 1 }],
     xp: [{ skill: 'fishing', amount: 30 }],
+    factionRep: [{ factionId: 'hushwrights', amount: 15 }],
   },
   journalEntry:
     "Mira is running low on fresh protein. She said the usual supply traders haven't come through and the settlement is eating dry rations again. She's asked me to fish the nearby pond for perch — three should be enough to feed the kitchen tonight. In return she'll cook one up for me to take.",
@@ -204,6 +207,7 @@ const stoneFromTheQuarry: TaskDefinition = {
   reward: {
     coins: 12,
     xp: [{ skill: 'mining', amount: 30 }],
+    factionRep: [{ factionId: 'quarry_union', amount: 15 }],
   },
   journalEntry:
     "Aldric pulled me aside near the settlement hall. The hearth wall is crumbling and the last of the cut stone was used up in last season's repairs. He says there's copper-bearing rock along the old quarry face east of the settlement — four chunks should give the masons enough to work with.",
@@ -235,6 +239,7 @@ const wordFromTheTidemark: TaskDefinition = {
   reward: {
     coins: 8,
     xp: [{ skill: 'wayfaring', amount: 20 }],
+    factionRep: [{ factionId: 'tidebound_keepers', amount: 15 }],
   },
   journalEntry:
     'Nairn Dusk waylaid me near the chapel entrance. She has been stationed here for weeks, studying the ward patterns carved into the stone and monitoring the mist that rises from the shaft. She said I need to understand the danger before I go any further — the shaft seeps something that drains the warmth from you. She asked me to come and hear her out properly.',
@@ -263,6 +268,7 @@ const aWardBeforeTheMist: TaskDefinition = {
   reward: {
     coins: 10,
     xp: [{ skill: 'warding', amount: 30 }],
+    factionRep: [{ factionId: 'tidebound_keepers', amount: 20 }],
   },
   journalEntry:
     "Nairn explained the Ashwillow Ward — a flat disc of scored ashwood sealed with resin smoke. The interlocking glyph pattern resonates with the boundary markers carved into the chapel stone, causing the mist to divert away from the bearer. Without one, she said, standing in the inner shrine for any length of time is a death sentence. I need to get hold of one from the warding altar in Hushwood before I go further.",
@@ -292,6 +298,7 @@ const theMistBorn: TaskDefinition = {
   reward: {
     coins: 15,
     xp: [{ skill: 'wayfaring', amount: 30 }],
+    factionRep: [{ factionId: 'tidebound_keepers', amount: 25 }],
   },
   journalEntry:
     "Nairn has a theory: the wisps aren't separate creatures but crystallised fragments of the mist, given unstable form by the Veil boundary beneath the shaft. She says they dissolve when struck and leave behind a cold light she calls a Wisp Ember. She wants me to fight three of them to thin the population inside the shrine and bring back what they shed.",
@@ -340,6 +347,7 @@ const echoesOfTheSealedShaft: TaskDefinition = {
       { skill: 'warding', amount: 60 },
       { skill: 'wayfaring', amount: 40 },
     ],
+    factionRep: [{ factionId: 'tidebound_keepers', amount: 40 }],
   },
   journalEntry:
     "Nairn laid out her full plan: she needs three Wisp Ember fragments to triangulate the edges of the Tidemark boundary — the point underground where the Veil runs thin and the mist originates. She wants me to enter the inner shrine, gather the embers the wisps leave behind, and bring them back to her. She pressed two extra Ashwillow Wards into my hands and told me not to go in without at least one of them. Whatever the founders sealed in that shaft, she is certain it is still down there.",
@@ -377,6 +385,7 @@ const quarryWord: TaskDefinition = {
   reward: {
     coins: 10,
     xp: [{ skill: 'wayfaring', amount: 15 }],
+    factionRep: [{ factionId: 'quarry_union', amount: 10 }],
   },
   journalEntry:
     "A note was left at the settlement gate — Gorven at the Redwake face is behind on quota and wants a word. The settlement relies on the quarry output for repairs and smithing stock, so I should head north and find out what he needs.",
@@ -412,6 +421,10 @@ const quarryIronHaul: TaskDefinition = {
   reward: {
     coins: 20,
     xp: [{ skill: 'mining', amount: 40 }],
+    factionRep: [
+      { factionId: 'quarry_union', amount: 25 },
+      { factionId: 'hushwrights', amount: 10 },
+    ],
   },
   journalEntry:
     "Gorven laid it out plainly: five chunks of iron ore, delivered to Bron at the smithy. The quarry iron veins run deep — the three seams at the back of the basin are the richest. After I've filled the order I should run them south before Bron runs short.",
@@ -448,6 +461,7 @@ const quarryDeepSeam: TaskDefinition = {
     coins: 30,
     items: [{ itemId: 'iron_bar', qty: 2 }],
     xp: [{ skill: 'mining', amount: 80 }],
+    factionRep: [{ factionId: 'quarry_union', amount: 40 }],
   },
   journalEntry:
     "Gorven pointed toward the north wall — a darker band of rock that runs through the cliff face. Duskiron: harder than iron, takes a proper pick to chip. He said there's a supply cache sealed back in the alcove, stocked before the last crew left. Three chunks and it's mine to open. I'll need a good pick and patience.",
@@ -479,6 +493,7 @@ const fenSignal: TaskDefinition = {
   reward: {
     coins: 10,
     xp: [{ skill: 'warding', amount: 15 }],
+    factionRep: [{ factionId: 'lantern_circle', amount: 15 }],
   },
   journalEntry:
     "Nairn stopped me before I left the chapel grounds. She's been cross-referencing the mist vent patterns and she says the gas readings from Marrowfen — the deep fen south of the Brackroot Bog — show the same thermal signature as the sealed shaft here. She wants eyes on those vents. I should head into the fen and come back with a description of what I find.",
@@ -514,6 +529,7 @@ const fenSamples: TaskDefinition = {
   reward: {
     coins: 15,
     xp: [{ skill: 'warding', amount: 35 }],
+    factionRep: [{ factionId: 'lantern_circle', amount: 20 }],
   },
   journalEntry:
     "Nairn confirmed it after I described the vents — the pattern matches the Tidemark boundary almost exactly. She wants physical samples: the spore clusters that grow near the gas vent cracks are laden with the same mineral trace she found in the chapel mist. Three of them, brought back carefully. She said the fen floor near the cracks is the richest source.",
@@ -561,6 +577,7 @@ const fenWardWork: TaskDefinition = {
       { itemId: 'thornward_mark', qty: 1 },
     ],
     xp: [{ skill: 'warding', amount: 60 }],
+    factionRep: [{ factionId: 'lantern_circle', amount: 35 }],
   },
   journalEntry:
     "Nairn said the bogfiends and mire hounds near the vent cracks are drawing energy from the same source as the mist — it's making them volatile and territorial. She needs the area thinned before she can establish a safe survey perimeter. She handed me a bog filter wrap as a precaution against the gas and told me to bring back a thornward mark once the creatures are dealt with — she knows a way to key it to the fen's ward pattern.",
@@ -591,6 +608,7 @@ const surveyReach: TaskDefinition = {
   reward: {
     coins: 5,
     xp: [{ skill: 'wayfaring', amount: 10 }],
+    factionRep: [{ factionId: 'underline_syndics', amount: 10 }],
   },
   journalEntry:
     "Aldric wants a formal survey done — reports from Redwake Quarry, Tidemark Chapel, and the deep fen to the south. He says the Veil disturbances are being reported from all three directions now and the settlement council needs hard evidence before they can act. He's offering decent pay for a thorough job.",
@@ -634,6 +652,7 @@ const surveySamples: TaskDefinition = {
   reward: {
     coins: 20,
     xp: [{ skill: 'wayfaring', amount: 25 }],
+    factionRep: [{ factionId: 'underline_syndics', amount: 20 }],
   },
   journalEntry:
     "Aldric specified what he wants: a sample from each zone that will let Sera and the other researchers verify conditions without travelling themselves. A duskiron ore chunk from the quarry deep seam, a marrowfen spore cluster from the fen vents, and a wisp ember fragment from the chapel shrine. Each one requires going into the thick of it. I'll need to cover ground.",
@@ -663,6 +682,7 @@ const surveyReport: TaskDefinition = {
     coins: 45,
     items: [{ itemId: 'waystone_fragment', qty: 3 }],
     xp: [{ skill: 'wayfaring', amount: 100 }],
+    factionRep: [{ factionId: 'underline_syndics', amount: 40 }],
   },
   journalEntry:
     "With all three samples in hand I should return to Aldric and let him draw his conclusions. The duskiron ore, the fen spore, and the wisp ember — between the three of them the settlement researchers should be able to map the Veil disturbances and figure out what's connecting the frontier zones. Aldric mentioned waystone fragments as part of the payment. Those will be useful.",

@@ -205,6 +205,8 @@ import { getTask } from './engine/task'
 import { useMinimapStore } from './store/useMinimapStore'
 import { getRegionLabel } from './engine/minimap'
 import { MinimapHud } from './ui/hud/MinimapHud'
+import { FactionPanel } from './ui/hud/FactionPanel'
+import { useFactionStore } from './store/useFactionStore'
 import {
   initVfx,
   spawnGatherSparks,
@@ -396,6 +398,7 @@ function App() {
     clearSaveData()
     useSaveLoadStore.getState().notifyCleared()
     useGameStore.getState().resetToDefaults()
+    useFactionStore.getState().resetToDefaults()
     hideMenu()
   }
 
@@ -1470,7 +1473,8 @@ function App() {
         action === 'toggle-inventory' ||
         action === 'toggle-skills'    ||
         action === 'toggle-journal'   ||
-        action === 'toggle-ledger'
+        action === 'toggle-ledger'    ||
+        action === 'toggle-faction'
       ) {
         dispatchPanelKey(action)
         return
@@ -2871,6 +2875,8 @@ function App() {
           <SaveLoadPanel />
           {/* Phase 54 — Minimap / Region Map */}
           <MinimapHud />
+          {/* Phase 76 — Faction standings panel */}
+          <FactionPanel />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
           <MobileControls
             joystickRef={mobileJoystickRef}

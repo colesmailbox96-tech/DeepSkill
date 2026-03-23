@@ -33,6 +33,7 @@ export type InputAction =
   | 'toggle-surveying'
   | 'toggle-warding'
   | 'toggle-map'
+  | 'toggle-faction'
 
 /**
  * Map from keyboard code to InputAction.  Used by App.tsx's `onKeyDown` to
@@ -71,6 +72,7 @@ const SELF_MANAGED_PANEL_ACTIONS = new Set<InputAction>([
   'toggle-skills',
   'toggle-journal',
   'toggle-ledger',
+  'toggle-faction',
 ])
 
 /**
@@ -82,6 +84,7 @@ const ACTION_TO_KEY: Readonly<Partial<Record<InputAction, string>>> = {
   'toggle-skills':    'KeyK',
   'toggle-journal':   'KeyJ',
   'toggle-ledger':    'KeyL',
+  'toggle-faction':   'KeyU',
 }
 
 /**

@@ -73,6 +73,14 @@ export interface TaskXpReward {
   amount: number
 }
 
+/** Phase 76 — Faction reputation granted on completion. */
+export interface TaskFactionRepReward {
+  /** Faction id (matches FactionDefinition.id in factionRegistry). */
+  factionId: string
+  /** Amount of reputation to grant (positive integer). */
+  amount: number
+}
+
 /** Everything the player receives when all objectives are fulfilled. */
 export interface TaskReward {
   /** Marks (⬡) added to the player's coin balance. */
@@ -81,6 +89,8 @@ export interface TaskReward {
   items?: TaskItemReward[]
   /** Skill XP grants. */
   xp?: TaskXpReward[]
+  /** Phase 76 — Faction rep grants. */
+  factionRep?: TaskFactionRepReward[]
 }
 
 // ─── Definition ──────────────────────────────────────────────────────────────

@@ -37,6 +37,7 @@ import type { TaskDefinition } from '../../engine/task'
 import { getTask } from '../../engine/task'
 import { CURRENCY_NAME, CURRENCY_PLURAL, CURRENCY_SYMBOL } from '../../engine/economy'
 import { getItem } from '../../data/items/itemRegistry'
+import { getFaction } from '../../data/factions/factionRegistry'
 import type { TaskRecord } from '../../store/useTaskStore'
 import { useTaskStore } from '../../store/useTaskStore'
 
@@ -130,6 +131,19 @@ function TaskDetail({ record, def, isCompleted }: TaskDetailProps) {
               className="journal-detail__reward-chip journal-detail__reward-chip--item"
             >
               {itemR.qty > 1 ? `${itemR.qty}× ` : ''}{label}
+            </span>
+          )
+        })}
+        {def.reward.factionRep?.map((fr) => {
+          const factionDef = getFaction(fr.factionId)
+          const factionLabel = factionDef?.name ?? fr.factionId
+          return (
+            <span
+              key={fr.factionId}
+              className="journal-detail__reward-chip journal-detail__reward-chip--faction"
+              title={factionLabel}
+            >
+              +{fr.amount} {factionLabel} rep
             </span>
           )
         })}
