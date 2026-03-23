@@ -20,6 +20,23 @@
  *   "The Mist-Born"               – defeat 3 Chapel Wisps (hazard combat)
  *   "Echoes of the Sealed Shaft"  – explore inner shrine, gather wisp_ember,
  *                                   deliver to Nairn (region reward unlock)
+ *
+ * Phase 75 adds three region-bridging quest chains:
+ *   Chain 1 — "The Foreman's Contract" (Hushwood ↔ Quarry):
+ *     "Word from the Foreman"     – explore quarry, speak with Gorven
+ *     "Iron for the Settlement"   – mine iron_ore, deliver to Bron
+ *     "The Deep Seam"             – mine duskiron_ore, deliver to Gorven;
+ *                                   unlocks quarry supply cache (gated door)
+ *   Chain 2 — "Mist and Fen" (Chapel ↔ Marrowfen):
+ *     "The Fen Signal"            – explore Marrowfen on Nairn's instruction
+ *     "Fen Samples"               – gather marrowfen_spore, return to Nairn
+ *     "Wards Against the Fen"     – defeat bogfiend × 2 + mire_hound × 2,
+ *                                   return to Nairn; rewards bog gear + ward
+ *   Chain 3 — "The Elder's Survey" (Hushwood → all regions):
+ *     "Survey the Reach"          – accept commission from Aldric
+ *     "Samples from the Frontier" – gather duskiron_ore, marrowfen_spore,
+ *                                   wisp_ember (one from each region)
+ *     "Full Report to the Elder"  – deliver samples to Aldric; major XP reward
  */
 
 import { registerTasks } from '../../engine/task'
@@ -328,7 +345,330 @@ const echoesOfTheSealedShaft: TaskDefinition = {
     "Nairn laid out her full plan: she needs three Wisp Ember fragments to triangulate the edges of the Tidemark boundary — the point underground where the Veil runs thin and the mist originates. She wants me to enter the inner shrine, gather the embers the wisps leave behind, and bring them back to her. She pressed two extra Ashwillow Wards into my hands and told me not to go in without at least one of them. Whatever the founders sealed in that shaft, she is certain it is still down there.",
 }
 
-/** Complete list of all task definitions (Phase 37 + Phase 38 + Phase 64). */
+// ─── Phase 75 — Chain 1: The Foreman's Contract (Hushwood ↔ Quarry) ──────────
+
+/**
+ * "Word from the Foreman" (Task 1 of 3)
+ * Gorven (Quarry Foreman) needs the settlement's support.  The player must
+ * travel to the quarry and speak with him to open the chain.
+ */
+const quarryWord: TaskDefinition = {
+  id: 'quarry_word',
+  title: 'Word from the Foreman',
+  description:
+    'Gorven at Redwake Quarry has sent word to the settlement — he needs help keeping the iron quota up. Head north to the quarry and hear him out.',
+  giverName: 'Gorven (Quarry Foreman)',
+  objectives: [
+    {
+      id: 'explore_quarry',
+      description: 'Reach Redwake Quarry',
+      type: 'explore',
+      targetId: 'quarry',
+      required: 1,
+    },
+    {
+      id: 'talk_to_gorven_word',
+      description: 'Speak with Gorven (Quarry Foreman)',
+      type: 'talk',
+      targetId: 'Gorven (Quarry Foreman)',
+      required: 1,
+    },
+  ],
+  reward: {
+    coins: 10,
+    xp: [{ skill: 'wayfaring', amount: 15 }],
+  },
+  journalEntry:
+    "A note was left at the settlement gate — Gorven at the Redwake face is behind on quota and wants a word. The settlement relies on the quarry output for repairs and smithing stock, so I should head north and find out what he needs.",
+}
+
+/**
+ * "Iron for the Settlement" (Task 2 of 3)
+ * Mine five iron ore from the quarry and deliver them to Bron the Blacksmith
+ * in Hushwood.  Bridges the quarry and the settlement.
+ */
+const quarryIronHaul: TaskDefinition = {
+  id: 'quarry_iron_haul',
+  title: 'Iron for the Settlement',
+  description:
+    "Gorven needs five chunks of iron ore delivered to Bron the Blacksmith. Mine them from the quarry's iron veins and make the run south.",
+  giverName: 'Gorven (Quarry Foreman)',
+  objectives: [
+    {
+      id: 'mine_iron_ore_haul',
+      description: 'Mine 5 Iron Ore',
+      type: 'gather',
+      targetId: 'iron_ore',
+      required: 5,
+    },
+    {
+      id: 'deliver_iron_to_bron',
+      description: 'Deliver the iron to Bron (Blacksmith)',
+      type: 'deliver',
+      targetId: 'Bron (Blacksmith)',
+      required: 1,
+    },
+  ],
+  reward: {
+    coins: 20,
+    xp: [{ skill: 'mining', amount: 40 }],
+  },
+  journalEntry:
+    "Gorven laid it out plainly: five chunks of iron ore, delivered to Bron at the smithy. The quarry iron veins run deep — the three seams at the back of the basin are the richest. After I've filled the order I should run them south before Bron runs short.",
+}
+
+/**
+ * "The Deep Seam" (Task 3 of 3)
+ * Mine three duskiron ore from the deep seam and deliver them to Gorven.
+ * Completing this task unlocks the quarry supply cache (gated door).
+ */
+const quarryDeepSeam: TaskDefinition = {
+  id: 'quarry_deep_seam',
+  title: 'The Deep Seam',
+  description:
+    "Gorven has a harder job: three chunks of duskiron ore from the seam at the back of the quarry. Bring them to him and he'll open the sealed supply cache.",
+  giverName: 'Gorven (Quarry Foreman)',
+  objectives: [
+    {
+      id: 'mine_duskiron_ore',
+      description: 'Mine 3 Duskiron Ore',
+      type: 'gather',
+      targetId: 'duskiron_ore',
+      required: 3,
+    },
+    {
+      id: 'deliver_duskiron_to_gorven',
+      description: 'Deliver the duskiron ore to Gorven (Quarry Foreman)',
+      type: 'deliver',
+      targetId: 'Gorven (Quarry Foreman)',
+      required: 1,
+    },
+  ],
+  reward: {
+    coins: 30,
+    items: [{ itemId: 'iron_bar', qty: 2 }],
+    xp: [{ skill: 'mining', amount: 80 }],
+  },
+  journalEntry:
+    "Gorven pointed toward the north wall — a darker band of rock that runs through the cliff face. Duskiron: harder than iron, takes a proper pick to chip. He said there's a supply cache sealed back in the alcove, stocked before the last crew left. Three chunks and it's mine to open. I'll need a good pick and patience.",
+}
+
+// ─── Phase 75 — Chain 2: Mist and Fen (Chapel ↔ Marrowfen) ──────────────────
+
+/**
+ * "The Fen Signal" (Task 1 of 3)
+ * Nairn Dusk has detected a similarity between the chapel mist signature and
+ * the gas vent activity in Marrowfen.  She asks the player to travel there
+ * and observe the vents firsthand.
+ */
+const fenSignal: TaskDefinition = {
+  id: 'fen_signal',
+  title: 'The Fen Signal',
+  description:
+    "Nairn Dusk believes the gas vents in Marrowfen share an origin with the chapel's mist seep. She wants you to travel south into the fen and observe the vent activity.",
+  giverName: 'Nairn Dusk (Ward-Adept)',
+  objectives: [
+    {
+      id: 'explore_marrowfen_signal',
+      description: 'Enter Marrowfen',
+      type: 'explore',
+      targetId: 'marrowfen',
+      required: 1,
+    },
+  ],
+  reward: {
+    coins: 10,
+    xp: [{ skill: 'warding', amount: 15 }],
+  },
+  journalEntry:
+    "Nairn stopped me before I left the chapel grounds. She's been cross-referencing the mist vent patterns and she says the gas readings from Marrowfen — the deep fen south of the Brackroot Bog — show the same thermal signature as the sealed shaft here. She wants eyes on those vents. I should head into the fen and come back with a description of what I find.",
+}
+
+/**
+ * "Fen Samples" (Task 2 of 3)
+ * Gather three marrowfen_spore clusters from the fen floor and deliver them
+ * to Nairn for her comparative analysis.
+ */
+const fenSamples: TaskDefinition = {
+  id: 'fen_samples',
+  title: 'Fen Samples',
+  description:
+    "Nairn needs three Marrowfen Spore clusters from the fen floor for her analysis. Forage them from the deep fen and return to the chapel.",
+  giverName: 'Nairn Dusk (Ward-Adept)',
+  objectives: [
+    {
+      id: 'gather_marrowfen_spore',
+      description: 'Gather 3 Marrowfen Spore',
+      type: 'gather',
+      targetId: 'marrowfen_spore',
+      required: 3,
+    },
+    {
+      id: 'deliver_spore_to_nairn',
+      description: 'Deliver the spore samples to Nairn Dusk (Ward-Adept)',
+      type: 'deliver',
+      targetId: 'Nairn Dusk (Ward-Adept)',
+      required: 1,
+    },
+  ],
+  reward: {
+    coins: 15,
+    xp: [{ skill: 'warding', amount: 35 }],
+  },
+  journalEntry:
+    "Nairn confirmed it after I described the vents — the pattern matches the Tidemark boundary almost exactly. She wants physical samples: the spore clusters that grow near the gas vent cracks are laden with the same mineral trace she found in the chapel mist. Three of them, brought back carefully. She said the fen floor near the cracks is the richest source.",
+}
+
+/**
+ * "Wards Against the Fen" (Task 3 of 3)
+ * The fen creatures — bogfiend and mire_hound — have become more aggressive
+ * near the vents.  Nairn asks the player to cull their numbers.  Completing
+ * this task rewards a bog_filter_wrap and thornward_mark.
+ */
+const fenWardWork: TaskDefinition = {
+  id: 'fen_ward_work',
+  title: 'Wards Against the Fen',
+  description:
+    "The creatures near the Marrowfen vents have grown dangerous. Defeat two Bogfiends and two Mire Hounds, then return to Nairn.",
+  giverName: 'Nairn Dusk (Ward-Adept)',
+  objectives: [
+    {
+      id: 'kill_bogfiend',
+      description: 'Defeat 2 Bogfiends',
+      type: 'kill',
+      targetId: 'bogfiend',
+      required: 2,
+    },
+    {
+      id: 'kill_mire_hound',
+      description: 'Defeat 2 Mire Hounds',
+      type: 'kill',
+      targetId: 'mire_hound',
+      required: 2,
+    },
+    {
+      id: 'talk_to_nairn_ward',
+      description: 'Return to Nairn Dusk (Ward-Adept)',
+      type: 'talk',
+      targetId: 'Nairn Dusk (Ward-Adept)',
+      required: 1,
+    },
+  ],
+  reward: {
+    coins: 20,
+    items: [
+      { itemId: 'bog_filter_wrap', qty: 1 },
+      { itemId: 'thornward_mark', qty: 1 },
+    ],
+    xp: [{ skill: 'warding', amount: 60 }],
+  },
+  journalEntry:
+    "Nairn said the bogfiends and mire hounds near the vent cracks are drawing energy from the same source as the mist — it's making them volatile and territorial. She needs the area thinned before she can establish a safe survey perimeter. She handed me a bog filter wrap as a precaution against the gas and told me to bring back a thornward mark once the creatures are dealt with — she knows a way to key it to the fen's ward pattern.",
+}
+
+// ─── Phase 75 — Chain 3: The Elder's Survey (Hushwood → all regions) ─────────
+
+/**
+ * "Survey the Reach" (Task 1 of 3)
+ * Aldric has commissioned a formal survey of all frontier zones to understand
+ * the Veil disturbances.  A talk objective to open the chain.
+ */
+const surveyReach: TaskDefinition = {
+  id: 'survey_reach',
+  title: 'Survey the Reach',
+  description:
+    "Aldric the Village Elder wants a full survey of the frontier zones — quarry, chapel, and fen. Speak with him to accept the commission.",
+  giverName: 'Aldric (Village Elder)',
+  objectives: [
+    {
+      id: 'talk_to_aldric_survey',
+      description: 'Speak with Aldric (Village Elder)',
+      type: 'talk',
+      targetId: 'Aldric (Village Elder)',
+      required: 1,
+    },
+  ],
+  reward: {
+    coins: 5,
+    xp: [{ skill: 'wayfaring', amount: 10 }],
+  },
+  journalEntry:
+    "Aldric wants a formal survey done — reports from Redwake Quarry, Tidemark Chapel, and the deep fen to the south. He says the Veil disturbances are being reported from all three directions now and the settlement council needs hard evidence before they can act. He's offering decent pay for a thorough job.",
+}
+
+/**
+ * "Samples from the Frontier" (Task 2 of 3)
+ * Gather one material from each of the three frontier regions:
+ *   duskiron_ore from the quarry, marrowfen_spore from the fen,
+ *   wisp_ember from the chapel.
+ */
+const surveySamples: TaskDefinition = {
+  id: 'survey_samples',
+  title: 'Samples from the Frontier',
+  description:
+    "Aldric needs physical evidence from each frontier zone: one Duskiron Ore (quarry), one Marrowfen Spore (fen), and one Wisp Ember (chapel).",
+  giverName: 'Aldric (Village Elder)',
+  objectives: [
+    {
+      id: 'gather_duskiron_survey',
+      description: 'Gather 1 Duskiron Ore (Redwake Quarry)',
+      type: 'gather',
+      targetId: 'duskiron_ore',
+      required: 1,
+    },
+    {
+      id: 'gather_spore_survey',
+      description: 'Gather 1 Marrowfen Spore (Marrowfen)',
+      type: 'gather',
+      targetId: 'marrowfen_spore',
+      required: 1,
+    },
+    {
+      id: 'gather_ember_survey',
+      description: 'Gather 1 Wisp Ember (Tidemark Chapel)',
+      type: 'gather',
+      targetId: 'wisp_ember',
+      required: 1,
+    },
+  ],
+  reward: {
+    coins: 20,
+    xp: [{ skill: 'wayfaring', amount: 25 }],
+  },
+  journalEntry:
+    "Aldric specified what he wants: a sample from each zone that will let Sera and the other researchers verify conditions without travelling themselves. A duskiron ore chunk from the quarry deep seam, a marrowfen spore cluster from the fen vents, and a wisp ember fragment from the chapel shrine. Each one requires going into the thick of it. I'll need to cover ground.",
+}
+
+/**
+ * "Full Report to the Elder" (Task 3 of 3)
+ * Return the three samples to Aldric.  The largest reward in the chain —
+ * a substantial wayfaring XP grant, waystone fragments, and coins.
+ */
+const surveyReport: TaskDefinition = {
+  id: 'survey_report',
+  title: 'Full Report to the Elder',
+  description:
+    "Return to Aldric (Village Elder) with all three frontier samples to complete the survey commission.",
+  giverName: 'Aldric (Village Elder)',
+  objectives: [
+    {
+      id: 'deliver_survey_to_aldric',
+      description: 'Return to Aldric (Village Elder) with all samples',
+      type: 'talk',
+      targetId: 'Aldric (Village Elder)',
+      required: 1,
+    },
+  ],
+  reward: {
+    coins: 45,
+    items: [{ itemId: 'waystone_fragment', qty: 3 }],
+    xp: [{ skill: 'wayfaring', amount: 100 }],
+  },
+  journalEntry:
+    "With all three samples in hand I should return to Aldric and let him draw his conclusions. The duskiron ore, the fen spore, and the wisp ember — between the three of them the settlement researchers should be able to map the Veil disturbances and figure out what's connecting the frontier zones. Aldric mentioned waystone fragments as part of the payment. Those will be useful.",
+}
+
+/** Complete list of all task definitions (Phase 37 + Phase 38 + Phase 64 + Phase 75). */
 export const ALL_TASKS: TaskDefinition[] = [
   wordFromTheElder,
   warmRunoff,
@@ -340,6 +680,18 @@ export const ALL_TASKS: TaskDefinition[] = [
   aWardBeforeTheMist,
   theMistBorn,
   echoesOfTheSealedShaft,
+  // Phase 75 — Chain 1: The Foreman's Contract (Hushwood ↔ Quarry)
+  quarryWord,
+  quarryIronHaul,
+  quarryDeepSeam,
+  // Phase 75 — Chain 2: Mist and Fen (Chapel ↔ Marrowfen)
+  fenSignal,
+  fenSamples,
+  fenWardWork,
+  // Phase 75 — Chain 3: The Elder's Survey (Hushwood → all regions)
+  surveyReach,
+  surveySamples,
+  surveyReport,
 ]
 
 // ─── Initialiser ─────────────────────────────────────────────────────────────
