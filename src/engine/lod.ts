@@ -111,7 +111,7 @@ export const REGION_CHUNKS: readonly RegionChunkDef[] = [
   },
   // Belowglass Vaults — far-west late-game zone, entry at x ≈ −98.
   {
-    id: 'belowglass',
+    id: 'belowglass_vaults',
     center: new THREE.Vector3(-102, 0, 0),
     showDistance: 140,
     hideDistance: 160,

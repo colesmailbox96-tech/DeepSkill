@@ -724,20 +724,8 @@ function App() {
     collidables.push(...chapel.collidables)
     allNpcs.push(...chapel.npcs)
 
-    // Phase 65 — Hollow Vault Steps Zone
-    // Build the ruin-adjacent descending vault west of the chapel.
-    // The gate slab is a collidable until the player unseals it with a ward.
-    // Phase 88 — wrapped in a LOD group.
-    let hollowVault!: ReturnType<typeof buildHollowVault>
-    const hollowVaultGroup = captureIntoGroup(scene, () => {
-      hollowVault = buildHollowVault(scene, interactables)
-    })
-    collidables.push(...hollowVault.collidables)
-    let vaultGateSealed = true
-
-    // Phase 66 — Salvage System
-    // Salvage nodes placed inside the Hollow Vault.  Uses the 'salvaging' skill;
-    // the callback pattern mirrors onForageStart.
+    // Phase 66 — Salvage System callback.
+    // Defined here so it can be referenced inside both region captures below.
     const onSalvageStart = (node: SalvageNode) => {
       const cfg = SALVAGE_VARIANT_CONFIG[node.variant]
       if (getSalvagingLevel() < cfg.levelReq) {
@@ -769,7 +757,21 @@ function App() {
       depleteSalvageNode(node)
     }
 
-    const allSalvageNodes = buildSalvageNodes(scene, interactables, onSalvageStart)
+    // Phase 65 — Hollow Vault Steps Zone
+    // Build the ruin-adjacent descending vault west of the chapel.
+    // The gate slab is a collidable until the player unseals it with a ward.
+    // Phase 66 — Salvage nodes are included in the same capture so they hide
+    //             correctly with the rest of the Hollow Vault geometry.
+    // Phase 88 — wrapped in a LOD group.
+    let hollowVault!: ReturnType<typeof buildHollowVault>
+    let hvSalvageNodes!: ReturnType<typeof buildSalvageNodes>
+    const hollowVaultGroup = captureIntoGroup(scene, () => {
+      hollowVault = buildHollowVault(scene, interactables)
+      hvSalvageNodes = buildSalvageNodes(scene, interactables, onSalvageStart)
+    })
+    collidables.push(...hollowVault.collidables)
+    let vaultGateSealed = true
+    const allSalvageNodes = [...hvSalvageNodes]
 
     // Phase 57 — Ashfen Copse Zone
     // Phase 58 — adds Duskiron Seam rock nodes; onMineStart callback needed.
@@ -799,17 +801,19 @@ function App() {
     // The access gate slab is collidable until the player has completed the
     // "Echoes of the Sealed Shaft" task; pollOpened() checks each frame.
     // Phase 84 — sanctumDoor is the inner boss chamber gate; pollOpened() for that too.
-    // Phase 88 — wrapped in a LOD group.
+    // Phase 88 — wrapped in a LOD group; vault salvage nodes included in same capture
+    //             so they hide/show consistently with the rest of the zone.
     let belowglassVaults!: BelowglassVaultsResult
+    let bvSalvageNodes!: ReturnType<typeof buildVaultSalvageNodes>
     const belowglassGroup = captureIntoGroup(scene, () => {
       belowglassVaults = buildBelowglassVaults(scene, interactables)
+      bvSalvageNodes = buildVaultSalvageNodes(scene, interactables, onSalvageStart)
     })
     collidables.push(...belowglassVaults.collidables)
     let bvGateSealed = true
     let bvSanctumSealed = true
 
-    // Higher-tier salvage nodes inside the Belowglass Vaults.
-    const bvSalvageNodes = buildVaultSalvageNodes(scene, interactables, onSalvageStart)
+    // Merge belowglass salvage nodes into the shared salvage collection.
     allSalvageNodes.push(...bvSalvageNodes)
 
     // Phase 88 — LOD / Streaming Pass: register all LOD-controlled region groups.
@@ -824,7 +828,7 @@ function App() {
       { def: REGION_CHUNK_MAP.get('ashfen')!,       group: ashfenGroup },
       { def: REGION_CHUNK_MAP.get('chapel')!,       group: chapelGroup },
       { def: REGION_CHUNK_MAP.get('hollow_vault')!, group: hollowVaultGroup },
-      { def: REGION_CHUNK_MAP.get('belowglass')!,   group: belowglassGroup },
+      { def: REGION_CHUNK_MAP.get('belowglass_vaults')!, group: belowglassGroup },
     ]
 
     // Phase 22 — Cooking System Foundation
