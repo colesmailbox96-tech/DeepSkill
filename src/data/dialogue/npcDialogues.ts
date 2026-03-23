@@ -393,6 +393,58 @@ const brinSaltTree = {
   },
 }
 
+// ─── Gorven — Quarry Foreman (Phase 75) ──────────────────────────────────────
+
+const gorvenTree = {
+  npcName: 'Gorven (Quarry Foreman)',
+  rootNode: 'intro',
+  repeatNode: 'repeat',
+  nodes: {
+    intro: {
+      key: 'intro',
+      text: "Gorven. I run the Redwake face. We're behind on iron — the settlement keeps requisitioning and we can't keep pace. If you're willing to swing a pick I could use the help.",
+      choices: [
+        { label: 'What do you need?', nextNode: 'iron_need' },
+        { label: 'Tell me about the quarry.', nextNode: 'quarry_lore' },
+        { label: 'Just passing through.', nextNode: null },
+      ],
+    },
+    iron_need: {
+      key: 'iron_need',
+      text: "Five chunks of iron ore, delivered to Bron down at the smithy. After that, I've got a deeper job for you — duskiron seam, further in. Harder going but the vein is rich.",
+      choices: [
+        { label: "I'll get on it.", nextNode: null },
+        { label: 'Tell me about the quarry.', nextNode: 'quarry_lore' },
+      ],
+    },
+    quarry_lore: {
+      key: 'quarry_lore',
+      text: "Redwake has been worked since before the settlement was built. The older crew called the deep seam 'duskiron' — harder than standard iron, runs darker, takes an edge better. Takes a better pick too. Don't go at it with a copper tool.",
+      choices: [
+        { label: 'What do you need from me?', nextNode: 'iron_need' },
+        { label: "Good to know. I'll be back.", nextNode: null },
+      ],
+    },
+    deep_seam: {
+      key: 'deep_seam',
+      text: "Good work on the iron. Now the real job: there's a duskiron seam deeper in, past the locked supply alcove. Bring me three chunks of duskiron ore and I'll see the cache opened for you. What's in there is worth the effort.",
+      choices: [
+        { label: "I'll get the duskiron.", nextNode: null },
+        { label: 'Tell me about the quarry.', nextNode: 'quarry_lore' },
+      ],
+    },
+    repeat: {
+      key: 'repeat',
+      text: "Face is still running. You need more ore, the seam's open. Don't let the loose rubble catch you.",
+      choices: [
+        { label: 'What else needs doing?', nextNode: 'deep_seam' },
+        { label: 'Tell me about the quarry.', nextNode: 'quarry_lore' },
+        { label: 'Understood. Farewell.', nextNode: null },
+      ],
+    },
+  },
+}
+
 // ─── Public registration function ─────────────────────────────────────────────
 
 /**
@@ -408,4 +460,6 @@ export function registerAllDialogues(): void {
   registerDialogue(tomasTree)
   registerDialogue(nairnDuskTree)
   registerDialogue(brinSaltTree)
+  // Phase 75
+  registerDialogue(gorvenTree)
 }

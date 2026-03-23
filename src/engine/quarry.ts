@@ -33,7 +33,9 @@ import type { Interactable } from './interactable'
 import type { Npc } from './npc'
 import { buildRockNodesAt } from './mining'
 import type { RockNode } from './mining'
-import { useNotifications } from '../store/useNotifications'
+import { buildGatedDoor } from './gating'
+import type { GatedDoorResult } from './gating'
+import { useDialogueStore } from '../store/useDialogueStore'
 
 // ─── Shared materials ────────────────────────────────────────────────────────
 
@@ -61,6 +63,12 @@ export interface QuarryResult {
   rockNodes: RockNode[]
   /** Live NPC objects for per-frame ambient sway (the foreman). */
   npcs: Npc[]
+  /**
+   * Phase 75 — Gated supply cache alcove.  Requires task 'quarry_deep_seam'
+   * completion to open.  App.tsx must poll pollOpened() each frame and
+   * remove the mesh/collidable when it fires.
+   */
+  supplyCache: GatedDoorResult
 }
 
 // ─── Quarry mining node placements ───────────────────────────────────────────
@@ -73,7 +81,7 @@ export interface QuarryResult {
  *   3 × Copper Vein   — mid-basin oxidized seams
  *   3 × Iron Vein     — deeper back of the basin (lore: iron-rich seams)
  */
-const QUARRY_ROCK_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: 'loose_stone' | 'copper' | 'iron' }> = [
+const QUARRY_ROCK_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: 'loose_stone' | 'copper' | 'iron' | 'duskiron' }> = [
   { pos: [-14, -57], variant: 'loose_stone' },
   { pos: [ 11, -59], variant: 'loose_stone' },
   { pos: [  -8, -65], variant: 'copper' },
@@ -82,6 +90,9 @@ const QUARRY_ROCK_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: 'l
   { pos: [-15, -72], variant: 'iron'   },
   { pos: [  9, -78], variant: 'iron'   },
   { pos: [  0, -88], variant: 'iron'   },
+  // Phase 75 — Duskiron seam at the deep end of the basin
+  { pos: [ -6, -91], variant: 'duskiron' },
+  { pos: [  8, -93], variant: 'duskiron' },
 ]
 
 // ─── NPC constants ───────────────────────────────────────────────────────────
@@ -247,10 +258,9 @@ export function buildQuarry(
     mesh: foremanGroup,
     label: 'Gorven (Quarry Foreman)',
     interactRadius: 2.2,
-    onInteract: () =>
-      useNotifications
-        .getState()
-        .push('Gorven: "Keep your pick sharp and your feet clear of loose rubble."', 'info'),
+    onInteract: () => {
+      useDialogueStore.getState().openDialogue('Gorven (Quarry Foreman)')
+    },
   }
   interactables.push(foremanInteractable)
 
@@ -262,6 +272,31 @@ export function buildQuarry(
   }
   npcs.push(foremanNpc)
 
+  // ── Phase 75 — Locked supply cache alcove (deep north wall) ──────────────
+  // A wooden storage alcove sealed with a plank door.  Requires completing
+  // 'quarry_deep_seam' (the final Foreman's Contract chain task) to open.
+  // The alcove is set into the north cliff at z = −95, near the duskiron seam.
+  const supplyCache = buildGatedDoor(scene, interactables, {
+    x: 3,
+    y: 1.0,
+    z: -95.5,
+    width: 2.0,
+    height: 2.0,
+    depth: 0.4,
+    label: 'Quarry Supply Cache',
+    color: 0x7a5a30,
+    emissive: 0x201008,
+    requirements: [
+      {
+        kind: 'task',
+        taskId: 'quarry_deep_seam',
+        taskTitle: 'The Deep Seam',
+      },
+    ],
+    openMessage: "Gorven's supply cache swings open — the foreman kept his word.",
+  })
+  collidables.push(supplyCache.mesh)
+
   // ── Mining nodes (8 nodes inside the quarry basin) ────────────────────────
   const rockNodes = buildRockNodesAt(
     scene,
@@ -271,7 +306,7 @@ export function buildQuarry(
     'quarry_rock',
   )
 
-  return { collidables, rockNodes, npcs }
+  return { collidables, rockNodes, npcs, supplyCache }
 }
 
 // ─── Private helpers ──────────────────────────────────────────────────────────

@@ -272,6 +272,18 @@ function App() {
     useTaskStore.getState().acceptTask('tidemark_ward_proof')
     useTaskStore.getState().acceptTask('tidemark_mist_born')
     useTaskStore.getState().acceptTask('tidemark_sealed_shaft')
+    // Phase 75 — Chain 1: The Foreman's Contract
+    useTaskStore.getState().acceptTask('quarry_word')
+    useTaskStore.getState().acceptTask('quarry_iron_haul')
+    useTaskStore.getState().acceptTask('quarry_deep_seam')
+    // Phase 75 — Chain 2: Mist and Fen
+    useTaskStore.getState().acceptTask('fen_signal')
+    useTaskStore.getState().acceptTask('fen_samples')
+    useTaskStore.getState().acceptTask('fen_ward_work')
+    // Phase 75 — Chain 3: The Elder's Survey
+    useTaskStore.getState().acceptTask('survey_reach')
+    useTaskStore.getState().acceptTask('survey_samples')
+    useTaskStore.getState().acceptTask('survey_report')
   }, [])
 
   // Advance 'talk' objectives and handle 'deliver' objectives when the player
@@ -555,6 +567,8 @@ function App() {
     const quarry = buildQuarry(scene, interactables, onMineStart)
     collidables.push(...quarry.collidables)
     const allRockNodes = [...rockNodes, ...quarry.rockNodes]
+    // Phase 75 — track supply cache sealed state for per-frame poll
+    let quarrySupplyCacheSealed = true
 
     // Phase 19 — Fishing Node System
     // Fishing session: tracks which spot is being fished and elapsed cast time.
@@ -2595,6 +2609,10 @@ function App() {
       if (player.mesh.position.z >= 60 && player.mesh.position.z <= 105 && player.mesh.position.x >= -28 && player.mesh.position.x <= 28) {
         triggerZoneExplore('marrowfen')
       }
+      // Phase 75 — Redwake Quarry explore trigger (quarry basin begins at z ≤ −52).
+      if (player.mesh.position.z <= -52) {
+        triggerZoneExplore('quarry')
+      }
       // Phase 65 — Vault gate unseal: hide gate mesh, remove its collidable, and
       // unregister its interactable so the player can't target an invisible gate.
       if (vaultGateSealed && pollGateUnsealed()) {
@@ -2624,6 +2642,21 @@ function App() {
         const doorInteractableIdx = interactables.indexOf(hollowVault.innerSanctumDoor.interactable)
         if (doorInteractableIdx !== -1) {
           interactables.splice(doorInteractableIdx, 1)
+        }
+      }
+      // Phase 75 — Quarry supply cache: opened when the player completes
+      // 'quarry_deep_seam'.  Hide the door mesh and remove its collidable.
+      if (quarrySupplyCacheSealed && quarry.supplyCache.pollOpened()) {
+        quarrySupplyCacheSealed = false
+        quarry.supplyCache.mesh.visible = false
+        const cacheCollidableIdx = collidables.indexOf(quarry.supplyCache.mesh)
+        if (cacheCollidableIdx >= 0) {
+          collidables.splice(cacheCollidableIdx, 1)
+          collidableBoxes.splice(cacheCollidableIdx, 1)
+        }
+        const cacheInteractableIdx = interactables.indexOf(quarry.supplyCache.interactable)
+        if (cacheInteractableIdx !== -1) {
+          interactables.splice(cacheInteractableIdx, 1)
         }
       }
       // Sync live target HP to the combat store so the React overlay stays current.
