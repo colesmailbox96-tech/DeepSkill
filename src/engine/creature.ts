@@ -228,6 +228,18 @@ export interface Creature {
    * Decremented each frame; emissive is restored when it reaches 0.
    */
   hitFlashTimer: number
+  /**
+   * Emissive color captured immediately before the hit-flash started.
+   * Restored when `hitFlashTimer` reaches 0 so that unrelated emissive
+   * effects (e.g. the interaction-hover highlight set by applyHighlight)
+   * are not permanently cleared by the flash.
+   */
+  preFlashEmissive: THREE.Color
+  /**
+   * `bodyMat.emissiveIntensity` captured before the hit-flash started.
+   * Restored alongside `preFlashEmissive` when the flash expires.
+   */
+  preFlashEmissiveIntensity: number
 }
 
 // ─── Creature definitions ─────────────────────────────────────────────────────
@@ -579,6 +591,8 @@ export function spawnCreature(
     respawnTimer: 0,
     bodyMat,
     hitFlashTimer: 0,
+    preFlashEmissive: new THREE.Color(0x000000),
+    preFlashEmissiveIntensity: 1,
   }
 
   // Register as an interactable if it has a drop and a harvest callback.
@@ -623,8 +637,9 @@ export function updateCreatures(
     if (creature.hitFlashTimer > 0) {
       creature.hitFlashTimer = Math.max(0, creature.hitFlashTimer - delta)
       if (creature.hitFlashTimer <= 0) {
-        creature.bodyMat.emissive.setHex(0x000000)
-        creature.bodyMat.emissiveIntensity = 0
+        // Restore the emissive state that was active before the flash started.
+        creature.bodyMat.emissive.copy(creature.preFlashEmissive)
+        creature.bodyMat.emissiveIntensity = creature.preFlashEmissiveIntensity
       }
     }
     _stepCreature(creature, delta, playerPos, creatures, onAttack)
@@ -650,6 +665,13 @@ export function damageCreature(creature: Creature, amount: number): boolean {
   creature.hp = Math.max(0, creature.hp - amount)
 
   // Phase 71 — Brief white emissive hit-react flash.
+  // Save prior emissive state only when no flash is currently active so that
+  // a rapid sequence of hits doesn't overwrite the saved values with the flash
+  // itself (which would corrupt the restore target).
+  if (creature.hitFlashTimer <= 0) {
+    creature.preFlashEmissive.copy(creature.bodyMat.emissive)
+    creature.preFlashEmissiveIntensity = creature.bodyMat.emissiveIntensity
+  }
   creature.bodyMat.emissive.setHex(0xffffff)
   creature.bodyMat.emissiveIntensity = 0.8
   creature.hitFlashTimer = 0.15
