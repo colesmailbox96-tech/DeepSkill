@@ -1707,7 +1707,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     id: 'warden_heartstone',
     name: 'Warden Heartstone',
     type: 'material',
-    stackable: false,
+    stackable: true,
     value: 320,
     icon: 'items/warden_heartstone.png',
     description:

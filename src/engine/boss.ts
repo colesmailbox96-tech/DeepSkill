@@ -357,13 +357,24 @@ export interface BossArenaEntry {
    * Phase 84+ will populate these.
    */
   specialMoves: BossSpecialMove[]
+  /**
+   * Phase 84 — Accumulated attack-speed multiplier for the current boss phase.
+   *
+   * When a `BossPhaseThreshold` fires its `attackCooldownMult`, that value is
+   * stored here.  After each `updateCreatures` tick, if the boss just reloaded
+   * its attack timer (i.e., it fired an attack), the timer is scaled down by
+   * this multiplier so the accelerated cadence persists for the remainder of
+   * the phase rather than only applying once.  Defaults to 1 (no acceleration).
+   */
+  attackCooldownMult: number
 }
 
 /**
  * Global registry of boss arena configurations.
  *
- * Phase 83 ships an empty array — no boss is placed yet.
- * Phase 84 appends its arena config object here before buildCreatures() runs.
+ * This array is populated in-place with all boss arenas that should be
+ * available in the current phase.  Later phases can extend it by adding
+ * additional `BossArenaConfig` entries.
  */
 export const BOSS_ARENA_CONFIGS: BossArenaConfig[] = [
   // Phase 84 — Vault-Heart Warden arena.

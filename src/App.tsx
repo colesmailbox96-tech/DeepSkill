@@ -1409,6 +1409,7 @@ function App() {
             boss,
             phaseThresholds,
             specialMoves,
+            attackCooldownMult: 1,
           })
         }
         return acc
@@ -2746,7 +2747,25 @@ function App() {
 
       // Phase 29/30 — tick creature AI (roaming, flee, aggro, pursuit bounds, reset)
       // Phase 81 — pass inventory slots so ward repel (anti-wisp etc.) can be applied.
+      // Phase 84 — capture boss attackTimers before updateCreatures so we can detect
+      // when the boss just reloaded its timer after an attack and apply the phase mult.
+      const _preBossTimers = new Map<Creature, number>()
+      for (const entry of bossArenaEntries) {
+        if (entry.attackCooldownMult < 1) _preBossTimers.set(entry.boss, entry.boss.attackTimer)
+      }
       updateCreatures(creatures, delta, player.mesh.position, onCreatureAttack, useGameStore.getState().inventory.slots)
+      // Phase 84 — After updateCreatures, if a boss just reloaded its attackTimer
+      // (it was ≤ 0 before and is now > 0), apply the persistent phase multiplier.
+      for (const entry of bossArenaEntries) {
+        if (entry.attackCooldownMult >= 1) continue
+        const pre = _preBossTimers.get(entry.boss) ?? 1
+        const post = entry.boss.attackTimer
+        const baseCooldown = entry.boss.def.attackCooldown ?? 2.8
+        // Timer was just reloaded if it went from ≤ 0 to approximately baseCooldown.
+        if (pre <= 0 && post >= baseCooldown * 0.9) {
+          entry.boss.attackTimer = post * entry.attackCooldownMult
+        }
+      }
 
       // Phase 31 — tick player combat loop (auto-attack, cooldown, kill detection)
       updateCombat(
@@ -2952,10 +2971,6 @@ function App() {
         const taskStore = useTaskStore.getState()
         if (!taskStore.isCompleted('vault_heart') && !taskStore.active.some((r) => r.taskId === 'vault_heart')) {
           taskStore.acceptTask('vault_heart')
-          useNotifications.getState().push(
-            'Task started: The Vault-Heart',
-            'info',
-          )
         }
       }
       // Phase 80 — Hidden shortcut passages: opened when the player has the
@@ -3013,17 +3028,25 @@ function App() {
                 threshold.phaseLabel,
                 'warning',
               )
-              // Speed up the boss's attacks for this phase.
+              // Persist the attack-speed multiplier for this phase so every
+              // subsequent attack fires at the new cadence (not just the next one).
+              entry.attackCooldownMult = Math.min(
+                entry.attackCooldownMult,
+                threshold.attackCooldownMult,
+              )
+              // Also immediately shorten the current pending cooldown so the
+              // first attack of the new phase arrives faster.
               if (boss.def.attackCooldown != null) {
                 boss.attackTimer = Math.min(
                   boss.attackTimer,
-                  (boss.def.attackCooldown * threshold.attackCooldownMult) * 0.5,
+                  (boss.def.attackCooldown * entry.attackCooldownMult) * 0.5,
                 )
               }
             },
             // onBossDefeated
             () => {
               useBossStore.getState().clearBoss()
+              entry.attackCooldownMult = 1
               useNotifications.getState().push(
                 `${boss.def.name} has been defeated!`,
                 'success',
@@ -3032,6 +3055,7 @@ function App() {
             // onArenaReset
             () => {
               useBossStore.getState().clearBoss()
+              entry.attackCooldownMult = 1
               useNotifications.getState().push(
                 `The ${boss.def.name} has recovered and awaits your return.`,
                 'info',
