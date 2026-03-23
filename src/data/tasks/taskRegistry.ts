@@ -37,6 +37,23 @@
  *     "Samples from the Frontier" – gather duskiron_ore, marrowfen_spore,
  *                                   wisp_ember (one from each region)
  *     "Full Report to the Elder"  – deliver samples to Aldric; major XP reward
+ *
+ * Phase 86 — each task definition now carries an optional `unlocksTaskIds`
+ * field.  When a task completes, useTaskStore.completeTask() automatically
+ * accepts every task listed there, so players experience a staged quest
+ * introduction rather than receiving every task simultaneously at game start.
+ *
+ * Chain summary (new game flow):
+ *   Start                              → word_from_the_elder
+ *   word_from_the_elder completes      → warm_runoff, haul_for_the_hearth,
+ *                                        stock_the_camp_stores, stone_from_the_quarry
+ *   haul_for_the_hearth completes      → tidemark_word, survey_reach
+ *   stone_from_the_quarry completes    → quarry_word
+ *   tidemark_word      → tidemark_ward_proof → tidemark_mist_born
+ *                      → tidemark_sealed_shaft → fen_signal → fen_samples
+ *                      → fen_ward_work
+ *   quarry_word        → quarry_iron_haul → quarry_deep_seam
+ *   survey_reach       → survey_samples  → survey_report
  */
 
 import { registerTasks } from '../../engine/task'
@@ -76,6 +93,8 @@ const wordFromTheElder: TaskDefinition = {
   },
   journalEntry:
     'The elder flagged me down near the settlement hall. His face was drawn — more than the usual frontier weariness. He said the Veil has been shifting and that strange tracks have been found on the Brackroot Trail. He wants to brief me in person before I wander further south.',
+  // Phase 86 — unlock the first practical task set after meeting the elder.
+  unlocksTaskIds: ['warm_runoff', 'haul_for_the_hearth', 'stock_the_camp_stores', 'stone_from_the_quarry'],
 }
 
 /**
@@ -145,6 +164,9 @@ const haulForTheHearth: TaskDefinition = {
   },
   journalEntry:
     "Bron stopped me outside the smithy — the forge fire is running low and he's too busy mending tools to head out himself. He needs ashwood logs, five of them, to keep the heat through the night. I should head to the roadside trees, cut what he needs, and bring them back.",
+  // Phase 86 — completing the first woodcutting task opens the Tidemark arc
+  // and the Elder's Survey commission.
+  unlocksTaskIds: ['tidemark_word', 'survey_reach'],
 }
 
 /**
@@ -211,6 +233,8 @@ const stoneFromTheQuarry: TaskDefinition = {
   },
   journalEntry:
     "Aldric pulled me aside near the settlement hall. The hearth wall is crumbling and the last of the cut stone was used up in last season's repairs. He says there's copper-bearing rock along the old quarry face east of the settlement — four chunks should give the masons enough to work with.",
+  // Phase 86 — completing the first mining task opens the Foreman's Contract chain.
+  unlocksTaskIds: ['quarry_word'],
 }
 
 // ─── Phase 64 — Tidemark Storyline Arc ───────────────────────────────────────
@@ -243,6 +267,7 @@ const wordFromTheTidemark: TaskDefinition = {
   },
   journalEntry:
     'Nairn Dusk waylaid me near the chapel entrance. She has been stationed here for weeks, studying the ward patterns carved into the stone and monitoring the mist that rises from the shaft. She said I need to understand the danger before I go any further — the shaft seeps something that drains the warmth from you. She asked me to come and hear her out properly.',
+  unlocksTaskIds: ['tidemark_ward_proof'],
 }
 
 /**
@@ -272,6 +297,7 @@ const aWardBeforeTheMist: TaskDefinition = {
   },
   journalEntry:
     "Nairn explained the Ashwillow Ward — a flat disc of scored ashwood sealed with resin smoke. The interlocking glyph pattern resonates with the boundary markers carved into the chapel stone, causing the mist to divert away from the bearer. Without one, she said, standing in the inner shrine for any length of time is a death sentence. I need to get hold of one from the warding altar in Hushwood before I go further.",
+  unlocksTaskIds: ['tidemark_mist_born'],
 }
 
 /**
@@ -302,6 +328,7 @@ const theMistBorn: TaskDefinition = {
   },
   journalEntry:
     "Nairn has a theory: the wisps aren't separate creatures but crystallised fragments of the mist, given unstable form by the Veil boundary beneath the shaft. She says they dissolve when struck and leave behind a cold light she calls a Wisp Ember. She wants me to fight three of them to thin the population inside the shrine and bring back what they shed.",
+  unlocksTaskIds: ['tidemark_sealed_shaft'],
 }
 
 /**
@@ -351,6 +378,8 @@ const echoesOfTheSealedShaft: TaskDefinition = {
   },
   journalEntry:
     "Nairn laid out her full plan: she needs three Wisp Ember fragments to triangulate the edges of the Tidemark boundary — the point underground where the Veil runs thin and the mist originates. She wants me to enter the inner shrine, gather the embers the wisps leave behind, and bring them back to her. She pressed two extra Ashwillow Wards into my hands and told me not to go in without at least one of them. Whatever the founders sealed in that shaft, she is certain it is still down there.",
+  // Phase 86 — completing the Tidemark arc opens the Mist and Fen chain.
+  unlocksTaskIds: ['fen_signal'],
 }
 
 // ─── Phase 75 — Chain 1: The Foreman's Contract (Hushwood ↔ Quarry) ──────────
@@ -389,6 +418,7 @@ const quarryWord: TaskDefinition = {
   },
   journalEntry:
     "A note was left at the settlement gate — Gorven at the Redwake face is behind on quota and wants a word. The settlement relies on the quarry output for repairs and smithing stock, so I should head north and find out what he needs.",
+  unlocksTaskIds: ['quarry_iron_haul'],
 }
 
 /**
@@ -428,6 +458,7 @@ const quarryIronHaul: TaskDefinition = {
   },
   journalEntry:
     "Gorven laid it out plainly: five chunks of iron ore, delivered to Bron at the smithy. The quarry iron veins run deep — the three seams at the back of the basin are the richest. After I've filled the order I should run them south before Bron runs short.",
+  unlocksTaskIds: ['quarry_deep_seam'],
 }
 
 /**
@@ -497,6 +528,7 @@ const fenSignal: TaskDefinition = {
   },
   journalEntry:
     "Nairn stopped me before I left the chapel grounds. She's been cross-referencing the mist vent patterns and she says the gas readings from Marrowfen — the deep fen south of the Brackroot Bog — show the same thermal signature as the sealed shaft here. She wants eyes on those vents. I should head into the fen and come back with a description of what I find.",
+  unlocksTaskIds: ['fen_samples'],
 }
 
 /**
@@ -533,6 +565,7 @@ const fenSamples: TaskDefinition = {
   },
   journalEntry:
     "Nairn confirmed it after I described the vents — the pattern matches the Tidemark boundary almost exactly. She wants physical samples: the spore clusters that grow near the gas vent cracks are laden with the same mineral trace she found in the chapel mist. Three of them, brought back carefully. She said the fen floor near the cracks is the richest source.",
+  unlocksTaskIds: ['fen_ward_work'],
 }
 
 /**
@@ -612,6 +645,7 @@ const surveyReach: TaskDefinition = {
   },
   journalEntry:
     "Aldric wants a formal survey done — reports from Redwake Quarry, Tidemark Chapel, and the deep fen to the south. He says the Veil disturbances are being reported from all three directions now and the settlement council needs hard evidence before they can act. He's offering decent pay for a thorough job.",
+  unlocksTaskIds: ['survey_samples'],
 }
 
 /**
@@ -656,6 +690,7 @@ const surveySamples: TaskDefinition = {
   },
   journalEntry:
     "Aldric specified what he wants: a sample from each zone that will let Sera and the other researchers verify conditions without travelling themselves. A duskiron ore chunk from the quarry deep seam, a marrowfen spore cluster from the fen vents, and a wisp ember fragment from the chapel shrine. Each one requires going into the thick of it. I'll need to cover ground.",
+  unlocksTaskIds: ['survey_report'],
 }
 
 /**

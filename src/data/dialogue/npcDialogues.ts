@@ -30,24 +30,24 @@ const aldricTree = {
   nodes: {
     intro: {
       key: 'intro',
-      text: "Welcome, wanderer. I am Aldric, elder of Cinderglen. The Veil grows restless and strange things stir along the trail south. You'd do well to keep your wits sharp.",
+      text: "Ah — you've arrived at last. I am Aldric, elder of Cinderglen. There's much I need to tell you, but first things first. The settlement is stretched thin: Bron at the forge needs timber, Mira at the inn needs fish, and the quarry face needs hands. Start there — learn the land, build your strength. The dangers to the south can wait a little longer.",
       choices: [
+        { label: "What's happening to the south?", nextNode: 'south' },
         { label: 'Tell me about the Veil.', nextNode: 'veil' },
-        { label: 'What lies south of here?', nextNode: 'south' },
-        { label: "I'll be on my way.", nextNode: null },
+        { label: "I'll get started. Farewell.", nextNode: null },
       ],
     },
     veil: {
       key: 'veil',
-      text: "The Veil is an ancient boundary between what we know and what should remain unknown. Lately it flickers, and where it falters, creatures cross. Take heed.",
+      text: "The Veil is an ancient boundary between what we know and what should remain unknown. Lately it flickers, and where it falters, creatures cross. For now, focus on the settlement's needs — timber, fish, stone. That will prepare you for what lies further south.",
       choices: [
-        { label: 'What lies south of here?', nextNode: 'south' },
+        { label: "What's happening to the south?", nextNode: 'south' },
         { label: 'Farewell, elder.', nextNode: null },
       ],
     },
     south: {
       key: 'south',
-      text: "The Brackroot Trail winds through the grove. Woodcutters used it before the Snarl Whelps moved in. If you must go, travel light and stay alert.",
+      text: "The Brackroot Trail winds through the grove. Woodcutters used it before the Snarl Whelps moved in. Further on lies Tidemark Chapel, the quarry, and the deep fen — each with their own hazards. But start here, in Cinderglen. Cut some timber, fish the pond, mine the rock face. When you've found your footing, come back and I'll have more work for you.",
       choices: [
         { label: 'I understand. Farewell.', nextNode: null },
       ],
@@ -57,7 +57,7 @@ const aldricTree = {
       text: 'Stay vigilant, wanderer. The Veil does not rest, and neither should we.',
       choices: [
         { label: 'Tell me about the Veil.', nextNode: 'veil' },
-        { label: 'What lies south of here?', nextNode: 'south' },
+        { label: "What's happening to the south?", nextNode: 'south' },
         { label: 'Farewell.', nextNode: null },
       ],
     },

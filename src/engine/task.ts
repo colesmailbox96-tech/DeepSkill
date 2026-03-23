@@ -115,6 +115,13 @@ export interface TaskDefinition {
    * for immersive context.
    */
   journalEntry: string
+  /**
+   * Phase 86 — task ids that are automatically accepted when this task
+   * completes.  Used to chain quests sequentially rather than dumping every
+   * available task into the journal at once.  Each id must already be
+   * registered in the task registry.
+   */
+  unlocksTaskIds?: string[]
 }
 
 // ─── Registry ─────────────────────────────────────────────────────────────────

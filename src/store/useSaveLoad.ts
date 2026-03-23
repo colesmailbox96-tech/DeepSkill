@@ -8,6 +8,8 @@
  * vendor stock counts (so finite-supply items stay depleted across sessions).
  * Items marked resetEachSession in their VendorItem definition are excluded
  * from the restored stock and reset to their initial supply on every load.
+ * Phase 86 — task state (active + completed records) is now also saved so
+ * staged quest progression persists across sessions.
  * Large/transient state (NPC positions, combat, active sessions) is
  * intentionally excluded — it is rebuilt from defaults on each load.
  */
@@ -15,6 +17,8 @@ import { useCallback } from 'react'
 import { useGameStore } from './useGameStore'
 import { useShopStore } from './useShopStore'
 import { useFactionStore } from './useFactionStore'
+import { useTaskStore } from './useTaskStore'
+import type { TaskRecord } from './useTaskStore'
 import { getAllVendorDefs } from '../engine/shop'
 import type { PlayerStats, InventoryState, EquipmentState, Settings } from './useGameStore'
 import type { SkillsState } from './useGameStore'
@@ -33,6 +37,15 @@ interface SaveSnapshot {
   vendorStocks?: Record<string, Record<string, number>>
   /** Phase 76 — faction reputation values. Optional for backward compatibility. */
   factionRep?: Record<string, number>
+  /**
+   * Phase 86 — task journal state.  Optional for backward compatibility with
+   * saves created before Phase 86.  Storing this prevents the task list from
+   * resetting to only the intro task every time the player continues a game.
+   */
+  taskState?: {
+    active: TaskRecord[]
+    completed: TaskRecord[]
+  }
 }
 
 /** Runtime guard: verify that `v` is a finite, non-NaN number. */
@@ -48,6 +61,7 @@ export function useSaveGame(): () => boolean {
         useGameStore.getState()
       const { vendorStocks } = useShopStore.getState()
       const { rep: factionRep } = useFactionStore.getState()
+      const { active: taskActive, completed: taskCompleted } = useTaskStore.getState()
       const snapshot: SaveSnapshot = {
         version: 1,
         playerStats,
@@ -57,6 +71,7 @@ export function useSaveGame(): () => boolean {
         settings,
         vendorStocks,
         factionRep,
+        taskState: { active: taskActive, completed: taskCompleted },
       }
       localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot))
       return true
@@ -192,6 +207,18 @@ export function useLoadGame(): () => void {
           useFactionStore.setState((s) => ({
             rep: { ...s.rep, ...validatedRep },
           }))
+        }
+      }
+
+      // Phase 86 — restore task journal state if present.
+      // Absent in saves from before Phase 86; the game will start with the
+      // default intro task and chain progression from there.
+      // We set task state directly (without re-granting rewards) so that
+      // completed-task rewards are not awarded a second time on load.
+      if (snapshot.taskState && typeof snapshot.taskState === 'object') {
+        const { active, completed } = snapshot.taskState
+        if (Array.isArray(active) && Array.isArray(completed)) {
+          useTaskStore.setState({ active, completed })
         }
       }
     } catch (err) {
