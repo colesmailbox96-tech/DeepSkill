@@ -20,6 +20,7 @@ import { useFactionStore } from './useFactionStore'
 import { useTaskStore } from './useTaskStore'
 import type { TaskRecord } from './useTaskStore'
 import { getAllVendorDefs } from '../engine/shop'
+import { getTask } from '../engine/task'
 import type { PlayerStats, InventoryState, EquipmentState, Settings } from './useGameStore'
 import type { SkillsState } from './useGameStore'
 
@@ -218,7 +219,56 @@ export function useLoadGame(): () => void {
       if (snapshot.taskState && typeof snapshot.taskState === 'object') {
         const { active, completed } = snapshot.taskState
         if (Array.isArray(active) && Array.isArray(completed)) {
-          useTaskStore.setState({ active, completed })
+          const validateRecord = (raw: unknown): TaskRecord | null => {
+            if (!raw || typeof raw !== 'object') return null
+            const r = raw as Record<string, unknown>
+
+            // taskId must be a non-empty string that maps to a registered task.
+            if (typeof r.taskId !== 'string' || !r.taskId) return null
+            const def = getTask(r.taskId)
+            if (!def) return null
+
+            // progress must be a plain object; each value must be a finite number.
+            if (!r.progress || typeof r.progress !== 'object' || Array.isArray(r.progress)) return null
+            const rawProgress = r.progress as Record<string, unknown>
+            const validatedProgress: Record<string, number> = {}
+            for (const [key, val] of Object.entries(rawProgress)) {
+              if (typeof val === 'number' && Number.isFinite(val)) {
+                // Cap the value at the objective's required amount so a crafted
+                // save cannot mark objectives complete beyond their limit.
+                const obj = def.objectives.find((o) => o.id === key)
+                validatedProgress[key] = obj
+                  ? Math.max(0, Math.min(Math.floor(val), obj.required))
+                  : Math.max(0, Math.floor(val))
+              } else {
+                validatedProgress[key] = 0
+              }
+            }
+
+            // acceptedAt must be a finite number (Unix ms timestamp).
+            if (typeof r.acceptedAt !== 'number' || !Number.isFinite(r.acceptedAt)) return null
+
+            // completedAt is optional but must be a finite number when present.
+            const completedAt =
+              r.completedAt !== undefined
+                ? typeof r.completedAt === 'number' && Number.isFinite(r.completedAt)
+                  ? r.completedAt
+                  : null
+                : undefined
+            if (completedAt === null) return null
+
+            const record: TaskRecord = {
+              taskId: r.taskId,
+              progress: validatedProgress,
+              acceptedAt: r.acceptedAt,
+              ...(completedAt !== undefined ? { completedAt } : {}),
+            }
+            return record
+          }
+
+          const validActive = active.map(validateRecord).filter((r): r is TaskRecord => r !== null)
+          const validCompleted = completed.map(validateRecord).filter((r): r is TaskRecord => r !== null)
+          useTaskStore.setState({ active: validActive, completed: validCompleted })
         }
       }
     } catch (err) {
