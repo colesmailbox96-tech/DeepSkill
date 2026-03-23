@@ -1,5 +1,6 @@
 /**
  * Phase 59 — Cook Panel
+ * Phase 70 — Crafting Panel UX Pass (filter bar, output preview, missing-material feedback)
  *
  * A hearthfire-side recipe browser that opens when the player interacts with
  * the campfire cook station.  All cookable recipes are listed; each row shows
@@ -9,12 +10,14 @@
  * Pressing Escape or clicking ✕ closes the panel.
  */
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useCookPanelStore } from '../../store/useCookPanelStore'
 import { useGameStore } from '../../store/useGameStore'
 import { getItem } from '../../data/items/itemRegistry'
 import { getAllCookRecipes } from '../../engine/cooking'
 import type { CookRecipeConfig } from '../../engine/cooking'
+import { CraftFilterBar, RecipeOutputPreview } from './CraftFilterBar'
+import type { CraftSortMode } from './CraftFilterBar'
 
 // ─── Recipe row ───────────────────────────────────────────────────────────
 
@@ -56,6 +59,7 @@ function CookRecipeRow({ recipe, ingredientQty, cookingLevel, onCook }: CookReci
           <span className="cook-recipe__lock-badge">Hearthcraft {recipe.levelReq} req</span>
         )}
       </div>
+      <RecipeOutputPreview outputDef={cookedDef} />
       <div className="cook-recipe__stats">
         <span className="cook-recipe__heal">+{recipe.healsHp} HP</span>
         {staminaLine && <span className="cook-recipe__stamina">{staminaLine}</span>}
@@ -70,7 +74,7 @@ function CookRecipeRow({ recipe, ingredientQty, cookingLevel, onCook }: CookReci
       </div>
       <div className="cook-recipe__bottom">
         <span className={`cook-recipe__count${hasIngredient ? '' : ' cook-recipe__count--low'}`}>
-          In bag: {ingredientQty}
+          In bag: {ingredientQty}{!hasIngredient && <span className="craft-need"> (need 1 more)</span>}
         </span>
         <button
           className="cook-recipe__btn"
@@ -100,6 +104,9 @@ export function CookPanel({ onCookSelect }: CookPanelProps) {
     (s) => s.skills.skills.find((sk) => sk.id === 'hearthcraft')?.level ?? 1,
   )
 
+  const [craftableOnly, setCraftableOnly] = useState(false)
+  const [sortMode, setSortMode] = useState<CraftSortMode>('level')
+
   const isOpenRef = useRef(false)
   useEffect(() => { isOpenRef.current = isOpen }, [isOpen])
   const panelRef = useRef<HTMLDivElement>(null)
@@ -123,8 +130,20 @@ export function CookPanel({ onCookSelect }: CookPanelProps) {
 
   if (!isOpen) return null
 
-  const recipes = getAllCookRecipes()
+  const allRecipes = getAllCookRecipes()
   const getQty = (id: string) => slots.find((s) => s.id === id)?.quantity ?? 0
+
+  const craftableRecipes = allRecipes.filter(
+    (r) => cookingLevel >= r.levelReq && getQty(r.rawId) > 0,
+  )
+
+  const visibleRecipes = (craftableOnly ? craftableRecipes : allRecipes)
+    .slice()
+    .sort((a, b) =>
+      sortMode === 'name'
+        ? (getItem(a.cookedId)?.name ?? a.cookedId).localeCompare(getItem(b.cookedId)?.name ?? b.cookedId)
+        : a.levelReq - b.levelReq,
+    )
 
   const handleCook = (recipe: CookRecipeConfig) => {
     closePanel()
@@ -153,9 +172,19 @@ export function CookPanel({ onCookSelect }: CookPanelProps) {
         </button>
       </div>
 
+      {/* ── Filter bar ─────────────────────────────────────────────────── */}
+      <CraftFilterBar
+        craftableOnly={craftableOnly}
+        sortMode={sortMode}
+        onToggleCraftable={() => setCraftableOnly((v) => !v)}
+        onSetSort={setSortMode}
+        craftableCount={craftableRecipes.length}
+        totalCount={allRecipes.length}
+      />
+
       {/* ── Recipe list ────────────────────────────────────────────────── */}
       <ul className="cook-panel__list" role="list">
-        {recipes.map((recipe) => (
+        {visibleRecipes.map((recipe) => (
           <CookRecipeRow
             key={recipe.cookedId}
             recipe={recipe}

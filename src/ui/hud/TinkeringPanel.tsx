@@ -1,5 +1,6 @@
 /**
  * Phase 43 — Tinkering Panel
+ * Phase 70 — Crafting Panel UX Pass (filter bar, output preview, missing-material feedback)
  *
  * A bench-side crafting panel toggled when the player interacts with the
  * Tinkerer's Bench or presses T while near it.  All tinkering recipes are
@@ -8,12 +9,14 @@
  * Pressing T, Escape, or clicking ✕ closes the panel.
  */
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTinkeringStore } from '../../store/useTinkeringStore'
 import { useGameStore } from '../../store/useGameStore'
 import { getItem } from '../../data/items/itemRegistry'
 import { getAllTinkerRecipes } from '../../engine/tinkering'
 import type { TinkerRecipeConfig } from '../../engine/tinkering'
+import { CraftFilterBar, RecipeOutputPreview } from './CraftFilterBar'
+import type { CraftSortMode } from './CraftFilterBar'
 
 // ─── Recipe row ───────────────────────────────────────────────────────────
 
@@ -32,6 +35,7 @@ function TinkerRecipeRow({ recipe, materialQty, tinkeringLevel, onTinker }: Tink
   const meetsLevel   = tinkeringLevel >= recipe.levelReq
   const hasMaterial  = materialQty >= recipe.materialQty
   const canTinker    = meetsLevel && hasMaterial
+  const need         = Math.max(0, recipe.materialQty - materialQty)
 
   return (
     <li className={`tinkering-recipe${canTinker ? '' : ' tinkering-recipe--locked'}`}>
@@ -45,6 +49,7 @@ function TinkerRecipeRow({ recipe, materialQty, tinkeringLevel, onTinker }: Tink
           <span className="tinkering-recipe__lock-badge">Tinkering {recipe.levelReq} req</span>
         )}
       </div>
+      <RecipeOutputPreview outputDef={outputDef} />
       <div className="tinkering-recipe__meta">
         <span>Lvl {recipe.levelReq}</span>
         <span>·</span>
@@ -54,7 +59,7 @@ function TinkerRecipeRow({ recipe, materialQty, tinkeringLevel, onTinker }: Tink
       </div>
       <div className="tinkering-recipe__bottom">
         <span className={`tinkering-recipe__count${hasMaterial ? '' : ' tinkering-recipe__count--low'}`}>
-          In bag: {materialQty}
+          In bag: {materialQty}{need > 0 && <span className="craft-need"> (need {need} more)</span>}
         </span>
         <button
           className="tinkering-recipe__btn"
@@ -84,6 +89,9 @@ export function TinkeringPanel({ onTinker }: TinkeringPanelProps) {
     (s) => s.skills.skills.find((sk) => sk.id === 'tinkering')?.level ?? 1,
   )
 
+  const [craftableOnly, setCraftableOnly] = useState(false)
+  const [sortMode, setSortMode] = useState<CraftSortMode>('level')
+
   const isOpenRef = useRef(false)
   useEffect(() => { isOpenRef.current = isOpen }, [isOpen])
   const panelRef = useRef<HTMLDivElement>(null)
@@ -109,10 +117,22 @@ export function TinkeringPanel({ onTinker }: TinkeringPanelProps) {
 
   if (!isOpen) return null
 
-  const recipes = getAllTinkerRecipes()
+  const allRecipes = getAllTinkerRecipes()
 
   const getMaterialQty = (materialId: string): number =>
     slots.find((s) => s.id === materialId)?.quantity ?? 0
+
+  const craftableRecipes = allRecipes.filter(
+    (r) => tinkeringLevel >= r.levelReq && getMaterialQty(r.materialId) >= r.materialQty,
+  )
+
+  const visibleRecipes = (craftableOnly ? craftableRecipes : allRecipes)
+    .slice()
+    .sort((a, b) =>
+      sortMode === 'name'
+        ? (getItem(a.outputId)?.name ?? a.outputId).localeCompare(getItem(b.outputId)?.name ?? b.outputId)
+        : a.levelReq - b.levelReq,
+    )
 
   return (
     <div
@@ -136,9 +156,19 @@ export function TinkeringPanel({ onTinker }: TinkeringPanelProps) {
         </button>
       </div>
 
+      {/* ── Filter bar ─────────────────────────────────────────────────── */}
+      <CraftFilterBar
+        craftableOnly={craftableOnly}
+        sortMode={sortMode}
+        onToggleCraftable={() => setCraftableOnly((v) => !v)}
+        onSetSort={setSortMode}
+        craftableCount={craftableRecipes.length}
+        totalCount={allRecipes.length}
+      />
+
       {/* ── Recipe list ────────────────────────────────────────────────── */}
       <ul className="tinkering-panel__list" role="list">
-        {recipes.map((recipe) => (
+        {visibleRecipes.map((recipe) => (
           <TinkerRecipeRow
             key={recipe.outputId}
             recipe={recipe}
