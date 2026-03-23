@@ -242,6 +242,13 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
     _grantRewards(def)
     useNotifications.getState().push(`Task complete: ${def.title}`, 'success')
+
+    // Phase 86 — auto-accept any tasks unlocked by this completion.
+    if (def.unlocksTaskIds && def.unlocksTaskIds.length > 0) {
+      for (const nextId of def.unlocksTaskIds) {
+        get().acceptTask(nextId)
+      }
+    }
   },
 
   isActive: (taskId) => get().active.some((r) => r.taskId === taskId),

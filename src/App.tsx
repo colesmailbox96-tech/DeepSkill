@@ -279,33 +279,23 @@ function App() {
   // be marked as complete when the player speaks to the target NPC.
   const openDialogueNpcName = useDialogueStore((s) => s.activeTree?.npcName ?? null)
 
-  // Auto-accept all tasks once at game start (runs once because the dependency
-  // array is empty; acceptTask is idempotent for known tasks).
+  // Phase 86 — Staged task introduction.
+  // Only the first introductory task is accepted automatically.  All subsequent
+  // tasks unlock through the chain mechanism (TaskDefinition.unlocksTaskIds)
+  // so the player's journal is not flooded with every quest at once.
+  // The check guards against re-accepting the intro task when continuing a
+  // saved game where task state has already been restored from the snapshot.
+  const menuVisible = useMainMenuStore((s) => s.isVisible)
   useEffect(() => {
-    useTaskStore.getState().acceptTask('word_from_the_elder')
-    useTaskStore.getState().acceptTask('warm_runoff')
-    // Phase 38 — practical starter tasks
-    useTaskStore.getState().acceptTask('haul_for_the_hearth')
-    useTaskStore.getState().acceptTask('stock_the_camp_stores')
-    useTaskStore.getState().acceptTask('stone_from_the_quarry')
-    // Phase 64 — Tidemark Storyline Arc
-    useTaskStore.getState().acceptTask('tidemark_word')
-    useTaskStore.getState().acceptTask('tidemark_ward_proof')
-    useTaskStore.getState().acceptTask('tidemark_mist_born')
-    useTaskStore.getState().acceptTask('tidemark_sealed_shaft')
-    // Phase 75 — Chain 1: The Foreman's Contract
-    useTaskStore.getState().acceptTask('quarry_word')
-    useTaskStore.getState().acceptTask('quarry_iron_haul')
-    useTaskStore.getState().acceptTask('quarry_deep_seam')
-    // Phase 75 — Chain 2: Mist and Fen
-    useTaskStore.getState().acceptTask('fen_signal')
-    useTaskStore.getState().acceptTask('fen_samples')
-    useTaskStore.getState().acceptTask('fen_ward_work')
-    // Phase 75 — Chain 3: The Elder's Survey
-    useTaskStore.getState().acceptTask('survey_reach')
-    useTaskStore.getState().acceptTask('survey_samples')
-    useTaskStore.getState().acceptTask('survey_report')
-  }, [])
+    if (menuVisible) return
+    const { active, completed } = useTaskStore.getState()
+    const introTracked =
+      active.some((r) => r.taskId === 'word_from_the_elder') ||
+      completed.some((r) => r.taskId === 'word_from_the_elder')
+    if (!introTracked) {
+      useTaskStore.getState().acceptTask('word_from_the_elder')
+    }
+  }, [menuVisible])
 
   // Advance 'talk' objectives and handle 'deliver' objectives when the player
   // opens dialogue with an NPC.
@@ -391,8 +381,7 @@ function App() {
   const loadGame = useLoadGame()
 
   // ── Phase 51 — Main Menu / Continue Flow ─────────────────────────────────
-  const menuVisible = useMainMenuStore((s) => s.isVisible)
-  const hideMenu    = useMainMenuStore((s) => s.hide)
+  const hideMenu = useMainMenuStore((s) => s.hide)
 
   // Check for an existing save exactly once when the component mounts.
   // The value is stable for the lifetime of the menu — it only becomes
@@ -418,7 +407,13 @@ function App() {
     useSaveLoadStore.getState().notifyCleared()
     useGameStore.getState().resetToDefaults()
     useFactionStore.getState().resetToDefaults()
+    // Phase 86 — reset task state so the player starts with a clean journal.
+    useTaskStore.setState({ active: [], completed: [] })
     hideMenu()
+    // Phase 86 — brief welcome hint pointing the player toward their first step.
+    useNotifications
+      .getState()
+      .push('Find Aldric the Village Elder — he wants a word before you head south.', 'info')
   }
 
   // Auto-save every 60 seconds, but only after the player has entered the world.

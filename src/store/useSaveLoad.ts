@@ -8,6 +8,8 @@
  * vendor stock counts (so finite-supply items stay depleted across sessions).
  * Items marked resetEachSession in their VendorItem definition are excluded
  * from the restored stock and reset to their initial supply on every load.
+ * Phase 86 — task state (active + completed records) is now also saved so
+ * staged quest progression persists across sessions.
  * Large/transient state (NPC positions, combat, active sessions) is
  * intentionally excluded — it is rebuilt from defaults on each load.
  */
@@ -15,7 +17,10 @@ import { useCallback } from 'react'
 import { useGameStore } from './useGameStore'
 import { useShopStore } from './useShopStore'
 import { useFactionStore } from './useFactionStore'
+import { useTaskStore } from './useTaskStore'
+import type { TaskRecord } from './useTaskStore'
 import { getAllVendorDefs } from '../engine/shop'
+import { getTask } from '../engine/task'
 import type { PlayerStats, InventoryState, EquipmentState, Settings } from './useGameStore'
 import type { SkillsState } from './useGameStore'
 
@@ -33,6 +38,15 @@ interface SaveSnapshot {
   vendorStocks?: Record<string, Record<string, number>>
   /** Phase 76 — faction reputation values. Optional for backward compatibility. */
   factionRep?: Record<string, number>
+  /**
+   * Phase 86 — task journal state.  Optional for backward compatibility with
+   * saves created before Phase 86.  Storing this prevents the task list from
+   * resetting to only the intro task every time the player continues a game.
+   */
+  taskState?: {
+    active: TaskRecord[]
+    completed: TaskRecord[]
+  }
 }
 
 /** Runtime guard: verify that `v` is a finite, non-NaN number. */
@@ -48,6 +62,7 @@ export function useSaveGame(): () => boolean {
         useGameStore.getState()
       const { vendorStocks } = useShopStore.getState()
       const { rep: factionRep } = useFactionStore.getState()
+      const { active: taskActive, completed: taskCompleted } = useTaskStore.getState()
       const snapshot: SaveSnapshot = {
         version: 1,
         playerStats,
@@ -57,6 +72,7 @@ export function useSaveGame(): () => boolean {
         settings,
         vendorStocks,
         factionRep,
+        taskState: { active: taskActive, completed: taskCompleted },
       }
       localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot))
       return true
@@ -192,6 +208,67 @@ export function useLoadGame(): () => void {
           useFactionStore.setState((s) => ({
             rep: { ...s.rep, ...validatedRep },
           }))
+        }
+      }
+
+      // Phase 86 — restore task journal state if present.
+      // Absent in saves from before Phase 86; the game will start with the
+      // default intro task and chain progression from there.
+      // We set task state directly (without re-granting rewards) so that
+      // completed-task rewards are not awarded a second time on load.
+      if (snapshot.taskState && typeof snapshot.taskState === 'object') {
+        const { active, completed } = snapshot.taskState
+        if (Array.isArray(active) && Array.isArray(completed)) {
+          const validateRecord = (raw: unknown): TaskRecord | null => {
+            if (!raw || typeof raw !== 'object') return null
+            const r = raw as Record<string, unknown>
+
+            // taskId must be a non-empty string that maps to a registered task.
+            if (typeof r.taskId !== 'string' || !r.taskId) return null
+            const def = getTask(r.taskId)
+            if (!def) return null
+
+            // progress must be a plain object; each value must be a finite number.
+            if (!r.progress || typeof r.progress !== 'object' || Array.isArray(r.progress)) return null
+            const rawProgress = r.progress as Record<string, unknown>
+            const validatedProgress: Record<string, number> = {}
+            for (const [key, val] of Object.entries(rawProgress)) {
+              if (typeof val === 'number' && Number.isFinite(val)) {
+                // Cap the value at the objective's required amount so a crafted
+                // save cannot mark objectives complete beyond their limit.
+                const obj = def.objectives.find((o) => o.id === key)
+                validatedProgress[key] = obj
+                  ? Math.max(0, Math.min(Math.floor(val), obj.required))
+                  : Math.max(0, Math.floor(val))
+              } else {
+                validatedProgress[key] = 0
+              }
+            }
+
+            // acceptedAt must be a finite number (Unix ms timestamp).
+            if (typeof r.acceptedAt !== 'number' || !Number.isFinite(r.acceptedAt)) return null
+
+            // completedAt is optional but must be a finite number when present.
+            const completedAt =
+              r.completedAt !== undefined
+                ? typeof r.completedAt === 'number' && Number.isFinite(r.completedAt)
+                  ? r.completedAt
+                  : null
+                : undefined
+            if (completedAt === null) return null
+
+            const record: TaskRecord = {
+              taskId: r.taskId,
+              progress: validatedProgress,
+              acceptedAt: r.acceptedAt,
+              ...(completedAt !== undefined ? { completedAt } : {}),
+            }
+            return record
+          }
+
+          const validActive = active.map(validateRecord).filter((r): r is TaskRecord => r !== null)
+          const validCompleted = completed.map(validateRecord).filter((r): r is TaskRecord => r !== null)
+          useTaskStore.setState({ active: validActive, completed: validCompleted })
         }
       }
     } catch (err) {
