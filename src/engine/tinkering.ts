@@ -3,6 +3,7 @@
  * Phase 58 — Dusk Lens Mount added.
  * Phase 62 — Creature Loot Expansion: sealing_pitch, hide_wrap, char_pad added.
  * Phase 66 — Salvage System: vault_mortar, relic_rivet added.
+ * Phase 68 — Light and Visibility Mechanics: hollow_lantern added.
  *
  * Provides a tinkerer's bench station and the assembly interface for
  * Veilmarch.  A single bench is placed in the Hushwood settlement; players
@@ -20,6 +21,7 @@
  *   iron_bar        ×1 + ember_ram_hide   ×2 → char_pad         (lvl 7, 12 s, 34 xp) [Phase 62]
  *   crumbled_masonry×2                       → vault_mortar     (lvl 5, 11 s, 28 xp) [Phase 66]
  *   iron_relic_fragment×1                    → relic_rivet      (lvl 6, 14 s, 32 xp) [Phase 66]
+ *   lantern_parts×1 + vault_seal_wax×1       → hollow_lantern   (lvl 3, 12 s, 22 xp) [Phase 68]
  *
  * The caller (App.tsx) owns the level check, timed session, item swap, and XP
  * grant.  This module provides the data, station visual, and helpers.
@@ -32,10 +34,10 @@ import { useGameStore } from '../store/useGameStore'
 // ─── Recipe configuration ─────────────────────────────────────────────────
 
 /** All tinkerable material IDs. */
-export type TinkerableId = 'copper_bar' | 'iron_bar' | 'ashwood_shaft' | 'duskiron_bar' | 'crumbled_masonry' | 'iron_relic_fragment'
+export type TinkerableId = 'copper_bar' | 'iron_bar' | 'ashwood_shaft' | 'duskiron_bar' | 'crumbled_masonry' | 'iron_relic_fragment' | 'lantern_parts'
 
 /** Union of every tinkering output ID. */
-export type TinkerOutputId = 'lantern_parts' | 'reinforced_hook' | 'bait_basket' | 'repair_clamp' | 'dusk_lens_mount' | 'sealing_pitch' | 'hide_wrap' | 'char_pad' | 'vault_mortar' | 'relic_rivet'
+export type TinkerOutputId = 'lantern_parts' | 'reinforced_hook' | 'bait_basket' | 'repair_clamp' | 'dusk_lens_mount' | 'sealing_pitch' | 'hide_wrap' | 'char_pad' | 'vault_mortar' | 'relic_rivet' | 'hollow_lantern'
 
 export interface TinkerRecipeConfig {
   /** Human-readable label for notifications. */
@@ -179,6 +181,20 @@ export const TINKER_RECIPE_CONFIG: Readonly<Record<TinkerOutputId, TinkerRecipeC
     tinkerDuration: 14,
     xp: 32,
   },
+
+  // Phase 68 — Light and Visibility Mechanics: the Hollow Lantern requires
+  // pre-assembled Lantern Parts sealed with Vault Seal Wax so the reservoir
+  // holds oil in the vault's damp air.
+  hollow_lantern: {
+    label: 'Hollow Lantern',
+    materialId: 'lantern_parts',
+    materialQty: 1,
+    secondaryIngredient: { id: 'vault_seal_wax', qty: 1, label: 'Vault Seal Wax' },
+    outputId: 'hollow_lantern',
+    levelReq: 3,
+    tinkerDuration: 12,
+    xp: 22,
+  },
 } as const
 
 /**
@@ -197,6 +213,7 @@ const TINKER_DISPLAY_ORDER: TinkerOutputId[] = [
   'char_pad',
   'vault_mortar',
   'relic_rivet',
+  'hollow_lantern',
 ]
 
 // ─── Tinkerer's bench station type ───────────────────────────────────────
