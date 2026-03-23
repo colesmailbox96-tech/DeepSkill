@@ -2629,7 +2629,9 @@ function App() {
         triggerZoneExplore('marrowfen')
       }
       // Phase 78 — Belowglass Vaults explore trigger.
-      if (player.mesh.position.x <= -98 && player.mesh.position.z >= -10 && player.mesh.position.z <= 10) {
+      // Guard with !bvGateSealed so this only fires once the player has
+      // actually passed through the gate, not while standing at the sealed slab.
+      if (!bvGateSealed && player.mesh.position.x < -98 && player.mesh.position.z >= -10 && player.mesh.position.z <= 10) {
         triggerZoneExplore('belowglass_vaults')
       }
       // Phase 75 — Redwake Quarry explore trigger (quarry basin begins at z ≤ −52).

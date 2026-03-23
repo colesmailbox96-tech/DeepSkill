@@ -1,12 +1,14 @@
 /**
  * Phase 66 — Salvage System
+ * Phase 78 — Belowglass Vaults salvage tier increase
  *
- * Adds interactive salvage nodes inside the Hollow Vault Steps zone.  Each
- * node represents a distinct category of ruin-derived material that the
- * player must have sufficient Salvaging skill to extract.
+ * Adds interactive salvage nodes inside the Hollow Vault Steps zone (Phase 66)
+ * and higher-tier salvage nodes inside the Belowglass Vaults threshold
+ * (Phase 78).  Each node represents a distinct category of ruin-derived
+ * material that the player must have sufficient Salvaging skill to extract.
  *
- * Node variants
- * ─────────────
+ * Node variants — Hollow Vault (Phase 66)
+ * ─────────────────────────────────────────
  *  masonry_rubble — Antechamber (x ≈ −64 → −73): loose stonework knocked
  *                   free from vault walls.  Yields crumbled_masonry.
  *  relic_cache    — Upper steps (x ≈ −77 → −86): corroded iron fittings
@@ -14,11 +16,29 @@
  *  wax_seal       — Lower floor (x ≈ −90 → −96): remnant wax seals pressed
  *                   into stone depressions.  Yields vault_seal_wax.
  *
+ * Node variants — Belowglass Vaults (Phase 78)
+ * ──────────────────────────────────────────────
+ *  vault_glass    — Threshold floor/mid-hall (x ≈ −106 → −112): shattered
+ *                   vaultglass panel fragments.  Yields vault_glass_shard.
+ *                   Salvaging level 5 required.
+ *  construct_core — Inner threshold (x ≈ −120 → −124): deactivated construct
+ *                   core plating extracted from dormant chassis.
+ *                   Yields construct_plating.  Salvaging level 6 required.
+ *
+ * Placement builders
+ * ──────────────────
+ *  buildSalvageNodes()      — spawns Hollow Vault nodes (9 total, Phase 66).
+ *  buildVaultSalvageNodes() — spawns Belowglass Vaults nodes (6 total, Phase 78).
+ *  App.tsx merges both into allSalvageNodes so the shared updateSalvageNodes()
+ *  handles respawn ticking for both sets.
+ *
  * Downstream uses
  * ───────────────
  *  crumbled_masonry   ×2 → vault_mortar      (Tinkering lvl 5, 11 s, 28 xp)
  *  iron_relic_fragment×1 → relic_rivet       (Tinkering lvl 6, 14 s, 32 xp)
  *  vault_seal_wax     ×2 → vault_seal_ward   (Warding   lvl 3, 18 s, 24 xp)
+ *  vault_glass_shard  — late-tier smithing / tinkering component (Phase 79+)
+ *  construct_plating  — late-tier armour component (Phase 79+)
  *
  * All salvage materials can be sold to Tomas (General Trader) or bought from
  * his limited stock when the player has not yet unlocked the vault.

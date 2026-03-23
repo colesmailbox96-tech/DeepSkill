@@ -103,6 +103,13 @@ export function buildBelowglassVaults(
   floor.position.set(-115, 0.01, 0)
   scene.add(floor)
 
+  // Narrow entry strip bridging the Hollow Vault lower floor to the threshold
+  // (x = −98 → −102).  Fills the visual gap at the Belowglass gate/slab.
+  const entryStrip = new THREE.Mesh(new THREE.PlaneGeometry(4, 20), matThresholdFloor)
+  entryStrip.rotation.x = -Math.PI / 2
+  entryStrip.position.set(-100, 0.01, 0)
+  scene.add(entryStrip)
+
   // ── Boundary walls ─────────────────────────────────────────────────────────
   // North wall (z = −10)
   const boundN  = _addWall(scene, 26, 6, 0.4,  -115, 3, -10.2, matBound)
