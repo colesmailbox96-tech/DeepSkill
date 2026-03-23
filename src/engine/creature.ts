@@ -662,6 +662,83 @@ const CREATURE_DEFS: CreatureDef[] = [
     dropItemId: 'construct_plating',
     dropChance: 0.60,
   },
+
+  // ── Phase 82 — Higher Threat Creature Pack ────────────────────────────────
+
+  // 16. Deep Husk — Phase 82 Belowglass Vaults inner-chamber creature.  A
+  //     massive, hollowed ruin-construct whose outer casing has calcified into
+  //     a dense membrane over centuries of vault stasis.  Slow and methodical,
+  //     it absorbs enormous punishment before collapsing.  Drops husk_membrane.
+  {
+    id: 'deep_husk',
+    name: 'Deep Husk',
+    x: -126,
+    z: -7,
+    color: 0x5a4a38,
+    scale: 1.50,
+    roamRadius: 4,
+    pursuitRadius: 12,
+    leashRadius: 18,
+    speed: 1.3,
+    idleBase: 6.0,
+    aggroRadius: 7,
+    maxHp: 90,
+    attackDamage: 14,
+    attackCooldown: 3.2,
+    respawnDelay: 100,
+    dropItemId: 'husk_membrane',
+    dropChance: 0.65,
+  },
+
+  // 17. Glassjaw Sentinel — Phase 82 Belowglass Vaults creature.  A swift,
+  //     angular construct assembled from reinforced glass-alloy plating.
+  //     Its striking face is its most distinctive feature — powerful but prone
+  //     to fracturing under sustained counterattacks.  Drops glassjaw_shard.
+  {
+    id: 'glassjaw_sentinel',
+    name: 'Glassjaw Sentinel',
+    x: -116,
+    z: 7,
+    color: 0x9ad0e8,
+    scale: 1.05,
+    roamRadius: 6,
+    pursuitRadius: 18,
+    leashRadius: 24,
+    speed: 3.0,
+    idleBase: 3.5,
+    aggroRadius: 9,
+    maxHp: 45,
+    attackDamage: 11,
+    attackCooldown: 1.8,
+    respawnDelay: 55,
+    dropItemId: 'glassjaw_shard',
+    dropChance: 0.70,
+  },
+
+  // 18. Lantern Eel — Phase 82 Marrowfen deep channel creature.  A long,
+  //     bioluminescent predator that lurks in the darkest murky channels of
+  //     the inner fen.  Its glowing lure draws prey close before it strikes
+  //     with a rapid, electrified bite.  Drops eel_lantern_organ.
+  {
+    id: 'lantern_eel',
+    name: 'Lantern Eel',
+    x: 16,
+    z: 95,
+    color: 0x2a7a60,
+    scale: 0.85,
+    roamRadius: 8,
+    pursuitRadius: 22,
+    leashRadius: 28,
+    speed: 3.6,
+    idleBase: 3.0,
+    aggroRadius: 8,
+    maxHp: 38,
+    attackDamage: 9,
+    attackCooldown: 1.4,
+    respawnDelay: 50,
+    dropItemId: 'eel_lantern_organ',
+    dropChance: 0.75,
+  },
 ]
 
 /** Interaction radius for wildlife harvest. */
