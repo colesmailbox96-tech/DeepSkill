@@ -241,10 +241,16 @@ export function buildHollowVault(
   // Lower vault boundary walls
   collidables.push(_addWall(scene, 10, 4, 0.4, lowerFloorCentreX, 2, -8, matBound))
   collidables.push(_addWall(scene, 10, 4, 0.4, lowerFloorCentreX, 2,  8, matBound))
-  collidables.push(_addWall(scene, 0.4, 4, 16, -98, 2, 0, matBound))
+  // West wall at x = −98.  A 12-unit central gap (z = −6 → +6) provides the
+  // connection corridor to the Belowglass Vaults (Phase 78).  Two flanking
+  // sections fill the north (z = −8 → −6) and south (z = +6 → +8) edges.
+  collidables.push(_addWall(scene, 0.4, 4, 2, -98, 2, -7, matBound))
+  collidables.push(_addWall(scene, 0.4, 4, 2, -98, 2,  7, matBound))
   _addBox(scene, 10, 3.0, 0.3, lowerFloorCentreX, 1.5, -7.85, matRuinDark)
   _addBox(scene, 10, 3.0, 0.3, lowerFloorCentreX, 1.5,  7.85, matRuinDark)
-  _addBox(scene, 0.3, 3.0, 16, -97.9, 1.5, 0, matRuinDark)
+  // Decorative west face — same gap as the collidable wall above.
+  _addBox(scene, 0.3, 3.0, 2, -97.9, 1.5, -7, matRuinDark)
+  _addBox(scene, 0.3, 3.0, 2, -97.9, 1.5,  7, matRuinDark)
 
   // Low overhead ceiling fragments (visual atmosphere — low clearance feel)
   const ceilMat = new THREE.MeshStandardMaterial({ color: 0x1a1818, roughness: 0.98 })

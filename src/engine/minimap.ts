@@ -15,8 +15,8 @@
 // ─── World bounds ─────────────────────────────────────────────────────────────
 
 /** Leftmost (west) world X used for canvas projection.
- *  Hollow Vault Steps west boundary is x=−98 (hollow_vault.ts). */
-export const WORLD_MIN_X = -102
+ *  Belowglass Vaults west boundary is x=−128 (belowglass_vaults.ts). */
+export const WORLD_MIN_X = -132
 /** Rightmost (east) world X used for canvas projection.
  *  Shoreline zone extends to x=+80 (shoreline.ts), the true easternmost bound;
  *  Ashfen Copse east boundary is x=+72 (ashfen_copse.ts). */
@@ -48,6 +48,15 @@ export interface MinimapRegion {
 }
 
 export const MINIMAP_REGIONS: MinimapRegion[] = [
+  {
+    id: 'belowglass_vaults',
+    label: 'Belowglass Vaults',
+    // Western crystalline threshold: x < −98, z ∈ [−10, +10].
+    // Must be checked before 'hollow_vault' since belowglass is further west.
+    contains: (x, z) => x < -98 && z >= -10 && z <= 10,
+    color: '#1a2a38',
+    borderColor: '#3a6888',
+  },
   {
     id: 'hollow_vault',
     label: 'Hollow Vault Steps',
@@ -165,6 +174,10 @@ export const MINIMAP_MARKERS: MinimapMarker[] = [
   { id: 'vault_crawler',   label: 'Vault Crawler',   x: -82,    z:   -3,   kind: 'npc', icon: '🦂' },
   { id: 'stone_wraith',    label: 'Stone Wraith',    x: -93,    z:    3,   kind: 'npc', icon: '💀' },
 
+  // ── Belowglass Vaults encounters ────────────────────────────────────────────
+  { id: 'shard_construct', label: 'Shard Construct', x: -110,   z:   -4,   kind: 'npc', icon: '🔷' },
+  { id: 'glass_warden',    label: 'Glass Warden',    x: -124,   z:    3,   kind: 'npc', icon: '🛡️' },
+
   // ── Marrowfen encounters ────────────────────────────────────────────────────
   { id: 'bogfiend',        label: 'Bogfiend',        x:  -8,    z:   82,   kind: 'npc', icon: '🐊' },
   { id: 'mire_hound',      label: 'Mire Hound',      x:  10,    z:   72,   kind: 'npc', icon: '🐺' },
@@ -184,6 +197,7 @@ export const MINIMAP_MARKERS: MinimapMarker[] = [
   { id: 'zone_ashfen',        label: 'Ashfen Copse',    x:  53,    z:  -73,   kind: 'zone' },
   { id: 'zone_hollow_vault',  label: 'Hollow Vault',    x: -79,    z:    0,   kind: 'zone' },
   { id: 'zone_marrowfen',     label: 'Marrowfen',       x:   0,    z:   82,   kind: 'zone' },
+  { id: 'zone_belowglass',    label: 'Belowglass Vaults', x: -113, z:    0,   kind: 'zone' },
 ]
 
 // ─── Marker colour palette ────────────────────────────────────────────────────

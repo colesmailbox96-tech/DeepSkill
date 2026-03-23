@@ -1513,4 +1513,34 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       slot: 'neck',
     },
   },
+
+  // ── Phase 78 — Belowglass Vaults drop materials ───────────────────────────
+
+  {
+    id: 'vault_glass_shard',
+    name: 'Vault Glass Shard',
+    type: 'material',
+    stackable: true,
+    value: 32,
+    icon: 'items/vault_glass_shard.png',
+    description:
+      'A razor-edged fragment of the ancient vaultglass panels that once lined the ' +
+      'Belowglass threshold halls.  The glass is far harder than any surface material — ' +
+      'it holds a sharp cutting edge and refracts light with a pale blue-white gleam. ' +
+      'Smiths and tinkers prize it as a component in high-tier optical and cutting tools.',
+  },
+
+  {
+    id: 'construct_plating',
+    name: 'Construct Plating',
+    type: 'material',
+    stackable: true,
+    value: 45,
+    icon: 'items/construct_plating.png',
+    description:
+      'A thick interlocking plate salvaged from a deactivated vault construct. ' +
+      'The alloy composition is unknown to current craft traditions — dense, ' +
+      'corrosion-resistant, and faintly warm to the touch even long after the construct ' +
+      'was destroyed.  A key component in late-tier armour and precision mechanisms.',
+  },
 ]

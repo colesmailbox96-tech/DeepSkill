@@ -39,7 +39,7 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /** Unique identifier for an audio region. */
-export type AudioRegion = 'hushwood' | 'bog' | 'chapel' | 'quarry' | 'shoreline' | 'ashfen' | 'hollow_vault' | 'marrowfen'
+export type AudioRegion = 'hushwood' | 'bog' | 'chapel' | 'quarry' | 'shoreline' | 'ashfen' | 'hollow_vault' | 'marrowfen' | 'belowglass_vaults'
 
 /** Type of one-shot sound effect. */
 export type SfxType =
@@ -175,6 +175,19 @@ const REGION_CONFIG: Record<AudioRegion, RegionConfig> = {
     lfoDepth: 28,
     airLevel: 0.04,  // almost no open air — dense canopy and humid miasma
   },
+  // Phase 78 — Belowglass Vaults: cold, crystalline resonance.  The shattered
+  // glass panels amplify every footstep into a high-frequency ring; a very
+  // low subsonic drone emanates from the deepest vault machinery.
+  belowglass_vaults: {
+    filterType: 'highpass',
+    filterFreq: 80,
+    filterQ: 2.8,
+    droneFreq: 38,
+    droneLevel: 0.18,
+    lfoFreq: 0.015,  // near-static, like pressure in a sealed chamber
+    lfoDepth: 8,
+    airLevel: 0.02,  // almost no ambient air — crystal-still underground
+  },
 }
 
 // ─── Pentatonic music sequences ───────────────────────────────────────────────
@@ -245,6 +258,12 @@ const REGION_PEACEFUL_SEQ: Record<AudioRegion, [number, number][]> = {
   // by long rests; the silence feels as threatening as the notes.
   marrowfen: [
     [0, 0.9], [1, 0.7], [0, 1.2], [1, 0.85],
+  ],
+  // Phase 78 — Belowglass Vaults: eerie and crystalline — single high notes
+  // with very long gaps; the tonal quality should feel like glass resonating
+  // deep underground.
+  belowglass_vaults: [
+    [4, 0.8], [0, 1.4], [4, 0.7],
   ],
 }
 
@@ -816,6 +835,8 @@ export const audioManager = new AudioManager()
  * This mirrors the zone layout established by the world-building phases.
  */
 export function getAudioRegion(x: number, z: number): AudioRegion {
+  // Belowglass Vaults — further west than the Hollow Vault; checked first.
+  if (x < -98 && z >= -10 && z <= 10) return 'belowglass_vaults'
   // Hollow Vault Steps — deeper than the chapel; narrow z band within the chapel x range.
   if (x <= -60 && z >= -10 && z <= 10) return 'hollow_vault'
   if (x <= -32) return 'chapel'
