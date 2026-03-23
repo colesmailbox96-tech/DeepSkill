@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { createPlayer, updatePlayer } from './engine/player'
+import { createPlayer, updatePlayer, animatePlayer } from './engine/player'
 import {
   createCameraState,
   updateOrbitCamera,
@@ -419,6 +419,12 @@ function App() {
   const cookFromPanelRef = useRef<(recipe: CookRecipeConfig) => void>(() => {})
   /** Accumulator for throttling cache-status updates to ~1 Hz (Phase 45). */
   const surveyStatusAccumRef = useRef(0)
+  /**
+   * Phase 71 — Countdown (seconds) driving the 'interact' body animation.
+   * Set to a positive value when the player fires the [E] interact action;
+   * decremented each frame; player moveState is forced to 'interact' while > 0.
+   */
+  const interactAnimTimerRef = useRef(0)
 
   useEffect(() => {
     const container = sceneRef.current
@@ -1416,6 +1422,10 @@ function App() {
         if (interactionState.target) {
           audioManager.playSfx('interact')
           interactionState.target.onInteract()
+          // Phase 71 — anchor the interact arc to the current animPhase so
+          // it always starts from zero offset regardless of when [E] fires.
+          player.interactStartPhase = player.animPhase
+          interactAnimTimerRef.current = 0.4
         }
         return
       }
@@ -2610,6 +2620,50 @@ function App() {
         }
       }
       } // end !isDefeated
+
+      // Phase 71 — Override player moveState for animation purposes and call
+      // animatePlayer.  The moveState overrides only apply when the player is
+      // actively playing; when frozen (defeat overlay / main menu) we force
+      // 'idle' so the body reliably lerps back to rest.
+      if (!isDefeated && !isMenuVisible) {
+        // Gather: any active resource or crafting session → rhythmic dip loop.
+        const hasGatherSession =
+          !!choppingRef.current ||
+          !!miningRef.current  ||
+          !!fishingRef.current ||
+          !!cookingRef.current ||
+          !!smeltRef.current   ||
+          !!forgeRef.current   ||
+          !!carveRef.current   ||
+          !!tinkerRef.current  ||
+          !!tailorRef.current  ||
+          !!wardRef.current
+        if (hasGatherSession) {
+          player.moveState = 'gather'
+        }
+
+        // Attack: player has an active live target → fast oscillating pulse.
+        const combatTgt = combatRef.current.target
+        if (combatTgt && combatTgt.state !== 'dead') {
+          player.moveState = 'attack'
+        }
+
+        // Interact: [E] was pressed recently → single dip-and-rise arc.
+        if (interactAnimTimerRef.current > 0) {
+          interactAnimTimerRef.current -= delta
+          if (interactAnimTimerRef.current < 0) interactAnimTimerRef.current = 0
+          // Interact overrides idle and walk but yields to gather/attack.
+          if (player.moveState === 'idle' || player.moveState === 'walk') {
+            player.moveState = 'interact'
+          }
+        }
+      } else {
+        // Frozen: force idle so animatePlayer lerps the body back to rest.
+        player.moveState = 'idle'
+        interactAnimTimerRef.current = 0
+      }
+
+      animatePlayer(player, delta)
 
       renderer.render(scene, camera)
     }

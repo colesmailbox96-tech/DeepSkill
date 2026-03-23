@@ -1,11 +1,23 @@
 import * as THREE from 'three'
 
-export type MoveState = 'idle' | 'walk'
+/**
+ * Phase 71 — Animation Integration Pass adds 'gather', 'attack', and
+ * 'interact' states so animatePlayer() can drive distinct procedural loops.
+ */
+export type MoveState = 'idle' | 'walk' | 'gather' | 'attack' | 'interact'
 
 export interface Player {
   mesh: THREE.Group
   moveState: MoveState
   speed: number
+  /** Phase 71 — running timer (seconds) used as the phase input for procedural animations. */
+  animPhase: number
+  /**
+   * Phase 71 — `animPhase` value captured the moment the 'interact' arc started.
+   * Subtracted from `animPhase` in animatePlayer() so the arc always begins from
+   * zero offset regardless of when [E] is pressed.
+   */
+  interactStartPhase: number
 }
 
 /**
@@ -34,7 +46,7 @@ export function createPlayer(scene: THREE.Scene): Player {
 
   scene.add(group)
 
-  return { mesh: group, moveState: 'idle', speed: 5 }
+  return { mesh: group, moveState: 'idle', speed: 5, animPhase: 0, interactStartPhase: 0 }
 }
 
 export function updatePlayer(
@@ -115,6 +127,74 @@ export function updatePlayer(
       else if (m === dR) player.mesh.position.x = EX
       else if (m === dF) player.mesh.position.z = ez
       else player.mesh.position.z = EZ
+    }
+  }
+}
+
+// ── Phase 71 — Procedural animation ──────────────────────────────────────────
+
+/** Natural resting Y of the player body capsule mesh. */
+const BODY_BASE_Y = 0.8
+
+/**
+ * Phase 71 — Animate the player body with simple procedural sine-wave offsets.
+ *
+ * Call once per animation frame *after* updatePlayer() and any moveState
+ * overrides so the correct state drives the correct loop.
+ *
+ * Frequencies below are true Hz (complete cycles per second).  Each multiplier
+ * is `2π × frequency_Hz` so that `Math.sin(animPhase × multiplier)` oscillates
+ * at the stated rate regardless of the frame rate.
+ *
+ * States:
+ *   walk    — 2.5 Hz vertical bob (footstep rhythm).
+ *   gather  — 1.0 Hz downward dip (axe-swing / mining strike / cast cycle).
+ *   attack  — 4.0 Hz fast pulse while auto-attacking in melee.
+ *   interact — deterministic single dip-and-rise arc anchored to the [E] press.
+ *   idle    — body smoothly lerps back to rest height.
+ */
+export function animatePlayer(player: Player, delta: number): void {
+  player.animPhase += delta
+
+  const body = player.mesh.children[0] as THREE.Mesh
+  if (!body) return
+
+  switch (player.moveState) {
+    case 'walk': {
+      // 2.5 Hz vertical bob — simulates weight shifting between feet.
+      // Multiplier = 2π × 2.5 ≈ 15.71 rad/s.
+      body.position.y = BODY_BASE_Y + Math.sin(player.animPhase * Math.PI * 5) * 0.04
+      break
+    }
+    case 'gather': {
+      // 1.0 Hz downward dip — chop/mine/cast repeating cycle.
+      // Multiplier = 2π × 1.0 ≈ 6.28 rad/s.
+      // Math.max(0, sin(t)) produces [0,1] on the positive half-cycle and 0
+      // on the negative half, creating a repeated downward stroke + quick return.
+      const t = player.animPhase * Math.PI * 2
+      body.position.y = BODY_BASE_Y - Math.max(0, Math.sin(t)) * 0.12
+      break
+    }
+    case 'attack': {
+      // 4.0 Hz rapid pulse while auto-attacking.
+      // Multiplier = 2π × 4.0 ≈ 25.13 rad/s.
+      body.position.y = BODY_BASE_Y + Math.sin(player.animPhase * Math.PI * 8) * 0.06
+      break
+    }
+    case 'interact': {
+      // Deterministic single dip-and-rise arc anchored to when [E] was pressed.
+      // localPhase = 0 at trigger → arc starts exactly at rest, dips, and returns.
+      // Using abs(sin(localPhase × π / duration)) so the arc completes in ~0.4 s.
+      const localPhase = player.animPhase - player.interactStartPhase
+      body.position.y = BODY_BASE_Y - Math.abs(Math.sin(localPhase * Math.PI * 2.5)) * 0.08
+      break
+    }
+    default: {
+      // Idle: smoothly lerp back to the natural resting height.
+      // Clamp alpha to ≤ 1 so a frame-time spike can never overshoot BODY_BASE_Y.
+      const lerpAlpha = Math.min(1, delta * 6)
+      body.position.y = THREE.MathUtils.lerp(body.position.y, BODY_BASE_Y, lerpAlpha)
+      break
     }
   }
 }
