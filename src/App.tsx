@@ -178,6 +178,7 @@ import { TailoringPanel } from './ui/hud/TailoringPanel'
 import { WardingPanel } from './ui/hud/WardingPanel'
 import { CookPanel } from './ui/hud/CookPanel'
 import { HazardWarningHud } from './ui/hud/HazardWarningHud'
+import { GateBlockedHud } from './ui/hud/GateBlockedHud'
 import { AudioSettingsPanel } from './ui/hud/AudioSettingsPanel'
 import { audioManager, getAudioRegion } from './engine/audio'
 import type { AudioRegion } from './engine/audio'
@@ -1243,6 +1244,11 @@ function App() {
     // Phase 65 — Index of the vault gate slab in both collidables and
     // collidableBoxes.  Used to splice it out once the player unseals the gate.
     let vaultGateSlabIdx = collidables.indexOf(hollowVault.gateMesh)
+
+    // Phase 67 — Tracks whether the inner sanctum door is still sealed.
+    // The index is computed at removal time via indexOf() to avoid staleness
+    // caused by earlier collidable splices (e.g. vault gate slab removal).
+    let innerSanctumDoorSealed = true
 
     // Phase 03 — player controller
     const player = createPlayer(scene)
@@ -2487,6 +2493,22 @@ function App() {
           interactables.splice(gateInteractableIdx, 1)
         }
       }
+      // Phase 67 — Inner sanctum door: opened when the player satisfies the
+      // task requirement.  Index is computed at removal time to avoid stale
+      // values caused by earlier collidable splices (e.g. vault gate slab).
+      if (innerSanctumDoorSealed && hollowVault.innerSanctumDoor.pollOpened()) {
+        innerSanctumDoorSealed = false
+        hollowVault.innerSanctumDoor.mesh.visible = false
+        const doorCollidableIdx = collidables.indexOf(hollowVault.innerSanctumDoor.mesh)
+        if (doorCollidableIdx >= 0) {
+          collidables.splice(doorCollidableIdx, 1)
+          collidableBoxes.splice(doorCollidableIdx, 1)
+        }
+        const doorInteractableIdx = interactables.indexOf(hollowVault.innerSanctumDoor.interactable)
+        if (doorInteractableIdx !== -1) {
+          interactables.splice(doorInteractableIdx, 1)
+        }
+      }
       // Sync live target HP to the combat store so the React overlay stays current.
       // Cache the last values written to avoid redundant Zustand updates every frame.
       const combatTarget = combatRef.current.target
@@ -2643,6 +2665,8 @@ function App() {
           />
           {/* Phase 48 — Environmental hazard warning banner */}
           <HazardWarningHud />
+          {/* Phase 67 — Gate requirement feedback panel */}
+          <GateBlockedHud />
           {/* Phase 49 — Audio settings panel */}
           <AudioSettingsPanel />
           {/* Phase 50 — Save / Load panel */}
