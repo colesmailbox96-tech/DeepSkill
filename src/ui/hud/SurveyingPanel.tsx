@@ -135,7 +135,12 @@ export function SurveyingPanel({ onStartSurvey }: SurveyingPanelProps) {
             <li>
               <em>Ore Chip</em>, <em>Raw Resin</em>, <em>Reed Fiber</em>,{' '}
               <em>Marsh Herb</em>, <em>Flint Shard</em>, <em>Copper Ore</em>,{' '}
-              <em>Rare Fragment</em>, <em>Waystone Fragment</em>
+              <em>Rare Fragment</em>, <em>Waystone Fragment</em>,{' '}
+              <em>Vault Glass Shard</em>, <em>Construct Plating</em>,{' '}
+              <em>Fensteel Bar</em>, <em>Heartwrought Ingot</em>
+            </li>
+            <li className="surveying-panel__shortcut-hint">
+              ✦ Expert surveyors (lvl 5+) can clear hidden rubble passages to reveal secret shortcuts.
             </li>
           </ul>
         </div>

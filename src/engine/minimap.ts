@@ -132,7 +132,7 @@ export const MINIMAP_REGIONS: MinimapRegion[] = [
 // ─── Marker definitions ───────────────────────────────────────────────────────
 
 /** Category of map marker, drives icon and colour selection. */
-export type MarkerKind = 'spawn' | 'station' | 'npc' | 'zone'
+export type MarkerKind = 'spawn' | 'station' | 'npc' | 'zone' | 'secret'
 
 /** A named point of interest shown on the minimap. */
 export interface MinimapMarker {
@@ -200,6 +200,27 @@ export const MINIMAP_MARKERS: MinimapMarker[] = [
   { id: 'zone_belowglass',    label: 'Belowglass Vaults', x: -113, z:    0,   kind: 'zone' },
 ]
 
+// ─── Phase 80 — Shortcut / secret-passage markers ────────────────────────────
+
+/**
+ * Data for a hidden shortcut discovery marker.
+ * These are kept separate from MINIMAP_MARKERS so they can be rendered
+ * selectively — only after the player has opened the passage.
+ */
+export interface ShortcutMarkerDef {
+  /** Must match the id used in HiddenShortcutConfig. */
+  id: string
+  label: string
+  x: number
+  z: number
+}
+
+/** One entry for each hidden shortcut defined in HIDDEN_SHORTCUT_CONFIGS. */
+export const SHORTCUT_MARKERS: ShortcutMarkerDef[] = [
+  { id: 'shortcut_vault_breach',    label: 'Vault Breach',  x:  -72, z:   0 },
+  { id: 'shortcut_belowglass_rift', label: 'Rift Fissure',  x: -100, z:  -8 },
+]
+
 // ─── Marker colour palette ────────────────────────────────────────────────────
 
 /** Returns the fill colour for a marker kind. */
@@ -209,6 +230,7 @@ export function markerColor(kind: MarkerKind): string {
     case 'station': return '#ff9900'
     case 'npc':     return '#44ccff'
     case 'zone':    return 'rgba(255,255,255,0.0)'
+    case 'secret':  return '#cc88ff'
   }
 }
 
@@ -219,6 +241,7 @@ export function markerStroke(kind: MarkerKind): string {
     case 'station': return '#cc5500'
     case 'npc':     return '#0088aa'
     case 'zone':    return 'rgba(0,0,0,0)'
+    case 'secret':  return '#883399'
   }
 }
 

@@ -20,6 +20,7 @@ import { useMinimapStore } from '../../store/useMinimapStore'
 import {
   MINIMAP_REGIONS,
   MINIMAP_MARKERS,
+  SHORTCUT_MARKERS,
   WORLD_MIN_X,
   WORLD_MAX_X,
   WORLD_MIN_Z,
@@ -118,6 +119,7 @@ function drawMinimap(
   playerX: number,
   playerZ: number,
   playerAngle: number,
+  discoveredShortcuts: string[],
 ): void {
   const W = size
   const H = size
@@ -162,6 +164,35 @@ function drawMinimap(
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
       ctx.fillText(marker.label, cx, cy + markerR + 2)
+    }
+  }
+
+  // ── Discovered shortcut markers (Phase 80) ────────────────────────────────
+  for (const sm of SHORTCUT_MARKERS) {
+    if (!discoveredShortcuts.includes(sm.id)) continue
+    const cx = worldToCanvasX(sm.x, W)
+    const cy = worldToCanvasY(sm.z, H)
+
+    // Diamond shape to distinguish secret passages from regular markers.
+    ctx.save()
+    ctx.translate(cx, cy)
+    ctx.rotate(Math.PI / 4)
+    const d = markerR * 1.1
+    ctx.beginPath()
+    ctx.rect(-d / 2, -d / 2, d, d)
+    ctx.fillStyle = markerColor('secret')
+    ctx.fill()
+    ctx.strokeStyle = markerStroke('secret')
+    ctx.lineWidth = 0.8
+    ctx.stroke()
+    ctx.restore()
+
+    if (isLarge) {
+      ctx.font = '8px sans-serif'
+      ctx.fillStyle = 'rgba(204,136,255,0.85)'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText(sm.label, cx, cy + markerR + 2)
     }
   }
 
@@ -220,13 +251,13 @@ export function MinimapHud() {
       if (!canvas) return
       const ctx = canvas.getContext('2d')
       if (!ctx) return
-      const { playerX, playerZ, playerAngle, isExpanded: expanded } = useMinimapStore.getState()
+      const { playerX, playerZ, playerAngle, isExpanded: expanded, discoveredShortcuts } = useMinimapStore.getState()
       const size = expanded ? LARGE_SIZE : SMALL_SIZE
       if (canvas.width !== size) {
         canvas.width  = size
         canvas.height = size
       }
-      drawMinimap(ctx, size, playerX, playerZ, playerAngle)
+      drawMinimap(ctx, size, playerX, playerZ, playerAngle, discoveredShortcuts)
     }
 
     // Initial draw

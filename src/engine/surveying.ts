@@ -2,6 +2,7 @@
  * Phase 44 — Surveying Skill Foundation
  * Phase 45 — Hidden Cache System
  * Phase 65 — Hollow Vault Steps survey caches
+ * Phase 80 — Advanced Surveying and Secret Paths
  *
  * Adds an original discovery skill to Veilmarch.  A survey stone is placed in
  * the Hushwood settlement; players interact with it (or press Y while nearby)
@@ -20,15 +21,29 @@
  * Phase 65 additions:
  *   - Two new buried cache locations in the Hollow Vault Steps (8 caches total).
  *
+ * Phase 80 additions:
+ *   - Two new high-level survey caches in the Belowglass Vaults (10 caches total).
+ *   - Hidden shortcuts: buildHiddenShortcut() builds a rubble-pile collidable that
+ *     only a sufficiently skilled surveyor can clear.  Two shortcuts are defined in
+ *     HIDDEN_SHORTCUT_CONFIGS — one in the Hollow Vault Steps and one at the
+ *     Belowglass threshold.  When cleared the caller removes the mesh from
+ *     collidables and registers the discovery on the minimap.
+ *
  * Survey caches:
- *   Cache A — near the eastern tree line    ( 6,    0,   8)  lvl 1   6 xp
- *   Cache B — south of the fishing dock     ( 3,    0,  -4)  lvl 1   8 xp
- *   Cache C — behind the carving workbench  (-5,    0,   9)  lvl 2  10 xp
- *   Cache D — far north trail bend          ( 0,    0,  24)  lvl 3  18 xp
- *   Cache E — west camp edge (bog margin)   (-8,    0,   3)  lvl 1   7 xp  ← Phase 45
- *   Cache F — northeast ridge lookout       ( 8,    0,  18)  lvl 2  12 xp  ← Phase 45
- *   Cache G — vault antechamber             (-67, 0,   2)  lvl 3  16 xp  ← Phase 65
- *   Cache H — lower vault floor             (-95, 0,  -4)  lvl 4  22 xp  ← Phase 65
+ *   Cache A — near the eastern tree line       ( 6,   0,   8)  lvl 1   6 xp
+ *   Cache B — south of the fishing dock        ( 3,   0,  -4)  lvl 1   8 xp
+ *   Cache C — behind the carving workbench     (-5,   0,   9)  lvl 2  10 xp
+ *   Cache D — far north trail bend             ( 0,   0,  24)  lvl 3  18 xp
+ *   Cache E — west camp edge (bog margin)      (-8,   0,   3)  lvl 1   7 xp  ← Phase 45
+ *   Cache F — northeast ridge lookout          ( 8,   0,  18)  lvl 2  12 xp  ← Phase 45
+ *   Cache G — vault antechamber                (-67,  0,   2)  lvl 3  16 xp  ← Phase 65
+ *   Cache H — lower vault floor                (-95,  0,  -4)  lvl 4  22 xp  ← Phase 65
+ *   Cache I — Vault Passage Niche              (-107, 0,   5)  lvl 5  28 xp  ← Phase 80
+ *   Cache J — Deep Vault Alcove                (-125, 0,  -6)  lvl 6  35 xp  ← Phase 80
+ *
+ * Hidden shortcuts:
+ *   Shortcut 1 — Collapsed Vault Wall   (x=-72,  z=0)  surveying lvl 5  ← Phase 80
+ *   Shortcut 2 — Sealed Rift Fissure    (x=-100, z=-8) surveying lvl 6  ← Phase 80
  *
  * The caller (App.tsx) owns the survey timer, reveal loop, cache interaction,
  * item award, and XP grant.  This module provides the data, station visual,
@@ -38,6 +53,7 @@
 import * as THREE from 'three'
 import type { Interactable } from './interactable'
 import { useGameStore } from '../store/useGameStore'
+import { useNotifications } from '../store/useNotifications'
 
 // ─── Survey cache configuration ───────────────────────────────────────────
 
@@ -193,6 +209,42 @@ export const SURVEY_CACHE_CONFIGS: Readonly<SurveyCacheConfig[]> = [
     levelReq: 4,
     xp: 22,
     cooldown: 240,
+  },
+
+  // ── Phase 80 — Belowglass Vaults hidden caches ────────────────────────────
+
+  // Cache I — Vault Passage Niche
+  //   Tucked into a fractured alcove just past the belowglass threshold.
+  //   Level 5 required; rewards vaultglass and construct materials.
+  {
+    id: 'cache_bv_passage_niche',
+    label: 'Vault Passage Niche',
+    position: [-107, 0, 5],
+    rewardPool: [
+      { itemId: 'vault_glass_shard', qty: 1, weight: 3 },
+      { itemId: 'construct_plating', qty: 1, weight: 3 },
+      { itemId: 'fensteel_bar',      qty: 1, weight: 1 },
+    ],
+    levelReq: 5,
+    xp: 28,
+    cooldown: 300,
+  },
+
+  // Cache J — Deep Vault Alcove
+  //   Hidden behind a collapsed glass panel deep in the inner chamber.
+  //   Level 6 required; rewards high-tier alloy materials.
+  {
+    id: 'cache_bv_deep_alcove',
+    label: 'Deep Vault Alcove',
+    position: [-125, 0, -6],
+    rewardPool: [
+      { itemId: 'construct_plating',  qty: 2, weight: 4 },
+      { itemId: 'vault_glass_shard',  qty: 2, weight: 3 },
+      { itemId: 'heartwrought_ingot', qty: 1, weight: 1 },
+    ],
+    levelReq: 6,
+    xp: 35,
+    cooldown: 360,
   },
 ] as const
 
@@ -496,4 +548,134 @@ export function tickCacheCooldowns(caches: SurveyCache[], delta: number): void {
 export function getSurveyingLevel(): number {
   const { skills } = useGameStore.getState()
   return skills.skills.find((s) => s.id === 'surveying')?.level ?? 1
+}
+
+// ─── Phase 80 — Hidden shortcuts ──────────────────────────────────────────────
+
+/**
+ * Configuration for a buried passage that an expert surveyor can clear.
+ * A rubble-pile collidable blocks the opening; when all skill requirements are
+ * met and the player interacts, the pile is removed and the shortcut opens.
+ */
+export interface HiddenShortcutConfig {
+  /** Unique identifier used to track discovery on the minimap. */
+  id: string
+  /** Interaction label shown in the E-prompt while the passage is blocked. */
+  label: string
+  /** World X of the rubble-pile centre. */
+  x: number
+  /** World Z of the rubble-pile centre. */
+  z: number
+  /** Width of the blocking mesh (X axis). */
+  width: number
+  /** Height of the blocking mesh (Y axis). */
+  height: number
+  /** Depth of the blocking mesh (Z axis). */
+  depth: number
+  /** Minimum Surveying level required to clear the passage. */
+  surveyingLevel: number
+  /** Notification shown to the player when the shortcut is opened. */
+  openMessage: string
+}
+
+/** Two predefined hidden shortcuts added in Phase 80. */
+export const HIDDEN_SHORTCUT_CONFIGS: Readonly<HiddenShortcutConfig[]> = [
+  {
+    // Hollow Vault Steps — collapsed wall between vault and chapel corridor.
+    id: 'shortcut_vault_breach',
+    label: 'Collapsed Vault Wall',
+    x: -72, z: 0,
+    width: 1.5, height: 2.2, depth: 0.8,
+    surveyingLevel: 5,
+    openMessage: 'You clear the collapsed stones — a hidden shortcut through the vault wall is revealed.',
+  },
+  {
+    // Belowglass threshold — sealed rift fissure at the vault boundary.
+    id: 'shortcut_belowglass_rift',
+    label: 'Sealed Rift Fissure',
+    x: -100, z: -8,
+    width: 1.5, height: 2.2, depth: 0.8,
+    surveyingLevel: 6,
+    openMessage: 'The ancient fissure cracks open — a shortcut between the vault chambers is revealed.',
+  },
+] as const
+
+/** Result handle returned by buildHiddenShortcut. */
+export interface HiddenShortcutResult {
+  /** Shortcut id — matches HiddenShortcutConfig.id; used for minimap registration. */
+  id: string
+  /** The blocking rubble mesh — push into collidables and hide on open. */
+  mesh: THREE.Mesh
+  /** The interaction target — splice from interactables on open. */
+  interactable: Interactable
+  /**
+   * Returns true once on the frame the player successfully opens the shortcut.
+   * Clears the flag on read.  Call every frame from App.tsx.
+   */
+  pollOpened(): boolean
+}
+
+/** Build a rubble-pile collidable for a hidden shortcut mesh. */
+function _buildRubbleMesh(width: number, height: number, depth: number): THREE.Mesh {
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x554840,
+    roughness: 0.98,
+    emissive: new THREE.Color(0x201814),
+    emissiveIntensity: 0.3,
+  })
+  return new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), mat)
+}
+
+/**
+ * Build a collidable hidden-shortcut rubble pile in the world.
+ *
+ * The pile blocks passage until the player interacts while meeting the
+ * Surveying skill requirement.  When the requirement is met pollOpened()
+ * returns true on the following call, signalling App.tsx to remove the
+ * collidable and register the discovery on the minimap.
+ */
+export function buildHiddenShortcut(
+  scene: THREE.Scene,
+  interactables: Interactable[],
+  config: HiddenShortcutConfig,
+): HiddenShortcutResult {
+  const mesh = _buildRubbleMesh(config.width, config.height, config.depth)
+  mesh.position.set(config.x, config.height / 2, config.z)
+  scene.add(mesh)
+
+  let _opened = false
+
+  const interactable: Interactable = {
+    mesh,
+    label: config.label,
+    interactRadius: 2.5,
+    onInteract: () => {
+      const surveyingLevel = getSurveyingLevel()
+      if (surveyingLevel < config.surveyingLevel) {
+        useNotifications
+          .getState()
+          .push(
+            `Requires Surveying level ${config.surveyingLevel} to reveal this passage (you are level ${surveyingLevel}).`,
+            'info',
+          )
+        return
+      }
+      _opened = true
+      useNotifications.getState().push(config.openMessage, 'success')
+    },
+  }
+  interactables.push(interactable)
+
+  return {
+    id: config.id,
+    mesh,
+    interactable,
+    pollOpened() {
+      if (_opened) {
+        _opened = false
+        return true
+      }
+      return false
+    },
+  }
 }

@@ -94,6 +94,7 @@ import { useTailoringStore } from './store/useTailoringStore'
 import {
   buildSurveyStoneStation,
   buildSurveyCaches,
+  buildHiddenShortcut,
   revealNearbyCaches,
   animateCacheMarkers,
   tickCacheCooldowns,
@@ -101,11 +102,12 @@ import {
   getSurveyingLevel,
   pickReward,
   buildCacheStatusList,
+  HIDDEN_SHORTCUT_CONFIGS,
   SURVEY_MODE_DURATION,
   SURVEY_CLAIM_RADIUS,
   SURVEY_STONE_INTERACT_RADIUS,
 } from './engine/surveying'
-import type { SurveyCache } from './engine/surveying'
+import type { SurveyCache, HiddenShortcutResult } from './engine/surveying'
 import { useSurveyingStore } from './store/useSurveyingStore'
 import { SurveyingPanel } from './ui/hud/SurveyingPanel'
 import {
@@ -1216,6 +1218,12 @@ function App() {
     surveyStoneStation = buildSurveyStoneStation(scene, interactables, () => onSurveyOpen())
     surveyCaches = buildSurveyCaches(scene, interactables, onClaimCache)
     startSurveyFromPanelRef.current = () => onStartSurvey()
+
+    // Phase 80 — Build hidden shortcut rubble piles.
+    const hiddenShortcuts: HiddenShortcutResult[] = HIDDEN_SHORTCUT_CONFIGS.map((cfg) =>
+      buildHiddenShortcut(scene, interactables, cfg),
+    )
+    hiddenShortcuts.forEach((hs) => collidables.push(hs.mesh))
 
     // Phase 46 — Warding Foundation
     const wardRef = { current: null as WardSession | null }
@@ -2789,6 +2797,24 @@ function App() {
         const bvGateInteractableIdx = interactables.indexOf(belowglassVaults.gateDoor.interactable)
         if (bvGateInteractableIdx !== -1) {
           interactables.splice(bvGateInteractableIdx, 1)
+        }
+      }
+      // Phase 80 — Hidden shortcut passages: opened when the player has the
+      // required Surveying level.  Hide the rubble mesh and remove collidable.
+      for (let _si = hiddenShortcuts.length - 1; _si >= 0; _si--) {
+        const hs = hiddenShortcuts[_si]
+        if (hs.pollOpened()) {
+          hs.mesh.visible = false
+          const hsColIdx = collidables.indexOf(hs.mesh)
+          if (hsColIdx >= 0) {
+            collidables.splice(hsColIdx, 1)
+            collidableBoxes.splice(hsColIdx, 1)
+          }
+          const hsIntIdx = interactables.indexOf(hs.interactable)
+          if (hsIntIdx !== -1) interactables.splice(hsIntIdx, 1)
+          // Register on minimap so the secret marker appears.
+          useMinimapStore.getState().addDiscoveredShortcut(hs.id)
+          hiddenShortcuts.splice(_si, 1)
         }
       }
       // Sync live target HP to the combat store so the React overlay stays current.
