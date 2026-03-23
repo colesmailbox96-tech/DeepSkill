@@ -203,6 +203,13 @@ import { getTask } from './engine/task'
 import { useMinimapStore } from './store/useMinimapStore'
 import { getRegionLabel } from './engine/minimap'
 import { MinimapHud } from './ui/hud/MinimapHud'
+import {
+  initVfx,
+  spawnGatherSparks,
+  spawnLevelUpRing,
+  spawnWardActivation,
+  tickVfx,
+} from './engine/vfx'
 import './App.css'
 
 // Register NPC dialogue trees once at module load time.
@@ -619,8 +626,9 @@ function App() {
         )
         return
       }
-      grantSkillXp('foraging', cfg.xp)
+      grantSkillXp('foraging', cfg.xp, spawnLevelUpRing)
       advanceGatherObjectives(cfg.itemId)
+      spawnGatherSparks(node.clusterMesh.position)
       audioManager.playSfx('forage')
       audioManager.playSfx('collect')
       useNotifications.getState().push(
@@ -682,8 +690,9 @@ function App() {
         )
         return
       }
-      grantSkillXp('salvaging', cfg.xp)
+      grantSkillXp('salvaging', cfg.xp, spawnLevelUpRing)
       advanceGatherObjectives(cfg.itemId)
+      spawnGatherSparks(node.clusterMesh.position)
       audioManager.playSfx('forage')
       audioManager.playSfx('collect')
       useNotifications.getState().push(
@@ -1108,7 +1117,7 @@ function App() {
         return
       }
       addItem({ id: reward.itemId, name: rewardName, quantity: reward.qty })
-      grantSkillXp('surveying', cache.config.xp)
+      grantSkillXp('surveying', cache.config.xp, spawnLevelUpRing)
       cache.revealed = false
       cache.markerMesh.visible = false
       cache.interactable.interactRadius = 0
@@ -1265,7 +1274,10 @@ function App() {
     // Phase 03 — player controller
     const player = createPlayer(scene)
 
-    // Phase 34 — Respawn / Safe Recovery Loop.
+    // Phase 72 — Initialise VFX system with scene and player-position accessor.
+    initVfx(scene, () => player.mesh.position)
+
+
     // Restores full HP, clears combat, teleports the player to the settlement
     // hearth, and triggers the respawn overlay.  The player retains all items
     // and currency (no punishing item loss).  The blocking overlay prevents
@@ -1862,8 +1874,11 @@ function App() {
             const logName = getItem(cfg.logId)?.name ?? cfg.logId
             const added = addItem({ id: cfg.logId, name: logName, quantity: 1 })
             if (added) {
-              grantSkillXp('woodcutting', cfg.xp)
+              grantSkillXp('woodcutting', cfg.xp, spawnLevelUpRing)
               advanceGatherObjectives(cfg.logId)
+              const sparkPos = new THREE.Vector3()
+              sess.node.trunk.getWorldPosition(sparkPos)
+              spawnGatherSparks(sparkPos)
               audioManager.playSfx('collect')
               useNotifications.getState().push(`You cut ${article(logName)} ${logName.toLowerCase()}.`, 'success')
               fellTree(sess.node)
@@ -1894,8 +1909,11 @@ function App() {
             const oreName = getItem(cfg.oreId)?.name ?? cfg.oreId
             const added = addItem({ id: cfg.oreId, name: oreName, quantity: 1 })
             if (added) {
-              grantSkillXp('mining', cfg.xp)
+              grantSkillXp('mining', cfg.xp, spawnLevelUpRing)
               advanceGatherObjectives(cfg.oreId)
+              const sparkPos = new THREE.Vector3()
+              sess.node.rockMesh.getWorldPosition(sparkPos)
+              spawnGatherSparks(sparkPos)
               audioManager.playSfx('collect')
               useNotifications.getState().push(`You mine ${article(oreName)} ${oreName.toLowerCase()}.`, 'success')
               depleteRock(sess.node)
@@ -1926,8 +1944,11 @@ function App() {
             const fishName = getItem(cfg.fishId)?.name ?? cfg.fishId
             const added = addItem({ id: cfg.fishId, name: fishName, quantity: 1 })
             if (added) {
-              grantSkillXp('fishing', cfg.xp)
+              grantSkillXp('fishing', cfg.xp, spawnLevelUpRing)
               advanceGatherObjectives(cfg.fishId)
+              const sparkPos = new THREE.Vector3()
+              sess.node.floatMesh.getWorldPosition(sparkPos)
+              spawnGatherSparks(sparkPos)
               audioManager.playSfx('collect')
               useNotifications.getState().push(`You catch ${article(fishName)} ${fishName.toLowerCase()}!`, 'success')
               depleteFishSpot(sess.node)
@@ -1974,7 +1995,7 @@ function App() {
             }
             removeItem(sess.recipe.rawId, 1)
             addItem({ id: sess.recipe.cookedId, name: cookedName, quantity: 1 })
-            grantSkillXp('hearthcraft', sess.recipe.xp)
+            grantSkillXp('hearthcraft', sess.recipe.xp, spawnLevelUpRing)
             useNotifications.getState().push(
               `You cook the ${sess.recipe.label.toLowerCase()}. ${cookedName} ready!`,
               'success',
@@ -2022,7 +2043,7 @@ function App() {
             }
             removeItem(sess.recipe.oreId, sess.recipe.oreQty)
             addItem({ id: sess.recipe.barId, name: barName, quantity: 1 })
-            grantSkillXp('forging', sess.recipe.xp)
+            grantSkillXp('forging', sess.recipe.xp, spawnLevelUpRing)
             useNotifications.getState().push(
               `You smelt the ${sess.recipe.label.toLowerCase()}. ${barName} ready!`,
               'success',
@@ -2072,7 +2093,7 @@ function App() {
               removeItem(ing.id, ing.qty)
             }
             addItem({ id: sess.recipe.toolId, name: toolName, quantity: 1 })
-            grantSkillXp('forging', sess.recipe.xp)
+            grantSkillXp('forging', sess.recipe.xp, spawnLevelUpRing)
             useNotifications.getState().push(
               `You forge a ${toolName}!`,
               'success',
@@ -2118,7 +2139,7 @@ function App() {
             }
             removeItem(sess.recipe.materialId, sess.recipe.materialQty)
             addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
-            grantSkillXp('carving', sess.recipe.xp)
+            grantSkillXp('carving', sess.recipe.xp, spawnLevelUpRing)
             useNotifications.getState().push(
               `You carve a ${outputName}!`,
               'success',
@@ -2179,7 +2200,7 @@ function App() {
               removeItem(sec.id, sec.qty)
             }
             addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
-            grantSkillXp('tinkering', sess.recipe.xp)
+            grantSkillXp('tinkering', sess.recipe.xp, spawnLevelUpRing)
             useNotifications.getState().push(
               `You assemble ${outputName}!`,
               'success',
@@ -2239,7 +2260,7 @@ function App() {
             removeItem(sess.recipe.materialId, sess.recipe.materialQty)
             removeItem(sec.id, sec.qty)
             addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
-            grantSkillXp('tailoring', sess.recipe.xp)
+            grantSkillXp('tailoring', sess.recipe.xp, spawnLevelUpRing)
             useNotifications.getState().push(
               `You stitch together ${outputName}!`,
               'success',
@@ -2304,8 +2325,12 @@ function App() {
               } else {
                 removeItem(sess.recipe.materialId, sess.recipe.materialQty)
                 addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
-                grantSkillXp('warding', sess.recipe.xp)
+                grantSkillXp('warding', sess.recipe.xp, spawnLevelUpRing)
                 advanceGatherObjectives(sess.recipe.outputId)
+                // Phase 72 — Ward activation VFX at the altar position.
+                if (wardingAltarStation) {
+                  spawnWardActivation(wardingAltarStation.mesh.position)
+                }
                 useNotifications.getState().push(
                   `Ward mark inscribed: ${outputName}! (+${sess.recipe.xp} warding xp)`,
                   'success',
@@ -2664,6 +2689,8 @@ function App() {
       }
 
       animatePlayer(player, delta)
+      // Phase 72 — tick all active VFX effects.
+      tickVfx(delta)
 
       renderer.render(scene, camera)
     }
