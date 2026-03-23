@@ -1876,7 +1876,9 @@ function App() {
             if (added) {
               grantSkillXp('woodcutting', cfg.xp, spawnLevelUpRing)
               advanceGatherObjectives(cfg.logId)
-              spawnGatherSparks(sess.node.trunk.position)
+              const sparkPos = new THREE.Vector3()
+              sess.node.trunk.getWorldPosition(sparkPos)
+              spawnGatherSparks(sparkPos)
               audioManager.playSfx('collect')
               useNotifications.getState().push(`You cut ${article(logName)} ${logName.toLowerCase()}.`, 'success')
               fellTree(sess.node)
@@ -1909,7 +1911,9 @@ function App() {
             if (added) {
               grantSkillXp('mining', cfg.xp, spawnLevelUpRing)
               advanceGatherObjectives(cfg.oreId)
-              spawnGatherSparks(sess.node.rockMesh.position)
+              const sparkPos = new THREE.Vector3()
+              sess.node.rockMesh.getWorldPosition(sparkPos)
+              spawnGatherSparks(sparkPos)
               audioManager.playSfx('collect')
               useNotifications.getState().push(`You mine ${article(oreName)} ${oreName.toLowerCase()}.`, 'success')
               depleteRock(sess.node)
@@ -1942,7 +1946,9 @@ function App() {
             if (added) {
               grantSkillXp('fishing', cfg.xp, spawnLevelUpRing)
               advanceGatherObjectives(cfg.fishId)
-              spawnGatherSparks(sess.node.floatMesh.position)
+              const sparkPos = new THREE.Vector3()
+              sess.node.floatMesh.getWorldPosition(sparkPos)
+              spawnGatherSparks(sparkPos)
               audioManager.playSfx('collect')
               useNotifications.getState().push(`You catch ${article(fishName)} ${fishName.toLowerCase()}!`, 'success')
               depleteFishSpot(sess.node)
