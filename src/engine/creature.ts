@@ -759,6 +759,35 @@ const CREATURE_DEFS: CreatureDef[] = [
     dropItemId: 'eel_lantern_organ',
     dropChance: 0.75,
   },
+
+  // ── Phase 84 — First Boss Encounter ──────────────────────────────────────
+
+  // 19. Vault-Heart Warden — Phase 84 boss creature.  A monolithic ancient
+  //     Deep Heart guardian that has stood dormant inside the innermost
+  //     sanctum of the Belowglass Vaults for centuries.  When the player
+  //     enters its arena it awakens, bringing its full resonance field to
+  //     bear.  High HP, hard-hitting, three-phase encounter.  Drops
+  //     warden_heartstone and prismatic_vault_shard on defeat.
+  {
+    id: 'vault_heart_warden',
+    name: 'Vault-Heart Warden',
+    x: -141,
+    z: 0,
+    color: 0x3a6890,
+    scale: 1.65,
+    roamRadius: 4,
+    pursuitRadius: 22,
+    leashRadius: 28,
+    speed: 1.8,
+    idleBase: 7.0,
+    aggroRadius: 12,
+    maxHp: 220,
+    attackDamage: 16,
+    attackCooldown: 2.8,
+    respawnDelay: 300,
+    isBoss: true,
+    bossArenaId: 'vault_heart_warden_arena',
+  },
 ]
 
 /** Interaction radius for wildlife harvest. */

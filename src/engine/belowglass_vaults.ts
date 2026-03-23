@@ -43,10 +43,10 @@ import { buildGatedDoor, type GatedDoorResult } from './gating'
 
 // ─── Zone bounds (exported for App.tsx region checks) ─────────────────────────
 
-export const BV_MIN_X = -128
+export const BV_MIN_X = -154
 export const BV_MAX_X = -98
-export const BV_MIN_Z = -10
-export const BV_MAX_Z =  10
+export const BV_MIN_Z = -14
+export const BV_MAX_Z =  14
 
 // ─── Shared materials ─────────────────────────────────────────────────────────
 
@@ -80,6 +80,12 @@ export interface BelowglassVaultsResult {
    * when true, removes the slab from collidables and interactables.
    */
   gateDoor: GatedDoorResult
+  /**
+   * Phase 84 — The inner sanctum boss chamber door result.  Sealed until the
+   * player has Salvaging level 5.  App.tsx calls pollOpened() each frame and,
+   * when true, removes the slab from collidables and interactables.
+   */
+  sanctumDoor: GatedDoorResult
 }
 
 // ─── Main builder ─────────────────────────────────────────────────────────────
@@ -188,7 +194,103 @@ export function buildBelowglassVaults(
   })
   collidables.push(gateDoor.mesh as THREE.Mesh)
 
-  return { collidables, gateDoor }
+  // ── Inner Sanctum — Phase 84 boss chamber ─────────────────────────────────
+  // The Warden's Sanctum lies further west of the threshold chamber
+  // (x = −130 → −154, z = −14 → +14).  A wider, taller hall lit by deep
+  // resonance glow.  The Vault-Heart Warden stands at its centre.
+
+  // Sanctum floor
+  const sanctumFloor = new THREE.Mesh(new THREE.PlaneGeometry(24, 28), matThresholdFloor)
+  sanctumFloor.rotation.x = -Math.PI / 2
+  sanctumFloor.position.set(-142, 0.01, 0)
+  scene.add(sanctumFloor)
+
+  // Sanctum boundary walls
+  const sancN  = _addWall(scene, 24, 8, 0.4,  -142, 4, -14.2, matBound)
+  const sancS  = _addWall(scene, 24, 8, 0.4,  -142, 4,  14.2, matBound)
+  const sancW  = _addWall(scene, 0.4, 8, 28,  -154.2, 4, 0, matBound)
+  collidables.push(sancN, sancS, sancW)
+
+  // Boss altar platform — a raised dais at the sanctum centre where the
+  // Vault-Heart Warden stands dormant.
+  const altarMat = new THREE.MeshStandardMaterial({
+    color: 0x1c2838,
+    roughness: 0.80,
+    emissive: new THREE.Color(0x0a1820),
+    emissiveIntensity: 0.35,
+  })
+  const altarDais = new THREE.Mesh(new THREE.BoxGeometry(6, 0.35, 6), altarMat)
+  altarDais.position.set(-141, 0.175, 0)
+  scene.add(altarDais)
+
+  // Altar glyph ring — a flat ring of pale vaultglass set into the dais.
+  const glyphMat = new THREE.MeshStandardMaterial({
+    color: 0x5098c0,
+    roughness: 0.15,
+    emissive: new THREE.Color(0x204860),
+    emissiveIntensity: 0.70,
+  })
+  const altarGlyph = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.5, 16), glyphMat)
+  altarGlyph.rotation.x = -Math.PI / 2
+  altarGlyph.position.set(-141, 0.52, 0)
+  scene.add(altarGlyph)
+
+  // Six resonance pillars: four at sanctum corners and two flanking the altar.
+  const sp1 = _addGlassPillar(scene, -133, -11)
+  const sp2 = _addGlassPillar(scene, -133,  11)
+  const sp3 = _addGlassPillar(scene, -149, -11)
+  const sp4 = _addGlassPillar(scene, -149,  11)
+  collidables.push(sp1, sp2, sp3, sp4)
+
+  // Mid-sanctum accent pillars flanking the altar
+  const sp5 = _addGlassPillar(scene, -141, -9)
+  const sp6 = _addGlassPillar(scene, -141,  9)
+  collidables.push(sp5, sp6)
+
+  // Sanctum atmosphere lighting — deep blue resonance glow from the altar.
+  const sanctumAmbient = new THREE.PointLight(0x203858, 1.6, 30)
+  sanctumAmbient.position.set(-141, 5, 0)
+  scene.add(sanctumAmbient)
+
+  const altarGlow = new THREE.PointLight(0x4090c0, 2.0, 14)
+  altarGlow.position.set(-141, 1.5, 0)
+  scene.add(altarGlow)
+
+  const cornerGlow1 = new THREE.PointLight(0x305878, 1.0, 10)
+  cornerGlow1.position.set(-149, 3, -8)
+  scene.add(cornerGlow1)
+
+  const cornerGlow2 = new THREE.PointLight(0x305878, 1.0, 10)
+  cornerGlow2.position.set(-149, 3, 8)
+  scene.add(cornerGlow2)
+
+  // ── Sanctum access gate ────────────────────────────────────────────────────
+  // A dense vaultglass slab seals the passage from the threshold into the
+  // Inner Sanctum at x = −129.  Requires Salvaging level 5 to open, implying
+  // the player has worked the vault extensively before facing the boss.
+  const sanctumDoor = buildGatedDoor(scene, interactables, {
+    x: -129,
+    y: 3.5,
+    z: 0,
+    width: 0.5,
+    height: 7,
+    depth: 28,
+    label: 'Sanctum Resonance Seal',
+    color: 0x284870,
+    emissive: 0x0c1e30,
+    openMessage: 'The resonance seal shatters — the Inner Sanctum lies open.',
+    requirements: [
+      {
+        kind: 'skill',
+        skillId: 'salvaging',
+        skillName: 'Salvaging',
+        minLevel: 5,
+      },
+    ],
+  })
+  collidables.push(sanctumDoor.mesh as THREE.Mesh)
+
+  return { collidables, gateDoor, sanctumDoor }
 }
 
 // ─── Private helpers ──────────────────────────────────────────────────────────

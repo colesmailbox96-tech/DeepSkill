@@ -438,6 +438,44 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
     currencyMax: 14,
   },
 
+  // Vault-Heart Warden — Phase 84 boss: ancient Deep Heart guardian.
+  // Guaranteed heartstone drop; prismatic shards and construct plating as
+  // secondary materials; large coin reward for the capstone fight.
+  vault_heart_warden: {
+    entries: [
+      {
+        itemId: 'warden_heartstone',
+        chance: 1.0,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'rare',
+      },
+      {
+        itemId: 'prismatic_vault_shard',
+        chance: 0.85,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'uncommon',
+      },
+      {
+        itemId: 'construct_plating',
+        chance: 0.70,
+        minQty: 2,
+        maxQty: 4,
+        rarity: 'common',
+      },
+      {
+        itemId: 'vault_glass_shard',
+        chance: 0.65,
+        minQty: 2,
+        maxQty: 5,
+        rarity: 'common',
+      },
+    ],
+    currencyMin: 40,
+    currencyMax: 80,
+  },
+
   // Lantern Eel — bioluminescent fen predator; drops eel_lantern_organ as
   // its signature material; reed_fiber as common secondary.
   lantern_eel: {

@@ -228,7 +228,7 @@ import {
   resetBossArena,
   BOSS_ARENA_CONFIGS,
 } from './engine/boss'
-import type { BossArenaEntry } from './engine/boss'
+import type { BossArenaEntry, BossPhaseThreshold, BossSpecialMove } from './engine/boss'
 import { useBossStore } from './store/useBossStore'
 import { BossHealthBar } from './ui/hud/BossHealthBar'
 import './App.css'
@@ -769,9 +769,11 @@ function App() {
     // Build the late-game crystalline threshold zone west of the Hollow Vault.
     // The access gate slab is collidable until the player has completed the
     // "Echoes of the Sealed Shaft" task; pollOpened() checks each frame.
+    // Phase 84 — sanctumDoor is the inner boss chamber gate; pollOpened() for that too.
     const belowglassVaults: BelowglassVaultsResult = buildBelowglassVaults(scene, interactables)
     collidables.push(...belowglassVaults.collidables)
     let bvGateSealed = true
+    let bvSanctumSealed = true
 
     // Higher-tier salvage nodes inside the Belowglass Vaults.
     const bvSalvageNodes = buildVaultSalvageNodes(scene, interactables, onSalvageStart)
@@ -1341,19 +1343,72 @@ function App() {
     const creatures: Creature[] = buildCreatures(scene, interactables, onHarvest)
 
     // Phase 83 — Boss Encounter Framework: build arena entries for any boss
-    // creatures spawned by buildCreatures().  No boss is defined yet (Phase 84
-    // will add the first); the infrastructure is wired here so Phase 84 only
-    // needs to populate BOSS_ARENA_CONFIGS and set isBoss/bossArenaId on a def.
+    // creatures spawned by buildCreatures().
+    // Phase 84 — Vault-Heart Warden phase thresholds and special moves are
+    // injected here by matching on bossArenaId.
     const bossArenaEntries: BossArenaEntry[] = creatures
       .filter((c) => c.def.isBoss && c.def.bossArenaId)
       .reduce<BossArenaEntry[]>((acc, boss) => {
         const config = BOSS_ARENA_CONFIGS.find((c) => c.id === boss.def.bossArenaId)
         if (config) {
+          let phaseThresholds: BossPhaseThreshold[] = []
+          let specialMoves: BossSpecialMove[] = []
+
+          if (boss.def.bossArenaId === 'vault_heart_warden_arena') {
+            // ── Phase 84 — Vault-Heart Warden encounter data ──────────────
+            // Phase 2 at 65% HP: fractures and accelerates attack rhythm.
+            // Phase 3 at 35% HP: final surge — much faster, desperate.
+            phaseThresholds = [
+              {
+                hpFraction: 0.65,
+                attackCooldownMult: 0.75,
+                phaseLabel: 'The Vault-Heart Warden fractures — it accelerates!',
+              },
+              {
+                hpFraction: 0.35,
+                attackCooldownMult: 0.55,
+                phaseLabel: 'The Vault-Heart Warden enters final surge — light floods the sanctum!',
+              },
+            ]
+            // Shard Volley — ranged shard burst at distance ≤ 10 m, 15 damage.
+            // Vault Tremor — close shockwave at distance ≤ 5 m, 28 damage.
+            specialMoves = [
+              {
+                id: 'shard_volley',
+                cooldown: 8,
+                execute: (bossPos, playerPos, dealDamage) => {
+                  const dist = bossPos.distanceTo(playerPos)
+                  if (dist > 10) return false
+                  dealDamage(15)
+                  useNotifications.getState().push(
+                    'The Vault-Heart Warden unleashes a shard volley!',
+                    'warning',
+                  )
+                  return true
+                },
+              },
+              {
+                id: 'vault_tremor',
+                cooldown: 14,
+                execute: (bossPos, playerPos, dealDamage) => {
+                  const dist = bossPos.distanceTo(playerPos)
+                  if (dist > 5) return false
+                  dealDamage(28)
+                  useNotifications.getState().push(
+                    'A vault tremor erupts from the Warden — the ground shudders!',
+                    'warning',
+                  )
+                  return true
+                },
+              },
+            ]
+          }
+
           acc.push({
             arenaState: createBossArenaState(config),
             boss,
-            phaseThresholds: [],
-            specialMoves: [],
+            phaseThresholds,
+            specialMoves,
           })
         }
         return acc
@@ -2805,8 +2860,14 @@ function App() {
       // Phase 78 — Belowglass Vaults explore trigger.
       // Guard with !bvGateSealed so this only fires once the player has
       // actually passed through the gate, not while standing at the sealed slab.
-      if (!bvGateSealed && player.mesh.position.x < -98 && player.mesh.position.z >= -10 && player.mesh.position.z <= 10) {
+      // Phase 84 — extended z bounds to ±14 to cover the Inner Sanctum.
+      if (!bvGateSealed && player.mesh.position.x < -98 && player.mesh.position.z >= -14 && player.mesh.position.z <= 14) {
         triggerZoneExplore('belowglass_vaults')
+      }
+      // Phase 84 — Inner Sanctum explore trigger (fires when the player passes
+      // the sanctum door into the boss chamber).
+      if (!bvSanctumSealed && player.mesh.position.x < -130 && player.mesh.position.z >= -14 && player.mesh.position.z <= 14) {
+        triggerZoneExplore('inner_sanctum')
       }
       // Phase 75 — Redwake Quarry explore trigger (quarry basin begins at z ≤ −52).
       if (player.mesh.position.z <= -52) {
@@ -2871,6 +2932,30 @@ function App() {
         const bvGateInteractableIdx = interactables.indexOf(belowglassVaults.gateDoor.interactable)
         if (bvGateInteractableIdx !== -1) {
           interactables.splice(bvGateInteractableIdx, 1)
+        }
+      }
+      // Phase 84 — Inner Sanctum boss chamber door: opened when the player has
+      // Salvaging level 5.  Auto-accepts the 'vault_heart' boss task.
+      if (bvSanctumSealed && belowglassVaults.sanctumDoor.pollOpened()) {
+        bvSanctumSealed = false
+        belowglassVaults.sanctumDoor.mesh.visible = false
+        const bvSanctumColIdx = collidables.indexOf(belowglassVaults.sanctumDoor.mesh as THREE.Mesh)
+        if (bvSanctumColIdx >= 0) {
+          collidables.splice(bvSanctumColIdx, 1)
+          collidableBoxes.splice(bvSanctumColIdx, 1)
+        }
+        const bvSanctumIntIdx = interactables.indexOf(belowglassVaults.sanctumDoor.interactable)
+        if (bvSanctumIntIdx !== -1) {
+          interactables.splice(bvSanctumIntIdx, 1)
+        }
+        // Auto-accept the boss task if not already active or completed.
+        const taskStore = useTaskStore.getState()
+        if (!taskStore.isCompleted('vault_heart') && !taskStore.active.some((r) => r.taskId === 'vault_heart')) {
+          taskStore.acceptTask('vault_heart')
+          useNotifications.getState().push(
+            'Task started: The Vault-Heart',
+            'info',
+          )
         }
       }
       // Phase 80 — Hidden shortcut passages: opened when the player has the

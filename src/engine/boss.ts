@@ -365,4 +365,17 @@ export interface BossArenaEntry {
  * Phase 83 ships an empty array — no boss is placed yet.
  * Phase 84 appends its arena config object here before buildCreatures() runs.
  */
-export const BOSS_ARENA_CONFIGS: BossArenaConfig[] = []
+export const BOSS_ARENA_CONFIGS: BossArenaConfig[] = [
+  // Phase 84 — Vault-Heart Warden arena.
+  // The Inner Sanctum of the Belowglass Vaults: x = −130 → −154, z = −14 → +14.
+  // A 5-second grace window before the boss resets after the player flees so
+  // brief boundary brushes don't immediately cancel the encounter.
+  {
+    id: 'vault_heart_warden_arena',
+    minX: -154,
+    maxX: -130,
+    minZ: -14,
+    maxZ: 14,
+    escapeResetDelay: 5,
+  },
+]
