@@ -1,5 +1,6 @@
 /**
  * Phase 63 — Tailoring Panel
+ * Phase 70 — Crafting Panel UX Pass (filter bar, output preview, missing-material feedback)
  *
  * A sewing-table-side crafting panel toggled when the player interacts with
  * the Sewing Table or presses H while near it.  All tailoring recipes are
@@ -8,12 +9,14 @@
  * Pressing H, Escape, or clicking ✕ closes the panel.
  */
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTailoringStore } from '../../store/useTailoringStore'
 import { useGameStore } from '../../store/useGameStore'
 import { getItem } from '../../data/items/itemRegistry'
 import { getAllTailorRecipes } from '../../engine/tailoring'
 import type { TailorRecipeConfig } from '../../engine/tailoring'
+import { CraftFilterBar, RecipeOutputPreview } from './CraftFilterBar'
+import type { CraftSortMode } from './CraftFilterBar'
 
 // ─── Recipe row ───────────────────────────────────────────────────────────
 
@@ -44,6 +47,9 @@ function TailorRecipeRow({
   const hasSecondary  = secondaryQty >= recipe.secondaryIngredient.qty
   const canTailor     = meetsLevel && hasPrimary && hasSecondary
 
+  const primaryNeed   = Math.max(0, recipe.materialQty - primaryQty)
+  const secondaryNeed = Math.max(0, recipe.secondaryIngredient.qty - secondaryQty)
+
   return (
     <li className={`tailoring-recipe${canTailor ? '' : ' tailoring-recipe--locked'}`}>
       <div className="tailoring-recipe__top">
@@ -54,14 +60,17 @@ function TailorRecipeRow({
           <span className="tailoring-recipe__lock-badge">Tailoring {recipe.levelReq} req</span>
         )}
       </div>
+      <RecipeOutputPreview outputDef={outputDef} />
       <ul className="tailoring-recipe__ingredient-list">
-        <li className={primaryQty >= recipe.materialQty ? '' : 'tailoring-recipe__ingredient--low'}>
+        <li className={hasPrimary ? '' : 'tailoring-recipe__ingredient--low'}>
           {primaryName} ×{recipe.materialQty}
           <span className="tailoring-recipe__stock"> ({primaryQty})</span>
+          {primaryNeed > 0 && <span className="craft-need"> need {primaryNeed} more</span>}
         </li>
-        <li className={secondaryQty >= recipe.secondaryIngredient.qty ? '' : 'tailoring-recipe__ingredient--low'}>
+        <li className={hasSecondary ? '' : 'tailoring-recipe__ingredient--low'}>
           {secondaryName} ×{recipe.secondaryIngredient.qty}
           <span className="tailoring-recipe__stock"> ({secondaryQty})</span>
+          {secondaryNeed > 0 && <span className="craft-need"> need {secondaryNeed} more</span>}
         </li>
       </ul>
       <div className="tailoring-recipe__meta">
@@ -100,6 +109,9 @@ export function TailoringPanel({ onTailor }: TailoringPanelProps) {
     (s) => s.skills.skills.find((sk) => sk.id === 'tailoring')?.level ?? 1,
   )
 
+  const [craftableOnly, setCraftableOnly] = useState(false)
+  const [sortMode, setSortMode] = useState<CraftSortMode>('level')
+
   const isOpenRef = useRef(false)
   useEffect(() => { isOpenRef.current = isOpen }, [isOpen])
   const panelRef = useRef<HTMLDivElement>(null)
@@ -125,10 +137,25 @@ export function TailoringPanel({ onTailor }: TailoringPanelProps) {
 
   if (!isOpen) return null
 
-  const recipes = getAllTailorRecipes()
+  const allRecipes = getAllTailorRecipes()
 
   const getQty = (itemId: string): number =>
     slots.find((s) => s.id === itemId)?.quantity ?? 0
+
+  const craftableRecipes = allRecipes.filter(
+    (r) =>
+      tailoringLevel >= r.levelReq &&
+      getQty(r.materialId) >= r.materialQty &&
+      getQty(r.secondaryIngredient.id) >= r.secondaryIngredient.qty,
+  )
+
+  const visibleRecipes = (craftableOnly ? craftableRecipes : allRecipes)
+    .slice()
+    .sort((a, b) =>
+      sortMode === 'name'
+        ? (getItem(a.outputId)?.name ?? a.outputId).localeCompare(getItem(b.outputId)?.name ?? b.outputId)
+        : a.levelReq - b.levelReq,
+    )
 
   return (
     <div
@@ -152,9 +179,19 @@ export function TailoringPanel({ onTailor }: TailoringPanelProps) {
         </button>
       </div>
 
+      {/* ── Filter bar ─────────────────────────────────────────────────── */}
+      <CraftFilterBar
+        craftableOnly={craftableOnly}
+        sortMode={sortMode}
+        onToggleCraftable={() => setCraftableOnly((v) => !v)}
+        onSetSort={setSortMode}
+        craftableCount={craftableRecipes.length}
+        totalCount={allRecipes.length}
+      />
+
       {/* ── Recipe list ────────────────────────────────────────────────── */}
       <ul className="tailoring-panel__list" role="list">
-        {recipes.map((recipe) => (
+        {visibleRecipes.map((recipe) => (
           <TailorRecipeRow
             key={recipe.outputId}
             recipe={recipe}

@@ -1,5 +1,6 @@
 /**
  * Phase 46 — Warding Panel
+ * Phase 70 — Crafting Panel UX Pass (filter bar, output preview, missing-material feedback)
  *
  * An altar-side crafting panel toggled when the player interacts with the
  * Warding Altar or presses G while near it.  All ward mark recipes are
@@ -8,12 +9,14 @@
  * Pressing G, Escape, or clicking ✕ closes the panel.
  */
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useWardingStore } from '../../store/useWardingStore'
 import { useGameStore } from '../../store/useGameStore'
 import { getItem } from '../../data/items/itemRegistry'
 import { getAllWardRecipes } from '../../engine/warding'
 import type { WardRecipeConfig } from '../../engine/warding'
+import { CraftFilterBar, RecipeOutputPreview } from './CraftFilterBar'
+import type { CraftSortMode } from './CraftFilterBar'
 
 // ─── Recipe row ───────────────────────────────────────────────────────────
 
@@ -32,6 +35,7 @@ function WardRecipeRow({ recipe, materialQty, wardingLevel, onWard }: WardRecipe
   const meetsLevel   = wardingLevel >= recipe.levelReq
   const hasMaterial  = materialQty >= recipe.materialQty
   const canWard      = meetsLevel && hasMaterial
+  const need         = Math.max(0, recipe.materialQty - materialQty)
 
   return (
     <li className={`warding-recipe${canWard ? '' : ' warding-recipe--locked'}`}>
@@ -46,6 +50,7 @@ function WardRecipeRow({ recipe, materialQty, wardingLevel, onWard }: WardRecipe
         )}
       </div>
       <div className="warding-recipe__effect">{recipe.effectHint}</div>
+      <RecipeOutputPreview outputDef={outputDef} />
       <div className="warding-recipe__meta">
         <span>Lvl {recipe.levelReq}</span>
         <span>·</span>
@@ -55,7 +60,7 @@ function WardRecipeRow({ recipe, materialQty, wardingLevel, onWard }: WardRecipe
       </div>
       <div className="warding-recipe__bottom">
         <span className={`warding-recipe__count${hasMaterial ? '' : ' warding-recipe__count--low'}`}>
-          In bag: {materialQty}
+          In bag: {materialQty}{need > 0 && <span className="craft-need"> (need {need} more)</span>}
         </span>
         <button
           className="warding-recipe__btn"
@@ -85,6 +90,9 @@ export function WardingPanel({ onWard }: WardingPanelProps) {
     (s) => s.skills.skills.find((sk) => sk.id === 'warding')?.level ?? 1,
   )
 
+  const [craftableOnly, setCraftableOnly] = useState(false)
+  const [sortMode, setSortMode] = useState<CraftSortMode>('level')
+
   const isOpenRef = useRef(false)
   useEffect(() => { isOpenRef.current = isOpen }, [isOpen])
   const panelRef = useRef<HTMLDivElement>(null)
@@ -110,10 +118,22 @@ export function WardingPanel({ onWard }: WardingPanelProps) {
 
   if (!isOpen) return null
 
-  const recipes = getAllWardRecipes()
+  const allRecipes = getAllWardRecipes()
 
   const getMaterialQty = (materialId: string): number =>
     slots.find((s) => s.id === materialId)?.quantity ?? 0
+
+  const craftableRecipes = allRecipes.filter(
+    (r) => wardingLevel >= r.levelReq && getMaterialQty(r.materialId) >= r.materialQty,
+  )
+
+  const visibleRecipes = (craftableOnly ? craftableRecipes : allRecipes)
+    .slice()
+    .sort((a, b) =>
+      sortMode === 'name'
+        ? (getItem(a.outputId)?.name ?? a.outputId).localeCompare(getItem(b.outputId)?.name ?? b.outputId)
+        : a.levelReq - b.levelReq,
+    )
 
   return (
     <div
@@ -137,9 +157,19 @@ export function WardingPanel({ onWard }: WardingPanelProps) {
         </button>
       </div>
 
+      {/* ── Filter bar ─────────────────────────────────────────────────── */}
+      <CraftFilterBar
+        craftableOnly={craftableOnly}
+        sortMode={sortMode}
+        onToggleCraftable={() => setCraftableOnly((v) => !v)}
+        onSetSort={setSortMode}
+        craftableCount={craftableRecipes.length}
+        totalCount={allRecipes.length}
+      />
+
       {/* ── Recipe list ────────────────────────────────────────────────── */}
       <ul className="warding-panel__list" role="list">
-        {recipes.map((recipe) => (
+        {visibleRecipes.map((recipe) => (
           <WardRecipeRow
             key={recipe.outputId}
             recipe={recipe}

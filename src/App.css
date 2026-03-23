@@ -4764,3 +4764,120 @@ p {
   text-align: right;
   letter-spacing: 0.02em;
 }
+
+/* ── Phase 70 — Crafting Panel UX Pass ──────────────────────────────────────
+   Shared styles used by every crafting panel's filter bar, output preview,
+   and missing-material "need X more" indicator.                              */
+
+/* ── Filter / sort bar ──────────────────────────────────────────────────── */
+
+.craft-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.18);
+  flex-shrink: 0;
+}
+
+.craft-filter-bar__toggle {
+  padding: 0.18rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 999px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(190, 175, 150, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: auto;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+
+.craft-filter-bar__toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(220, 205, 170, 0.9);
+}
+
+.craft-filter-bar__toggle--active {
+  background: rgba(80, 180, 80, 0.18);
+  color: rgba(130, 220, 110, 0.95);
+  border-color: rgba(100, 195, 80, 0.35);
+}
+
+.craft-filter-bar__count {
+  font-size: 0.67rem;
+  color: rgba(155, 145, 120, 0.55);
+  flex: 1 1 auto;
+  white-space: nowrap;
+  text-align: left;
+  padding-left: 0.1rem;
+}
+
+.craft-filter-bar__sort {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.craft-filter-bar__sort-btn {
+  padding: 0.18rem 0.5rem;
+  font-size: 0.67rem;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(175, 160, 130, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: auto;
+  transition: background 0.1s, color 0.1s;
+}
+
+.craft-filter-bar__sort-btn:hover {
+  color: rgba(210, 190, 150, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.craft-filter-bar__sort-btn--active {
+  background: rgba(200, 150, 50, 0.2);
+  color: rgba(230, 185, 85, 0.9);
+  border-color: rgba(200, 150, 50, 0.3);
+}
+
+/* ── Output preview ─────────────────────────────────────────────────────── */
+
+.craft-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.3rem 0.5rem;
+  margin: 0.1rem 0 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 2px solid rgba(180, 140, 60, 0.25);
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.craft-preview__desc {
+  font-size: 0.7rem;
+  color: rgba(170, 158, 128, 0.75);
+  font-style: italic;
+  line-height: 1.35;
+}
+
+.craft-preview__stats {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(140, 210, 130, 0.85);
+  letter-spacing: 0.02em;
+}
+
+/* ── Missing-material "need X more" badge ────────────────────────────────── */
+
+.craft-need {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(220, 90, 70, 0.9);
+  margin-left: 0.15rem;
+}

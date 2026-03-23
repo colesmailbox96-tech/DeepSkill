@@ -1,6 +1,7 @@
 /**
  * Phase 40 — Smithing Panel
  * Phase 41 — Tool Upgrade Recipes (Forge tab)
+ * Phase 70 — Crafting Panel UX Pass (filter bar, output preview, missing-material feedback)
  *
  * A furnace-side crafting panel toggled when the player interacts with the
  * Furnace station or presses F while near it.  Two tabs are shown:
@@ -17,6 +18,8 @@ import { useGameStore } from '../../store/useGameStore'
 import { getItem } from '../../data/items/itemRegistry'
 import { getAllSmeltRecipes, getAllForgeRecipes } from '../../engine/smithing'
 import type { SmeltRecipeConfig, ForgeRecipeConfig } from '../../engine/smithing'
+import { CraftFilterBar, RecipeOutputPreview } from './CraftFilterBar'
+import type { CraftSortMode } from './CraftFilterBar'
 
 // ─── Smelt recipe row ─────────────────────────────────────────────────────
 
@@ -35,6 +38,7 @@ function RecipeRow({ recipe, oreQty, forgingLevel, onSmelt }: RecipeRowProps) {
   const meetsLevel = forgingLevel >= recipe.levelReq
   const hasOre     = oreQty >= recipe.oreQty
   const canSmelt   = meetsLevel && hasOre
+  const need       = Math.max(0, recipe.oreQty - oreQty)
 
   return (
     <li className={`smithing-recipe${canSmelt ? '' : ' smithing-recipe--locked'}`}>
@@ -48,6 +52,7 @@ function RecipeRow({ recipe, oreQty, forgingLevel, onSmelt }: RecipeRowProps) {
           <span className="smithing-recipe__lock-badge">Forging {recipe.levelReq} req</span>
         )}
       </div>
+      <RecipeOutputPreview outputDef={barDef} />
       <div className="smithing-recipe__meta">
         <span>Lvl {recipe.levelReq}</span>
         <span>·</span>
@@ -57,7 +62,7 @@ function RecipeRow({ recipe, oreQty, forgingLevel, onSmelt }: RecipeRowProps) {
       </div>
       <div className="smithing-recipe__bottom">
         <span className={`smithing-recipe__count${hasOre ? '' : ' smithing-recipe__count--low'}`}>
-          In bag: {oreQty}
+          In bag: {oreQty}{need > 0 && <span className="craft-need"> (need {need} more)</span>}
         </span>
         <button
           className="smithing-recipe__btn"
@@ -114,6 +119,7 @@ function ForgeRecipeRow({ recipe, slots, forgingLevel, gatherLevel, onForge }: F
           </span>
         )}
       </div>
+      <RecipeOutputPreview outputDef={toolDef} />
       <div className="smithing-recipe__meta">
         <span>Forging {recipe.forgingLevelReq}</span>
         <span>·</span>
@@ -124,12 +130,14 @@ function ForgeRecipeRow({ recipe, slots, forgingLevel, gatherLevel, onForge }: F
         <span>{recipe.forgeDuration} s</span>
       </div>
       <div className="smithing-recipe__bottom">
-        <span className={`smithing-recipe__ingredient-list${hasIngredients ? '' : ' smithing-recipe__count--low'}`}>
+        <span className="smithing-recipe__ingredient-list">
           {recipe.ingredients.map((ing) => {
             const have = slots.find((s) => s.id === ing.id)?.quantity ?? 0
+            const short = Math.max(0, ing.qty - have)
             return (
               <span key={ing.id} className={have >= ing.qty ? '' : 'smithing-recipe__count--low'}>
                 {ing.label}: {have}/{ing.qty}
+                {short > 0 && <span className="craft-need"> −{short}</span>}
               </span>
             )
           })}
@@ -174,6 +182,8 @@ export function SmithingPanel({ onSmelt, onForge }: SmithingPanelProps) {
   )
 
   const [activeTab, setActiveTab] = useState<SmithingTab>('smelt')
+  const [craftableOnly, setCraftableOnly] = useState(false)
+  const [sortMode, setSortMode] = useState<CraftSortMode>('level')
 
   const isOpenRef = useRef(false)
   useEffect(() => { isOpenRef.current = isOpen }, [isOpen])
@@ -200,14 +210,40 @@ export function SmithingPanel({ onSmelt, onForge }: SmithingPanelProps) {
 
   if (!isOpen) return null
 
-  const smeltRecipes = getAllSmeltRecipes()
-  const forgeRecipes = getAllForgeRecipes()
+  const allSmeltRecipes = getAllSmeltRecipes()
+  const allForgeRecipes = getAllForgeRecipes()
 
   const getOreQty = (oreId: string): number =>
     slots.find((s) => s.id === oreId)?.quantity ?? 0
 
   // Look up gather skill level from the subscribed skillLevels map.
   const getGatherLevel = (skillId: string): number => skillLevels[skillId] ?? 1
+
+  // ── Smelt filter + sort ───────────────────────────────────────────────
+  const smeltCraftable = allSmeltRecipes.filter((r) =>
+    forgingLevel >= r.levelReq && getOreQty(r.oreId) >= r.oreQty,
+  )
+  const smeltVisible = (craftableOnly ? smeltCraftable : allSmeltRecipes)
+    .slice()
+    .sort((a, b) =>
+      sortMode === 'name'
+        ? (getItem(a.barId)?.name ?? a.barId).localeCompare(getItem(b.barId)?.name ?? b.barId)
+        : a.levelReq - b.levelReq,
+    )
+
+  // ── Forge filter + sort ───────────────────────────────────────────────
+  const forgeCraftable = allForgeRecipes.filter((r) =>
+    forgingLevel >= r.forgingLevelReq &&
+    getGatherLevel(r.skillReq.skill) >= r.skillReq.level &&
+    r.ingredients.every((ing) => (slots.find((s) => s.id === ing.id)?.quantity ?? 0) >= ing.qty),
+  )
+  const forgeVisible = (craftableOnly ? forgeCraftable : allForgeRecipes)
+    .slice()
+    .sort((a, b) =>
+      sortMode === 'name'
+        ? (getItem(a.toolId)?.name ?? a.toolId).localeCompare(getItem(b.toolId)?.name ?? b.toolId)
+        : a.forgingLevelReq - b.forgingLevelReq,
+    )
 
   return (
     <div
@@ -251,10 +287,20 @@ export function SmithingPanel({ onSmelt, onForge }: SmithingPanelProps) {
         </button>
       </div>
 
+      {/* ── Filter bar ─────────────────────────────────────────────────── */}
+      <CraftFilterBar
+        craftableOnly={craftableOnly}
+        sortMode={sortMode}
+        onToggleCraftable={() => setCraftableOnly((v) => !v)}
+        onSetSort={setSortMode}
+        craftableCount={activeTab === 'smelt' ? smeltCraftable.length : forgeCraftable.length}
+        totalCount={activeTab === 'smelt' ? allSmeltRecipes.length : allForgeRecipes.length}
+      />
+
       {/* ── Recipe list ────────────────────────────────────────────────── */}
       {activeTab === 'smelt' && (
         <ul className="smithing-panel__list" role="list">
-          {smeltRecipes.map((recipe) => (
+          {smeltVisible.map((recipe) => (
             <RecipeRow
               key={recipe.oreId}
               recipe={recipe}
@@ -268,7 +314,7 @@ export function SmithingPanel({ onSmelt, onForge }: SmithingPanelProps) {
 
       {activeTab === 'forge' && (
         <ul className="smithing-panel__list" role="list">
-          {forgeRecipes.map((recipe) => (
+          {forgeVisible.map((recipe) => (
             <ForgeRecipeRow
               key={recipe.toolId}
               recipe={recipe}

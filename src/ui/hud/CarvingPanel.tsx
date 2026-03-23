@@ -1,5 +1,6 @@
 /**
  * Phase 42 — Carving Panel
+ * Phase 70 — Crafting Panel UX Pass (filter bar, output preview, missing-material feedback)
  *
  * A workbench-side crafting panel toggled when the player interacts with the
  * Carving Workbench or presses V while near it.  All carving recipes are shown
@@ -8,12 +9,14 @@
  * Pressing V, Escape, or clicking ✕ closes the panel.
  */
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useCarvingStore } from '../../store/useCarvingStore'
 import { useGameStore } from '../../store/useGameStore'
 import { getItem } from '../../data/items/itemRegistry'
 import { getAllCarveRecipes } from '../../engine/carving'
 import type { CarveRecipeConfig } from '../../engine/carving'
+import { CraftFilterBar, RecipeOutputPreview } from './CraftFilterBar'
+import type { CraftSortMode } from './CraftFilterBar'
 
 // ─── Recipe row ───────────────────────────────────────────────────────────
 
@@ -32,6 +35,7 @@ function CarveRecipeRow({ recipe, materialQty, carvingLevel, onCarve }: CarveRec
   const meetsLevel   = carvingLevel >= recipe.levelReq
   const hasMaterial  = materialQty >= recipe.materialQty
   const canCarve     = meetsLevel && hasMaterial
+  const need         = Math.max(0, recipe.materialQty - materialQty)
 
   return (
     <li className={`carving-recipe${canCarve ? '' : ' carving-recipe--locked'}`}>
@@ -45,6 +49,7 @@ function CarveRecipeRow({ recipe, materialQty, carvingLevel, onCarve }: CarveRec
           <span className="carving-recipe__lock-badge">Carving {recipe.levelReq} req</span>
         )}
       </div>
+      <RecipeOutputPreview outputDef={outputDef} />
       <div className="carving-recipe__meta">
         <span>Lvl {recipe.levelReq}</span>
         <span>·</span>
@@ -54,7 +59,7 @@ function CarveRecipeRow({ recipe, materialQty, carvingLevel, onCarve }: CarveRec
       </div>
       <div className="carving-recipe__bottom">
         <span className={`carving-recipe__count${hasMaterial ? '' : ' carving-recipe__count--low'}`}>
-          In bag: {materialQty}
+          In bag: {materialQty}{need > 0 && <span className="craft-need"> (need {need} more)</span>}
         </span>
         <button
           className="carving-recipe__btn"
@@ -84,6 +89,9 @@ export function CarvingPanel({ onCarve }: CarvingPanelProps) {
     (s) => s.skills.skills.find((sk) => sk.id === 'carving')?.level ?? 1,
   )
 
+  const [craftableOnly, setCraftableOnly] = useState(false)
+  const [sortMode, setSortMode] = useState<CraftSortMode>('level')
+
   const isOpenRef = useRef(false)
   useEffect(() => { isOpenRef.current = isOpen }, [isOpen])
   const panelRef = useRef<HTMLDivElement>(null)
@@ -109,10 +117,22 @@ export function CarvingPanel({ onCarve }: CarvingPanelProps) {
 
   if (!isOpen) return null
 
-  const recipes = getAllCarveRecipes()
+  const allRecipes = getAllCarveRecipes()
 
   const getMaterialQty = (materialId: string): number =>
     slots.find((s) => s.id === materialId)?.quantity ?? 0
+
+  const craftableRecipes = allRecipes.filter(
+    (r) => carvingLevel >= r.levelReq && getMaterialQty(r.materialId) >= r.materialQty,
+  )
+
+  const visibleRecipes = (craftableOnly ? craftableRecipes : allRecipes)
+    .slice()
+    .sort((a, b) =>
+      sortMode === 'name'
+        ? (getItem(a.outputId)?.name ?? a.outputId).localeCompare(getItem(b.outputId)?.name ?? b.outputId)
+        : a.levelReq - b.levelReq,
+    )
 
   return (
     <div
@@ -136,9 +156,19 @@ export function CarvingPanel({ onCarve }: CarvingPanelProps) {
         </button>
       </div>
 
+      {/* ── Filter bar ─────────────────────────────────────────────────── */}
+      <CraftFilterBar
+        craftableOnly={craftableOnly}
+        sortMode={sortMode}
+        onToggleCraftable={() => setCraftableOnly((v) => !v)}
+        onSetSort={setSortMode}
+        craftableCount={craftableRecipes.length}
+        totalCount={allRecipes.length}
+      />
+
       {/* ── Recipe list ────────────────────────────────────────────────── */}
       <ul className="carving-panel__list" role="list">
-        {recipes.map((recipe) => (
+        {visibleRecipes.map((recipe) => (
           <CarveRecipeRow
             key={recipe.outputId}
             recipe={recipe}
