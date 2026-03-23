@@ -125,6 +125,7 @@ p {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  border-radius: 0.75rem;
   background: radial-gradient(
     ellipse at center,
     transparent 35%,

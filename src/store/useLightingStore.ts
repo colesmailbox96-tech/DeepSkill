@@ -11,8 +11,8 @@ interface LightingState {
   /** ID of the dark zone the player is currently inside, or null. */
   activeDarkZoneId: string | null
   /**
-   * True when the player carries a light source (hollow_lantern equipped)
-   * that negates the darkness.
+   * True when the player has a light-providing item equipped
+   * (any equipment whose equipMeta.providesLight === true).
    */
   isLit: boolean
   /** Set both fields atomically. */

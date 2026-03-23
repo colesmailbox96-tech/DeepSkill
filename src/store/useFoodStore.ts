@@ -72,24 +72,26 @@ export const useFoodStore = create<FoodState>((set, get) => ({
     if (!inventory.slots.some((s) => s.id === itemId)) return false
 
     const def = getItem(itemId)
-    if (!def || def.type !== 'consumable' || !def.consumableMeta?.healsHp) return false
+    if (!def || def.type !== 'consumable') return false
+    const meta = def.consumableMeta
+    if (!meta || (!meta.healsHp && !meta.restoresStamina && !meta.buffAttack)) return false
 
-    const { healsHp, restoresStamina, buffAttack, duration } = def.consumableMeta
+    const { healsHp, restoresStamina, buffAttack, duration } = meta
 
     // Don't waste food when already at full health AND the item has nothing
     // else to restore (e.g. stamina).  A tonic that restores stamina is still
     // useful even when the player is at full HP.
-    const hpFull = playerStats.health >= playerStats.maxHealth
+    const hpFull = !healsHp || playerStats.health >= playerStats.maxHealth
     const staminaFull =
       !restoresStamina || playerStats.stamina >= playerStats.maxStamina
-    if (hpFull && staminaFull) {
-      useNotifications.getState().push('Already at full health.', 'info')
+    if (hpFull && staminaFull && !buffAttack) {
+      useNotifications.getState().push('Nothing left to restore.', 'info')
       return false
     }
 
-    const newHp = Math.min(playerStats.maxHealth, playerStats.health + healsHp)
+    const newHp = Math.min(playerStats.maxHealth, playerStats.health + (healsHp ?? 0))
     const actualHeal = newHp - playerStats.health
-    setHealth(newHp)
+    if (actualHeal > 0) setHealth(newHp)
 
     // Restore stamina if the item carries a stamina value.
     let staminaPart = ''
