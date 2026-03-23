@@ -6,11 +6,18 @@ import { meetsEquipRequirements, EQUIP_SLOT_META } from '../../engine/equipment'
 import { useNotifications } from '../../store/useNotifications'
 import { useFoodStore } from '../../store/useFoodStore'
 import { useCombatStore } from '../../store/useCombatStore'
+import { DEEP_RUIN_WARD_ITEM_ID } from '../../engine/warding'
 
 interface TooltipState {
   item: InventoryItem
   x: number
   y: number
+}
+
+/** Phase 81 — Props accepted by InventoryPanel. */
+interface InventoryPanelProps {
+  /** Called when the player activates a Deep Ruin Ward area-clearing seal. */
+  onActivateAreaSeal?: () => void
 }
 
 /**
@@ -22,7 +29,7 @@ interface TooltipState {
  *  - Hovering an occupied slot reveals a tooltip with full name and quantity.
  *  - Close via the ✕ button, pressing I again, or pressing Escape.
  */
-export function InventoryPanel() {
+export function InventoryPanel({ onActivateAreaSeal }: InventoryPanelProps = {}) {
   const [isOpen, setIsOpen] = useState(false)
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
@@ -297,6 +304,18 @@ export function InventoryPanel() {
               {inCombat && foodCooldown > 0
                 ? `On cooldown (${Math.ceil(foodCooldown)}s)`
                 : `Eat (+${tooltipDef.consumableMeta.healsHp} HP)`}
+            </button>
+          )}
+          {/* Phase 81 — Activate button for the Deep Ruin Ward area-clearing seal */}
+          {tooltipDef?.id === DEEP_RUIN_WARD_ITEM_ID && onActivateAreaSeal && (
+            <button
+              className="inv-tooltip__eat"
+              onClick={() => {
+                onActivateAreaSeal()
+                setTooltip(null)
+              }}
+            >
+              Activate (Area-Clearing Seal)
             </button>
           )}
         </div>

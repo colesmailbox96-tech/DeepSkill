@@ -124,6 +124,26 @@ const HAZARD_DEFS: HazardDef[] = [
     color: '#a8d060',
     icon: '☠️',
   },
+
+  // Phase 81 — Deep Glass Haze: a fine suspended haze of vaultglass
+  // micro-fragments that accumulates in the sealed inner halls of the
+  // Belowglass Vaults.  The microscopic edges lacerate exposed airways
+  // and eyes.  A Shatterglass Ward's refractive resonance deflects the
+  // particles before they make contact.
+  {
+    id: 'deep_glass_haze',
+    label: 'Deep Glass Haze',
+    aabb: { minX: -130, maxX: -116, minZ: -8, maxZ: 8 },
+    effect: 'damage',
+    tickInterval: 2.0,
+    tickAmount: 4,
+    wardItemId: 'shatterglass_ward',
+    entryMessage: 'A glittering haze fills the air — vaultglass micro-fragments slice at your skin and eyes.',
+    entryProtectedMessage: 'Your Shatterglass Ward deflects the glass haze — the particles cannot reach you.',
+    tickMessage: 'Glass micro-fragments cut through you.',
+    color: '#90d0f0',
+    icon: '🔷',
+  },
 ]
 
 // ─── Public API ───────────────────────────────────────────────────────────────

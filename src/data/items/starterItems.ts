@@ -1404,6 +1404,50 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'producing a seal strong enough to bar lesser spirits and deter ruin creatures.',
   },
 
+  // ── Phase 81 — Advanced Warding Content ──────────────────────────────────
+
+  {
+    id: 'ember_ward_seal',
+    name: 'Ember Ward Seal',
+    type: 'consumable',
+    stackable: true,
+    value: 38,
+    icon: 'items/ember_ward_seal.png',
+    description:
+      'A ward disc inscribed with the cold-light energy of Chapel Wisp embers. ' +
+      'The latent mist-resonance is redirected outward in a repellent pattern; ' +
+      'Chapel Wisps instinctively recoil from the carrier.  Keep it in your ' +
+      'pack — the effect is passive and continuous.',
+  },
+
+  {
+    id: 'deep_ruin_ward',
+    name: 'Deep Ruin Ward',
+    type: 'consumable',
+    stackable: true,
+    value: 48,
+    icon: 'items/deep_ruin_ward.png',
+    description:
+      'A heavy ward seal bound with construct plating\'s mechanoresonance. ' +
+      'When activated at a ruin threshold it pulses outward in a wide arc, ' +
+      'forcing all hostile creatures in range to flee.  A consumable ' +
+      'area-clearing seal prized by ruin delvers entering unknown corridors.',
+  },
+
+  {
+    id: 'shatterglass_ward',
+    name: 'Shatterglass Ward',
+    type: 'consumable',
+    stackable: true,
+    value: 58,
+    icon: 'items/shatterglass_ward.png',
+    description:
+      'A ward matrix threaded with vault glass shard fragments.  The refractive ' +
+      'resonance locked inside each shard creates a deflection field that counters ' +
+      'the deep glass haze filling the inner halls of the Belowglass Vaults. ' +
+      'Without this ward the suspended micro-fragments lacerate unprotected skin.',
+  },
+
   // ── Phase 67 — Skill-gated vault inscription reward ───────────────────────
 
   {
