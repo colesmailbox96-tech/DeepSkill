@@ -1588,6 +1588,49 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'was destroyed.  A key component in late-tier armour and precision mechanisms.',
   },
 
+  // ── Phase 82 — Higher Threat Creature Pack drops ─────────────────────────
+
+  {
+    id: 'husk_membrane',
+    name: 'Husk Membrane',
+    type: 'material',
+    stackable: true,
+    value: 48,
+    icon: 'items/husk_membrane.png',
+    description:
+      'A translucent, leathery membrane peeled from the outer casing of a Deep Husk. ' +
+      'The material absorbs ambient heat and pressure, making it an advanced insulating ' +
+      'layer for ruin-delver gear and high-tier protective wrappings.',
+  },
+
+  {
+    id: 'glassjaw_shard',
+    name: 'Glassjaw Shard',
+    type: 'material',
+    stackable: true,
+    value: 55,
+    icon: 'items/glassjaw_shard.png',
+    description:
+      'A curved fragment of reinforced glass-alloy torn from a Glassjaw Sentinel\'s ' +
+      'striking face.  The compound material is harder than pure vaultglass yet still ' +
+      'brittle along stress lines — smiths grind it into precision cutting inserts ' +
+      'for the finest tools and optical fittings.',
+  },
+
+  {
+    id: 'eel_lantern_organ',
+    name: 'Eel Lantern Organ',
+    type: 'material',
+    stackable: true,
+    value: 38,
+    icon: 'items/eel_lantern_organ.png',
+    description:
+      'The bioluminescent organ harvested from a Lantern Eel, still faintly ' +
+      'pulsing with cold blue-green light hours after the creature\'s death. ' +
+      'The organ secretes a light-reactive gel used by tinkers as a stable ' +
+      'illuminant fluid and by alchemists as a catalyst in night-vision compounds.',
+  },
+
   // ── Phase 79 — Advanced Smithing and Alloy Routes ─────────────────────────
 
   {

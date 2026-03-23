@@ -375,6 +375,98 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
     currencyMin: 4,
     currencyMax: 10,
   },
+
+  // ── Phase 82 — Higher Threat Creature Pack ─────────────────────────────────
+
+  // Deep Husk — massive calcified vault-construct; drops husk_membrane and
+  // construct_plating; occasional vault_glass_shard; high currency reward.
+  deep_husk: {
+    entries: [
+      {
+        itemId: 'husk_membrane',
+        chance: 0.70,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'uncommon',
+      },
+      {
+        itemId: 'construct_plating',
+        chance: 0.55,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'uncommon',
+      },
+      {
+        itemId: 'vault_glass_shard',
+        chance: 0.30,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'uncommon',
+      },
+      {
+        itemId: 'bone_shard',
+        chance: 0.60,
+        minQty: 1,
+        maxQty: 3,
+        rarity: 'common',
+      },
+    ],
+    currencyMin: 8,
+    currencyMax: 18,
+  },
+
+  // Glassjaw Sentinel — fast glass-alloy construct; drops glassjaw_shard as
+  // its signature material; vault_glass_shard as common secondary.
+  glassjaw_sentinel: {
+    entries: [
+      {
+        itemId: 'glassjaw_shard',
+        chance: 0.75,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'uncommon',
+      },
+      {
+        itemId: 'vault_glass_shard',
+        chance: 0.65,
+        minQty: 1,
+        maxQty: 2,
+        rarity: 'common',
+      },
+    ],
+    currencyMin: 6,
+    currencyMax: 14,
+  },
+
+  // Lantern Eel — bioluminescent fen predator; drops eel_lantern_organ as
+  // its signature material; reed_fiber as common secondary.
+  lantern_eel: {
+    entries: [
+      {
+        itemId: 'eel_lantern_organ',
+        chance: 0.80,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'uncommon',
+      },
+      {
+        itemId: 'reed_fiber',
+        chance: 0.60,
+        minQty: 1,
+        maxQty: 3,
+        rarity: 'common',
+      },
+      {
+        itemId: 'mossback_hide',
+        chance: 0.35,
+        minQty: 1,
+        maxQty: 1,
+        rarity: 'common',
+      },
+    ],
+    currencyMin: 5,
+    currencyMax: 12,
+  },
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
