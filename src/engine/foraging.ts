@@ -26,7 +26,7 @@ import { useGameStore } from '../store/useGameStore'
 
 // ─── Variant configuration ────────────────────────────────────────────────────
 
-export type ForageVariant = 'reed_clump' | 'marsh_herb' | 'resin_glob' | 'ashfen_resin' | 'marsh_glass_reed'
+export type ForageVariant = 'reed_clump' | 'marsh_herb' | 'resin_glob' | 'ashfen_resin' | 'marsh_glass_reed' | 'marrowfen_spore'
 
 export interface ForageVariantConfig {
   /** Interaction label shown when the node is ready. */
@@ -108,6 +108,19 @@ export const FORAGE_VARIANT_CONFIG: Readonly<Record<ForageVariant, ForageVariant
     respawnTime: 40,
     primaryColor: 0xa8d8c0,
     secondaryColor: 0xd0f0e8,
+  },
+  // Phase 74 — Marrowfen rare fungal cluster: pale glowing spore caps that
+  // push up through the fen mud.  High XP and rare; requires level 9 Foraging.
+  marrowfen_spore: {
+    label: 'Marrowfen Spore Cluster',
+    quietLabel: 'Spent Spore Bed',
+    depletedMessage: 'These spore caps have been harvested — wait for the next bloom.',
+    itemId: 'marrowfen_spore',
+    xp: 45,
+    levelReq: 9,
+    respawnTime: 55,
+    primaryColor: 0xd4b8e0,
+    secondaryColor: 0x8860a8,
   },
 } as const
 

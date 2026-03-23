@@ -119,6 +119,8 @@ import { buildBrackroot } from './engine/brackroot'
 import { buildTidemarkChapel } from './engine/tidemark_chapel'
 import { buildAshfenCopse } from './engine/ashfen_copse'
 import { buildHollowVault, pollGateUnsealed } from './engine/hollow_vault'
+import { buildMarrowfen } from './engine/marrowfen'
+import type { MarrowfenResult } from './engine/marrowfen'
 import {
   buildSalvageNodes,
   updateSalvageNodes,
@@ -712,6 +714,12 @@ function App() {
     allTreeNodes.push(...ashfenCopse.treeNodes)
     allForageNodes.push(...ashfenCopse.forageNodes)
     allRockNodes.push(...ashfenCopse.rockNodes)
+
+    // Phase 74 — Marrowfen Blockout
+    // Build the dangerous mid-late fen zone south of the Brackroot Bog.
+    const marrowfen: MarrowfenResult = buildMarrowfen(scene, interactables, onForageStart)
+    collidables.push(...marrowfen.collidables)
+    allForageNodes.push(...marrowfen.forageNodes)
 
     // Phase 22 — Cooking System Foundation
     // Phase 59 — Panel-based recipe selection replaces auto-cook.
@@ -2582,6 +2590,10 @@ function App() {
       // Phase 65 — Hollow Vault Steps explore trigger.
       if (player.mesh.position.x <= -62 && player.mesh.position.z >= -10 && player.mesh.position.z <= 10) {
         triggerZoneExplore('hollow_vault')
+      }
+      // Phase 74 — Marrowfen explore trigger.
+      if (player.mesh.position.z >= 60 && player.mesh.position.x >= -28 && player.mesh.position.x <= 28) {
+        triggerZoneExplore('marrowfen')
       }
       // Phase 65 — Vault gate unseal: hide gate mesh, remove its collidable, and
       // unregister its interactable so the player can't target an invisible gate.

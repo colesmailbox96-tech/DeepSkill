@@ -1439,4 +1439,61 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       effect: 'Restores 12 stamina.',
     },
   },
+
+  // ── Phase 74 — Marrowfen Blockout ─────────────────────────────────────────
+
+  {
+    id: 'marrowfen_spore',
+    name: 'Marrowfen Spore',
+    type: 'material',
+    stackable: true,
+    value: 18,
+    icon: 'items/marrowfen_spore.png',
+    description:
+      'A pale, faintly luminescent spore cap harvested from the fen floor. ' +
+      'The bioluminescent spores within pulse gently with a soft violet glow. ' +
+      'Herbalists and alchemists prize them for restorative and ward-binding preparations.',
+  },
+
+  {
+    id: 'bogfiend_scale',
+    name: 'Bogfiend Scale',
+    type: 'material',
+    stackable: true,
+    value: 22,
+    icon: 'items/bogfiend_scale.png',
+    description:
+      'A thick, hexagonal scale pried from a defeated Bogfiend. ' +
+      'Dense and moisture-resistant, the keratin plates resist cuts and blunt impacts — ' +
+      'crafters use them in mid-tier armour and durable water-resistant bindings.',
+  },
+
+  {
+    id: 'mire_hound_pelt',
+    name: 'Mire Hound Pelt',
+    type: 'material',
+    stackable: true,
+    value: 16,
+    icon: 'items/mire_hound_pelt.png',
+    description:
+      'A supple, mottled pelt stripped from a Mire Hound. ' +
+      'The dense, water-repellent undercoat makes it excellent for lining cloaks ' +
+      'and crafting light armour suited to wet, overgrown terrain.',
+  },
+
+  {
+    id: 'bog_filter_wrap',
+    name: 'Bog Filter Wrap',
+    type: 'equipment',
+    stackable: false,
+    value: 30,
+    icon: 'items/bog_filter_wrap.png',
+    description:
+      'A dense cloth wrap soaked in rendered Bogfiend tallow and dried Marrowfen Spore powder. ' +
+      'Worn over the nose and mouth, it filters out the worst of the toxic gas that ' +
+      'seeps from the Marrowfen vents — providing reliable protection inside the fen.',
+    equipMeta: {
+      slot: 'neck',
+    },
+  },
 ]

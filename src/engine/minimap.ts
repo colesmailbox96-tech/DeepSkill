@@ -66,6 +66,16 @@ export const MINIMAP_REGIONS: MinimapRegion[] = [
     color: '#3b4d6a',
     borderColor: '#5a72a0',
   },
+  // Marrowfen must be evaluated before bog since it is a deep-south sub-zone
+  // that would otherwise match the broader bog predicate (z ≥ 19).
+  {
+    id: 'marrowfen',
+    label: 'Marrowfen',
+    // Deep south fen: z ≥ 60, x ∈ [−28, +28].
+    contains: (x, z) => z >= 60 && x >= -28 && x <= 28,
+    color: '#1c2c1a',
+    borderColor: '#304828',
+  },
   {
     id: 'bog',
     label: 'Brackroot Bog',
@@ -155,6 +165,10 @@ export const MINIMAP_MARKERS: MinimapMarker[] = [
   { id: 'vault_crawler',   label: 'Vault Crawler',   x: -82,    z:   -3,   kind: 'npc', icon: '🦂' },
   { id: 'stone_wraith',    label: 'Stone Wraith',    x: -93,    z:    3,   kind: 'npc', icon: '💀' },
 
+  // ── Marrowfen encounters ────────────────────────────────────────────────────
+  { id: 'bogfiend',        label: 'Bogfiend',        x:  -8,    z:   82,   kind: 'npc', icon: '🐊' },
+  { id: 'mire_hound',      label: 'Mire Hound',      x:  10,    z:   72,   kind: 'npc', icon: '🐺' },
+
   // ── Quarry NPC ─────────────────────────────────────────────────────────────
   { id: 'gorven',          label: 'Gorven',          x:   6,    z:  -55.5, kind: 'npc', icon: '⛏️' },
 
@@ -169,6 +183,7 @@ export const MINIMAP_MARKERS: MinimapMarker[] = [
   { id: 'zone_shoreline',     label: 'Shoreline',       x:  50,    z:    0,   kind: 'zone' },
   { id: 'zone_ashfen',        label: 'Ashfen Copse',    x:  53,    z:  -73,   kind: 'zone' },
   { id: 'zone_hollow_vault',  label: 'Hollow Vault',    x: -79,    z:    0,   kind: 'zone' },
+  { id: 'zone_marrowfen',     label: 'Marrowfen',       x:   0,    z:   82,   kind: 'zone' },
 ]
 
 // ─── Marker colour palette ────────────────────────────────────────────────────

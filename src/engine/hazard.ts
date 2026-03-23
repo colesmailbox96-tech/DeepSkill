@@ -107,6 +107,22 @@ const HAZARD_DEFS: HazardDef[] = [
     color: '#ef9a3a',
     icon: '⚗️',
   },
+  // Phase 74 — Marrowfen gas vents: pockets of toxic miasma that bubble up
+  // through the fen floor.  Carrying a Bog Filter Wrap reduces the damage.
+  {
+    id: 'gas_vent_marrowfen',
+    label: 'Gas Vent',
+    aabb: { minX: -14, maxX: 14, minZ: 76, maxZ: 92 },
+    effect: 'damage',
+    tickInterval: 2.5,
+    tickAmount: 3,
+    wardItemId: 'bog_filter_wrap',
+    entryMessage: 'Noxious gas seeps up from the fen floor. The air is thick and dangerous.',
+    entryProtectedMessage: 'Your Bog Filter Wrap screens the worst of the gas. You breathe easier.',
+    tickMessage: 'Toxic miasma burns your airways.',
+    color: '#a8d060',
+    icon: '☠️',
+  },
 ]
 
 // ─── Public API ───────────────────────────────────────────────────────────────

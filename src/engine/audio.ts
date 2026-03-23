@@ -39,7 +39,7 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /** Unique identifier for an audio region. */
-export type AudioRegion = 'hushwood' | 'bog' | 'chapel' | 'quarry' | 'shoreline' | 'ashfen' | 'hollow_vault'
+export type AudioRegion = 'hushwood' | 'bog' | 'chapel' | 'quarry' | 'shoreline' | 'ashfen' | 'hollow_vault' | 'marrowfen'
 
 /** Type of one-shot sound effect. */
 export type SfxType =
@@ -163,6 +163,18 @@ const REGION_CONFIG: Record<AudioRegion, RegionConfig> = {
     lfoDepth: 10,
     airLevel: 0.03,  // almost no high-frequency content underground
   },
+  // Phase 74 — Marrowfen: thick, fetid air with a constant low gurgle from
+  // the gas vents.  Heavier than the bog; deeper drone signals real danger.
+  marrowfen: {
+    filterType: 'lowpass',
+    filterFreq: 160,
+    filterQ: 2.8,
+    droneFreq: 48,
+    droneLevel: 0.20,
+    lfoFreq: 0.07,   // slow bubbling motion like fen gas rising through water
+    lfoDepth: 28,
+    airLevel: 0.04,  // almost no open air — dense canopy and humid miasma
+  },
 }
 
 // ─── Pentatonic music sequences ───────────────────────────────────────────────
@@ -228,6 +240,11 @@ const REGION_PEACEFUL_SEQ: Record<AudioRegion, [number, number][]> = {
   // long silences between them heighten unease.
   hollow_vault: [
     [0, 1.1], [2, 0.9], [0, 1.3],
+  ],
+  // Phase 74 — Marrowfen: dark and dissonant — low two-note motifs interrupted
+  // by long rests; the silence feels as threatening as the notes.
+  marrowfen: [
+    [0, 0.9], [1, 0.7], [0, 1.2], [1, 0.85],
   ],
 }
 
@@ -802,6 +819,8 @@ export function getAudioRegion(x: number, z: number): AudioRegion {
   // Hollow Vault Steps — deeper than the chapel; narrow z band within the chapel x range.
   if (x <= -60 && z >= -10 && z <= 10) return 'hollow_vault'
   if (x <= -32) return 'chapel'
+  // Marrowfen — deep south fen zone, checked before the broad bog catch-all.
+  if (z >= 60 && x >= -28 && x <= 28) return 'marrowfen'
   if (z >= 19)  return 'bog'
   // Ashfen Copse must be checked before the broader east/south region checks
   // because it lies in the far-northeast corner of the map.
