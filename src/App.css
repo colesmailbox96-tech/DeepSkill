@@ -1862,6 +1862,131 @@ p {
   }
 }
 
+/* ── Phase 83 — Boss Health Bar ──────────────────────────────────────────── */
+
+/**
+ * Full-width boss health bar anchored to the bottom-centre of the viewport.
+ * Visually heavier than the regular CombatTargetHud to signal a major fight.
+ */
+.boss-health-bar {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: min(480px, 90vw);
+  pointer-events: none;
+  z-index: 60;
+}
+
+.boss-health-bar__header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.boss-health-bar__skull {
+  font-size: 1rem;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 4px rgba(200, 50, 50, 0.8));
+}
+
+.boss-health-bar__name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f5deb3;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(180, 30, 30, 0.6);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.boss-health-bar__phase-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #ffcc44;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 200, 50, 0.4);
+  border-radius: 3px;
+  padding: 0.1em 0.4em;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 6px rgba(255, 200, 50, 0.7);
+}
+
+.boss-health-bar__track {
+  position: relative;
+  height: 16px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  box-shadow: 0 0 12px rgba(180, 30, 30, 0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* Phase-1 fill: deep crimson — normal / early encounter. */
+.boss-health-bar__fill--phase1 {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #6b0e0e, #b52020);
+  transition: width 0.25s ease;
+}
+
+/* Phase-2 fill: orange-red — boss intensifies. */
+.boss-health-bar__fill--phase2 {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #8b2500, #d44000);
+  transition: width 0.25s ease;
+}
+
+/* Phase-3 fill: amber — desperate final phase. */
+.boss-health-bar__fill--phase3 {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7a5200, #c88000);
+  transition: width 0.25s ease;
+  animation: boss-phase3-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes boss-phase3-pulse {
+  from { filter: brightness(1); }
+  to   { filter: brightness(1.35); }
+}
+
+/* Divider marks separating phase segments. */
+.boss-health-bar__segment {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateX(-50%);
+}
+
+.boss-health-bar__label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+@media (pointer: coarse) {
+  .boss-health-bar {
+    bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+    width: min(400px, 92vw);
+  }
+}
+
 /* ── Phase 34 — Respawn / Safe Recovery Overlay ──────────────────────────── */
 
 /**

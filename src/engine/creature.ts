@@ -196,6 +196,26 @@ export interface CreatureDef {
    * `wardRepelId` item.  Defaults to `EMBER_WARD_REPEL_RADIUS` when omitted.
    */
   wardRepelRadius?: number
+
+  // ── Phase 83 boss fields ──────────────────────────────────────────────────
+
+  /**
+   * Phase 83 — Marks this creature as a boss.
+   *
+   * When `true` the game loop links this creature to a `BossArenaConfig` and
+   * drives the boss encounter framework (arena entry/exit, phase transitions,
+   * special moves, reset logic).  The `BossHealthBar` HUD is shown instead of
+   * the normal `CombatTargetHud` nameplate while a boss encounter is active.
+   */
+  isBoss?: boolean
+
+  /**
+   * Phase 83 — ID of the `BossArenaConfig` this creature belongs to.
+   *
+   * Must match the `id` field of a `BossArenaConfig` registered in App.tsx.
+   * Ignored unless `isBoss` is `true`.
+   */
+  bossArenaId?: string
 }
 
 /** A live creature instance in the world. */

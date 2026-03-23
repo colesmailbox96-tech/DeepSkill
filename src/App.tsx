@@ -222,6 +222,15 @@ import {
   spawnWardActivation,
   tickVfx,
 } from './engine/vfx'
+import {
+  createBossArenaState,
+  updateBossArena,
+  resetBossArena,
+  BOSS_ARENA_CONFIGS,
+} from './engine/boss'
+import type { BossArenaEntry } from './engine/boss'
+import { useBossStore } from './store/useBossStore'
+import { BossHealthBar } from './ui/hud/BossHealthBar'
 import './App.css'
 
 // Register NPC dialogue trees once at module load time.
@@ -1331,6 +1340,25 @@ function App() {
 
     const creatures: Creature[] = buildCreatures(scene, interactables, onHarvest)
 
+    // Phase 83 — Boss Encounter Framework: build arena entries for any boss
+    // creatures spawned by buildCreatures().  No boss is defined yet (Phase 84
+    // will add the first); the infrastructure is wired here so Phase 84 only
+    // needs to populate BOSS_ARENA_CONFIGS and set isBoss/bossArenaId on a def.
+    const bossArenaEntries: BossArenaEntry[] = creatures
+      .filter((c) => c.def.isBoss && c.def.bossArenaId)
+      .reduce<BossArenaEntry[]>((acc, boss) => {
+        const config = BOSS_ARENA_CONFIGS.find((c) => c.id === boss.def.bossArenaId)
+        if (config) {
+          acc.push({
+            arenaState: createBossArenaState(config),
+            boss,
+            phaseThresholds: [],
+            specialMoves: [],
+          })
+        }
+        return acc
+      }, [])
+
     // Phase 81 — Area-clearing seal activation.
     // When the player activates a Deep Ruin Ward from the inventory panel,
     // all non-dead hostile creatures within DEEP_RUIN_WARD_CLEAR_RADIUS are
@@ -1421,6 +1449,12 @@ function App() {
       // Clear combat target to prevent immediate re-aggro on wake.
       setTarget(combatRef.current, null)
       useCombatStore.getState().clearTarget()
+      // Phase 83 — Reset all boss arenas so bosses don't stay half-dead
+      // between attempts.  The boss store is also cleared so the UI resets.
+      for (const entry of bossArenaEntries) {
+        resetBossArena(entry.arenaState, entry.boss)
+      }
+      useBossStore.getState().clearBoss()
       // Teleport to settlement hearth (world origin).
       player.mesh.position.set(RESPAWN_X, RESPAWN_Y, RESPAWN_Z)
       // Clear any held movement inputs so the player doesn't slide after waking.
@@ -2857,6 +2891,88 @@ function App() {
           hiddenShortcuts.splice(_si, 1)
         }
       }
+      // Phase 83 — Boss Encounter Framework: advance each registered arena
+      // state and sync the boss store so BossHealthBar stays current.
+      {
+        const playerPos = player.mesh.position
+        let anyBossActive = false
+        for (const entry of bossArenaEntries) {
+          const { arenaState, boss, phaseThresholds, specialMoves } = entry
+          updateBossArena(
+            arenaState,
+            delta,
+            boss,
+            playerPos,
+            phaseThresholds,
+            specialMoves,
+            // dealDamage: forward special-move damage through the same path as
+            // creature melee attacks so equipment defence applies.
+            (amount: number) => onCreatureAttack(boss, amount),
+            // onArenaEnter
+            () => {
+              useNotifications.getState().push(
+                `A powerful presence stirs — ${boss.def.name} awakens!`,
+                'warning',
+              )
+            },
+            // onArenaExit
+            () => {
+              useNotifications.getState().push(
+                `You flee the arena — the ${boss.def.name} will recover…`,
+                'info',
+              )
+            },
+            // onPhaseChange
+            (_newPhase, threshold) => {
+              useNotifications.getState().push(
+                threshold.phaseLabel,
+                'warning',
+              )
+              // Speed up the boss's attacks for this phase.
+              if (boss.def.attackCooldown != null) {
+                boss.attackTimer = Math.min(
+                  boss.attackTimer,
+                  (boss.def.attackCooldown * threshold.attackCooldownMult) * 0.5,
+                )
+              }
+            },
+            // onBossDefeated
+            () => {
+              useBossStore.getState().clearBoss()
+              useNotifications.getState().push(
+                `${boss.def.name} has been defeated!`,
+                'success',
+              )
+            },
+            // onArenaReset
+            () => {
+              useBossStore.getState().clearBoss()
+              useNotifications.getState().push(
+                `The ${boss.def.name} has recovered and awaits your return.`,
+                'info',
+              )
+            },
+          )
+
+          // Sync boss store while the player is inside an active encounter.
+          if (arenaState.playerInside && !arenaState.bossDefeated && boss.state !== 'dead') {
+            anyBossActive = true
+            const maxPhase = phaseThresholds.length + 1
+            useBossStore.getState().setBossInfo(
+              boss.def.name,
+              boss.hp,
+              boss.def.maxHp ?? boss.hp,
+              arenaState.currentPhase,
+              maxPhase,
+            )
+          }
+        }
+        // Clear the boss store when no arena is active (covers the case where
+        // the player exits without triggering a reset notification path).
+        if (!anyBossActive && useBossStore.getState().isBossActive) {
+          useBossStore.getState().clearBoss()
+        }
+      }
       // Sync live target HP to the combat store so the React overlay stays current.
       // Cache the last values written to avoid redundant Zustand updates every frame.
       const combatTarget = combatRef.current.target
@@ -3009,6 +3125,8 @@ function App() {
           <PlayerStrip />
           {/* Phase 31 — Combat target nameplate + HP bar */}
           <CombatTargetHud />
+          {/* Phase 83 — Boss encounter health bar (bottom-centre, only shown during boss fights) */}
+          <BossHealthBar />
           <NotificationFeed />
           {/* Phase 10 — Inventory panel */}
           <InventoryPanel onActivateAreaSeal={() => activateAreaSealRef.current()} />
