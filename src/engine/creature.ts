@@ -68,6 +68,7 @@
 import * as THREE from 'three'
 import type { Interactable } from './interactable'
 import { spawnHitRing } from './vfx'
+import { EMBER_WARD_REPEL_RADIUS } from './warding'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -177,6 +178,24 @@ export interface CreatureDef {
    * player-side check.
    */
   leashRadius?: number
+
+  // ── Phase 81 ward repel ───────────────────────────────────────────────────
+
+  /**
+   * Phase 81 — Item ID of a ward that repels this creature.
+   *
+   * When the player's inventory contains this item the creature is forced to
+   * flee whenever the player is within `wardRepelRadius` metres.  This
+   * provides anti-wisp (and similar) passive deterrence without requiring the
+   * player to attack.
+   */
+  wardRepelId?: string
+
+  /**
+   * Phase 81 — Radius (metres) within which this creature is repelled by its
+   * `wardRepelId` item.  Defaults to `EMBER_WARD_REPEL_RADIUS` when omitted.
+   */
+  wardRepelRadius?: number
 }
 
 /** A live creature instance in the world. */
@@ -419,6 +438,7 @@ const CREATURE_DEFS: CreatureDef[] = [
   // 7. Chapel Wisp — Phase 47 Tidemark Chapel creature.  An unstable
   //    light-being that drifts through the flooded inner shrine.  Ethereal and
   //    swift, it attacks with a cold pulse.  Drops a wisp_ember.
+  //    Phase 81: repelled by an Ember Ward Seal carried by the player.
   {
     id: 'chapel_wisp',
     name: 'Chapel Wisp',
@@ -438,6 +458,8 @@ const CREATURE_DEFS: CreatureDef[] = [
     respawnDelay: 35,
     dropItemId: 'wisp_ember',
     dropChance: 0.70,
+    wardRepelId: 'ember_ward_seal',
+    wardRepelRadius: EMBER_WARD_REPEL_RADIUS,
   },
 
   // ── Phase 57 — Ashfen Copse creatures ────────────────────────────────────
@@ -715,18 +737,22 @@ export function spawnCreature(
  * Advance every creature's AI one simulation step.
  * Call once per animation frame with the frame delta (seconds).
  *
- * @param creatures  The live creature array returned by buildCreatures().
- * @param delta      Frame time in seconds.
- * @param playerPos  Current player world position; used for flee/aggro detection.
- * @param onAttack   Optional callback invoked when a hostile creature lands a
- *                   melee hit on the player.  Receives the attacker and the raw
- *                   damage value so the caller can apply it to player HP.
+ * @param creatures      The live creature array returned by buildCreatures().
+ * @param delta          Frame time in seconds.
+ * @param playerPos      Current player world position; used for flee/aggro detection.
+ * @param onAttack       Optional callback invoked when a hostile creature lands a
+ *                       melee hit on the player.  Receives the attacker and the raw
+ *                       damage value so the caller can apply it to player HP.
+ * @param playerSlots    Phase 81 — Current player inventory slots.  Used to check
+ *                       whether any creature's wardRepelId item is carried so that
+ *                       repelled creatures can be forced to flee.
  */
 export function updateCreatures(
   creatures: Creature[],
   delta: number,
   playerPos: THREE.Vector3,
   onAttack?: (creature: Creature, damage: number) => void,
+  playerSlots?: ReadonlyArray<{ id: string }>,
 ): void {
   for (const creature of creatures) {
     // Tick drop cooldown regardless of AI state.
@@ -743,6 +769,28 @@ export function updateCreatures(
         creature.bodyMat.emissiveIntensity = creature.preFlashEmissiveIntensity
       }
     }
+
+    // Phase 81 — Ward repel: if the player carries the repel ward for this
+    // creature and is within wardRepelRadius, force the creature to flee.
+    // Dead or already-fleeing creatures are skipped.
+    if (
+      playerSlots &&
+      creature.def.wardRepelId &&
+      creature.state !== 'dead' &&
+      creature.state !== 'flee'
+    ) {
+      const playerCarriesWard = playerSlots.some((s) => s.id === creature.def.wardRepelId)
+      if (playerCarriesWard) {
+        const repelRadius = creature.def.wardRepelRadius ?? EMBER_WARD_REPEL_RADIUS
+        const dx = creature.mesh.position.x - playerPos.x
+        const dz = creature.mesh.position.z - playerPos.z
+        const distSq = dx * dx + dz * dz
+        if (distSq < repelRadius * repelRadius) {
+          _startFlee(creature, playerPos)
+        }
+      }
+    }
+
     _stepCreature(creature, delta, playerPos, creatures, onAttack)
   }
 }

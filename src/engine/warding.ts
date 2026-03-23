@@ -1,21 +1,30 @@
 /**
  * Phase 46 — Warding Skill Foundation
  * Phase 66 — Salvage System: vault_seal_ward added.
+ * Phase 81 — Advanced Warding Content: ember_ward_seal, deep_ruin_ward,
+ *             shatterglass_ward.  Anti-wisp ward repel.  Area-clearing seal.
  *
  * Adds an occult utility skill to Veilmarch.  A warding altar is placed in
  * the Hushwood settlement; players interact with it (or press G while nearby)
  * to open the Warding Panel, then craft a ward mark.
  *
- * Warding covers two use cases drawn from the Phase 46 brief:
- *   1. Environmental protection — Ashwillow Ward: guards the holder against
- *      environmental hazards such as mist seep, cold creep, and vapour zones.
- *   2. Creature deterrence   — Thornward Mark: unsettles hostile creatures
- *      and causes them to avoid marked ground.
+ * Warding covers several use cases:
+ *   1. Environmental protection — Ashwillow Ward: guards against mist seep.
+ *   2. Creature deterrence   — Thornward Mark: unsettles hostile creatures.
+ *   3. Ruin spirit deterrence — Vault Seal Ward: bars lesser spirits. [P66]
+ *   4. Anti-wisp seal        — Ember Ward Seal: repels Chapel Wisps. [P81]
+ *   5. Area-clearing seal    — Deep Ruin Ward: forces nearby creatures to
+ *                              flee when activated.  [P81]
+ *   6. Hazard protection     — Shatterglass Ward: guards against the deep
+ *                              glass haze of the Belowglass inner vault. [P81]
  *
  * Ward mark recipes:
- *   ashwood_log    ×2 → ashwillow_ward   (lvl 1, 12 s, 14 xp)
- *   reed_fiber     ×3 → thornward_mark   (lvl 2, 15 s, 18 xp)
- *   vault_seal_wax ×2 → vault_seal_ward  (lvl 3, 18 s, 24 xp) [Phase 66]
+ *   ashwood_log      ×2 → ashwillow_ward    (lvl 1, 12 s, 14 xp)
+ *   reed_fiber       ×3 → thornward_mark    (lvl 2, 15 s, 18 xp)
+ *   vault_seal_wax   ×2 → vault_seal_ward   (lvl 3, 18 s, 24 xp) [Phase 66]
+ *   wisp_ember       ×2 → ember_ward_seal   (lvl 4, 20 s, 30 xp) [Phase 81]
+ *   construct_plating×1 → deep_ruin_ward    (lvl 5, 24 s, 36 xp) [Phase 81]
+ *   vault_glass_shard×3 → shatterglass_ward (lvl 6, 28 s, 42 xp) [Phase 81]
  *
  * The caller (App.tsx) owns the level check, timed session, item swap, and XP
  * grant.  This module provides the data, station visual, and helpers.
@@ -28,10 +37,22 @@ import { useGameStore } from '../store/useGameStore'
 // ─── Recipe configuration ─────────────────────────────────────────────────
 
 /** All warding material IDs. */
-export type WardableId = 'ashwood_log' | 'reed_fiber' | 'vault_seal_wax'
+export type WardableId =
+  | 'ashwood_log'
+  | 'reed_fiber'
+  | 'vault_seal_wax'
+  | 'wisp_ember'
+  | 'construct_plating'
+  | 'vault_glass_shard'
 
 /** Union of every ward mark output ID. */
-export type WardOutputId = 'ashwillow_ward' | 'thornward_mark' | 'vault_seal_ward'
+export type WardOutputId =
+  | 'ashwillow_ward'
+  | 'thornward_mark'
+  | 'vault_seal_ward'
+  | 'ember_ward_seal'
+  | 'deep_ruin_ward'
+  | 'shatterglass_ward'
 
 export interface WardRecipeConfig {
   /** Human-readable label for notifications and the panel. */
@@ -88,6 +109,50 @@ export const WARD_RECIPE_CONFIG: Readonly<Record<WardOutputId, WardRecipeConfig>
     xp: 24,
     effectHint: 'Ruin spirit deterrence',
   },
+
+  // Phase 81 — Advanced Warding Content.
+
+  // Ember Ward Seal: inscribed using the cold-light embers shed by Chapel
+  // Wisps.  The latent mist-energy crystallised in each ember is redirected
+  // outward, creating a pattern that wisps instinctively recoil from.
+  ember_ward_seal: {
+    label: 'Ember Ward Seal',
+    materialId: 'wisp_ember',
+    materialQty: 2,
+    outputId: 'ember_ward_seal',
+    levelReq: 4,
+    wardDuration: 20,
+    xp: 30,
+    effectHint: 'Anti-wisp seal; repels Chapel Wisps',
+  },
+
+  // Deep Ruin Ward: bound with construct plating's residual mechanoresonance.
+  // When activated at a ruin threshold, the ward pulses outward and forces
+  // nearby hostile creatures to flee — an area-clearing seal.
+  deep_ruin_ward: {
+    label: 'Deep Ruin Ward',
+    materialId: 'construct_plating',
+    materialQty: 1,
+    outputId: 'deep_ruin_ward',
+    levelReq: 5,
+    wardDuration: 24,
+    xp: 36,
+    effectHint: 'Area-clearing seal; use to repel all nearby creatures',
+  },
+
+  // Shatterglass Ward: the vault glass shard matrix holds a permanent
+  // refractive resonance that counters the deep glass haze filling the
+  // inner Belowglass vault halls.
+  shatterglass_ward: {
+    label: 'Shatterglass Ward',
+    materialId: 'vault_glass_shard',
+    materialQty: 3,
+    outputId: 'shatterglass_ward',
+    levelReq: 6,
+    wardDuration: 28,
+    xp: 42,
+    effectHint: 'Belowglass deep-glass-haze protection',
+  },
 } as const
 
 /**
@@ -95,7 +160,14 @@ export const WARD_RECIPE_CONFIG: Readonly<Record<WardOutputId, WardRecipeConfig>
  * Typed as `WardOutputId[]` so the compiler catches any key mismatch with
  * `WARD_RECIPE_CONFIG`.
  */
-const WARD_DISPLAY_ORDER: WardOutputId[] = ['ashwillow_ward', 'thornward_mark', 'vault_seal_ward']
+const WARD_DISPLAY_ORDER: WardOutputId[] = [
+  'ashwillow_ward',
+  'thornward_mark',
+  'vault_seal_ward',
+  'ember_ward_seal',
+  'deep_ruin_ward',
+  'shatterglass_ward',
+]
 
 // ─── Interact radius ──────────────────────────────────────────────────────
 
@@ -252,3 +324,30 @@ export function findWardableMaterial(
   }
   return null
 }
+
+// ─── Phase 81 — Area-clearing seal constants ──────────────────────────────
+
+/**
+ * The item ID of the area-clearing seal produced in Phase 81.
+ * When the player activates (uses) this item from their inventory all
+ * hostile creatures within DEEP_RUIN_WARD_CLEAR_RADIUS are forced to flee.
+ */
+export const DEEP_RUIN_WARD_ITEM_ID = 'deep_ruin_ward'
+
+/**
+ * Radius (metres) within which hostile creatures are forced to flee when
+ * a Deep Ruin Ward is activated.
+ */
+export const DEEP_RUIN_WARD_CLEAR_RADIUS = 14
+
+/**
+ * The item ID of the anti-wisp ward produced in Phase 81.  When carried,
+ * Chapel Wisps treat the player as a repelling source and flee on approach.
+ */
+export const EMBER_WARD_SEAL_ITEM_ID = 'ember_ward_seal'
+
+/**
+ * Range (metres) within which Chapel Wisps are repelled while the player
+ * carries an Ember Ward Seal.
+ */
+export const EMBER_WARD_REPEL_RADIUS = 10

@@ -115,6 +115,8 @@ import {
   findWardableMaterial,
   getWardingLevel,
   WARDING_ALTAR_INTERACT_RADIUS,
+  DEEP_RUIN_WARD_ITEM_ID,
+  DEEP_RUIN_WARD_CLEAR_RADIUS,
 } from './engine/warding'
 import type { WardRecipeConfig } from './engine/warding'
 import { useWardingStore } from './store/useWardingStore'
@@ -449,6 +451,12 @@ function App() {
   const startSurveyFromPanelRef = useRef<() => void>(() => {})
   /** Ward callback set by the game loop, called by WardingPanel recipe buttons. */
   const wardFromPanelRef = useRef<(recipe: WardRecipeConfig) => void>(() => {})
+  /**
+   * Phase 81 — Area-clearing seal activation callback.
+   * Set by the game loop so InventoryPanel can trigger the effect without
+   * holding a direct reference to the live creature array.
+   */
+  const activateAreaSealRef = useRef<() => void>(() => {})
   /** Cook callback set by the game loop, called by CookPanel recipe buttons. */
   const cookFromPanelRef = useRef<(recipe: CookRecipeConfig) => void>(() => {})
   /** Accumulator for throttling cache-status updates to ~1 Hz (Phase 45). */
@@ -1322,6 +1330,37 @@ function App() {
     }
 
     const creatures: Creature[] = buildCreatures(scene, interactables, onHarvest)
+
+    // Phase 81 — Area-clearing seal activation.
+    // When the player activates a Deep Ruin Ward from the inventory panel,
+    // all non-dead hostile creatures within DEEP_RUIN_WARD_CLEAR_RADIUS are
+    // forced to flee, and one ward is consumed from the inventory.
+    activateAreaSealRef.current = () => {
+      const { inventory, removeItem } = useGameStore.getState()
+      const hasWard = inventory.slots.some((s) => s.id === DEEP_RUIN_WARD_ITEM_ID)
+      if (!hasWard) {
+        useNotifications.getState().push('No Deep Ruin Ward in your pack.', 'info')
+        return
+      }
+      let repelled = 0
+      for (const creature of creatures) {
+        if (creature.state === 'dead') continue
+        // Only repel hostile creatures (those with both an aggro radius and HP pool).
+        if (!creature.def.aggroRadius || creature.def.maxHp == null) continue
+        const dist = creature.mesh.position.distanceTo(player.mesh.position)
+        if (dist <= DEEP_RUIN_WARD_CLEAR_RADIUS) {
+          triggerFlee(creature, player.mesh.position)
+          repelled++
+        }
+      }
+      removeItem(DEEP_RUIN_WARD_ITEM_ID, 1)
+      spawnWardActivation(player.mesh.position)
+      const msg =
+        repelled > 0
+          ? `The Deep Ruin Ward pulses outward — ${repelled} creature${repelled === 1 ? '' : 's'} driven back!`
+          : 'The Deep Ruin Ward pulses outward — no creatures nearby.'
+      useNotifications.getState().push(msg, 'success')
+    }
 
     // Phase 30 — creature attack handler.
     // Invoked each time a hostile creature lands a melee hit on the player.
@@ -2617,7 +2656,8 @@ function App() {
       }
 
       // Phase 29/30 — tick creature AI (roaming, flee, aggro, pursuit bounds, reset)
-      updateCreatures(creatures, delta, player.mesh.position, onCreatureAttack)
+      // Phase 81 — pass inventory slots so ward repel (anti-wisp etc.) can be applied.
+      updateCreatures(creatures, delta, player.mesh.position, onCreatureAttack, useGameStore.getState().inventory.slots)
 
       // Phase 31 — tick player combat loop (auto-attack, cooldown, kill detection)
       updateCombat(
@@ -2971,7 +3011,7 @@ function App() {
           <CombatTargetHud />
           <NotificationFeed />
           {/* Phase 10 — Inventory panel */}
-          <InventoryPanel />
+          <InventoryPanel onActivateAreaSeal={() => activateAreaSealRef.current()} />
           {/* Phase 14 — Skills panel */}
           <SkillsPanel />
           {/* Phase 23 — Shop panel */}
