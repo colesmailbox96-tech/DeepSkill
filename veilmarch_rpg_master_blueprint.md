@@ -1548,16 +1548,20 @@ Each phase below is deliberately narrow.
 
 ---
 
-## Phase 69 — Region-Specific Music and Ambience Pass
+## Phase 69 — Region-Specific Music and Ambience Pass ✅
 
 **Goal:** strengthen identity.
 
 **Deliverables:**
-- Hushwood ambience,
-- quarry ambience,
-- shoreline ambience,
-- chapel ambience,
-- smooth transitions.
+- Hushwood ambience ✅ — bandpass 600 Hz, gentle 0.05 Hz LFO sway, 0.15 air layer
+- Quarry ambience ✅ — lowpass 140 Hz, mechanical 0.12 Hz LFO flutter, 0.20 dust layer
+- Shoreline ambience ✅ — bandpass 350 Hz, 0.15 Hz wave LFO (120 Hz depth), 0.22 spray layer
+- Chapel ambience ✅ — bandpass 300 Hz, near-imperceptible 0.03 Hz LFO swell, 0.08 stone-dust layer
+- Smooth transitions ✅ — crossfade time constant increased to 1.5 s; LFO freq/depth cross-fade
+- Per-region peaceful music motifs ✅ — `REGION_PEACEFUL_SEQ` with 7 distinct melodic phrases
+- Secondary air-noise layer ✅ — highpass-filtered noise (3 kHz) mixed per-region via `airGain`
+
+**Implementation:** `src/engine/audio.ts` — `RegionConfig` gains `lfoFreq`, `lfoDepth`, `airLevel`; new `REGION_PEACEFUL_SEQ` map; three new AudioManager nodes (`airFilter`, `airGain`, `airSource`).
 
 ---
 
