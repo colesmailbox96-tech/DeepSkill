@@ -106,6 +106,8 @@ export type WeaponType = 'blunt' | 'slash' | 'pierce' | 'ranged'
  *                present, the weapon fires projectiles instead of swinging.
  * ammoId       — inventory item ID that is consumed one-per-shot (e.g.
  *                'flint_arrow').  Required when rangeBonus is set.
+ * providesLight — when true this item counts as a light source; equipping it
+ *                 negates the stamina-drain penalty in darkness zones (Phase 68).
  * requirements — minimum skill levels required to equip, keyed by skill id.
  */
 export interface EquipMeta {
@@ -116,6 +118,8 @@ export interface EquipMeta {
   weaponType?: WeaponType
   rangeBonus?: number
   ammoId?: string
+  /** True when this item acts as a light source (Phase 68). */
+  providesLight?: boolean
   requirements?: Partial<Record<string, number>>
 }
 

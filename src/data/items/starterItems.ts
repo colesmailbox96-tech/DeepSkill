@@ -1402,4 +1402,41 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'record a partial ward-boundary survey — scholars and warders prize these ' +
       'fragments for reconstructing the pre-Veil boundary map.',
   },
+
+  // ── Phase 68 — Light and Visibility Mechanics ─────────────────────────────
+
+  {
+    id: 'hollow_lantern',
+    name: 'Hollow Lantern',
+    type: 'equipment',
+    stackable: false,
+    value: 38,
+    icon: 'items/hollow_lantern.png',
+    description:
+      'A compact copper lantern assembled from pressed panels and a sealed wax ' +
+      'reservoir.  The vault-wax lining keeps the flame steady even in the ' +
+      'damp air of underground ruins.  Equipping it wards off the disorienting ' +
+      'darkness found deep inside the Hollow Vault.',
+    equipMeta: {
+      slot: 'offHand',
+      providesLight: true,
+    },
+  },
+
+  {
+    id: 'tallow_candle',
+    name: 'Tallow Candle',
+    type: 'consumable',
+    stackable: true,
+    value: 6,
+    icon: 'items/tallow_candle.png',
+    description:
+      'A short candle pressed from animal tallow.  Burns with a dim, steady ' +
+      'flame — not enough to fully penetrate vault darkness, but enough to ' +
+      'steady your nerves and recover a little stamina.',
+    consumableMeta: {
+      restoresStamina: 12,
+      effect: 'Restores 12 stamina.',
+    },
+  },
 ]

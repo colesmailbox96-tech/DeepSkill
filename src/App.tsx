@@ -132,6 +132,11 @@ import {
   isProtectedFromHazard,
 } from './engine/hazard'
 import { useHazardStore } from './store/useHazardStore'
+import {
+  getDarkZoneAtPosition,
+  hasLanternEquipped,
+} from './engine/lighting'
+import { useLightingStore } from './store/useLightingStore'
 import { useGameStore } from './store/useGameStore'
 import { useNotifications } from './store/useNotifications'
 import { useFoodStore } from './store/useFoodStore'
@@ -179,6 +184,7 @@ import { WardingPanel } from './ui/hud/WardingPanel'
 import { CookPanel } from './ui/hud/CookPanel'
 import { HazardWarningHud } from './ui/hud/HazardWarningHud'
 import { GateBlockedHud } from './ui/hud/GateBlockedHud'
+import { DarknessHud } from './ui/hud/DarknessHud'
 import { AudioSettingsPanel } from './ui/hud/AudioSettingsPanel'
 import { audioManager, getAudioRegion } from './engine/audio'
 import type { AudioRegion } from './engine/audio'
@@ -1794,6 +1800,10 @@ function App() {
     let hazardTickAccum = 0
     let prevHazardId: string | null = null
 
+    // Phase 68 — Light and Visibility Mechanics tick accumulator and prior-zone tracker.
+    let darkTickAccum = 0
+    let prevDarkZoneId: string | null = null
+
     // Phase 49 — Audio Foundation: subscribe to store changes.
     // Do NOT call audioManager.init() here — defer until the first user gesture
     // to comply with browser autoplay policy and avoid allocating audio
@@ -2370,6 +2380,60 @@ function App() {
         }
       }
 
+      // Phase 68 — Light and Visibility Mechanics: check dark zones and apply
+      // stamina drain when the player is in a dark area without a light source.
+      {
+        const pos = player.mesh.position
+        const darkDef = getDarkZoneAtPosition(pos.x, pos.z)
+        const darkId = darkDef ? darkDef.id : null
+
+        if (darkId !== prevDarkZoneId) {
+          // Player crossed a dark-zone boundary.
+          if (darkDef) {
+            const lit = hasLanternEquipped()
+            useLightingStore.getState().setDarkZone(darkDef.id, lit)
+            if (lit) {
+              useNotifications.getState().push(darkDef.entryLitMessage, 'info')
+            } else {
+              useNotifications.getState().push(darkDef.entryDarkMessage, 'warning')
+            }
+          } else {
+            useLightingStore.getState().clearDarkZone()
+          }
+          darkTickAccum = 0
+        }
+
+        prevDarkZoneId = darkId
+
+        if (darkDef) {
+          // Refresh lit status each tick (player may equip/unequip lantern).
+          const lit = hasLanternEquipped()
+          const lightState = useLightingStore.getState()
+          if (
+            lightState.activeDarkZoneId !== darkDef.id ||
+            lightState.isLit !== lit
+          ) {
+            lightState.setDarkZone(darkDef.id, lit)
+          }
+
+          darkTickAccum += delta
+          while (darkTickAccum >= darkDef.tickInterval) {
+            darkTickAccum -= darkDef.tickInterval
+            if (!lit) {
+              const { playerStats, setStamina } = useGameStore.getState()
+              const newStamina = Math.max(0, playerStats.stamina - darkDef.tickAmount)
+              setStamina(newStamina)
+              useNotifications.getState().push(
+                `${darkDef.tickMessage} (−${darkDef.tickAmount} stamina)`,
+                'warning',
+              )
+            }
+          }
+        } else {
+          darkTickAccum = 0
+        }
+      }
+
       // Phase 29/30 — tick creature AI (roaming, flee, aggro, pursuit bounds, reset)
       updateCreatures(creatures, delta, player.mesh.position, onCreatureAttack)
 
@@ -2667,6 +2731,8 @@ function App() {
           <HazardWarningHud />
           {/* Phase 67 — Gate requirement feedback panel */}
           <GateBlockedHud />
+          {/* Phase 68 — Darkness vignette and zone status */}
+          <DarknessHud />
           {/* Phase 49 — Audio settings panel */}
           <AudioSettingsPanel />
           {/* Phase 50 — Save / Load panel */}
