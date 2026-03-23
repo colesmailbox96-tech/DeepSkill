@@ -79,7 +79,7 @@ interface RecipeOutputPreviewProps {
 
 /**
  * Displays the output item's flavour description and numeric stats.
- * Returns null when the item definition is missing or has no useful stats.
+ * Returns null only when the item definition is missing.
  */
 export function RecipeOutputPreview({ outputDef }: RecipeOutputPreviewProps) {
   if (!outputDef) return null
