@@ -16,7 +16,7 @@
  *   east-west across the fen.  Gnarled, moss-draped mangrove pillars break
  *   the skyline.  Faint bioluminescent spore clusters provide the only
  *   ambient light.  Pale gas vent emissions billow from cracks in the fen
- *   floor in the deeper north area.
+ *   floor in the deeper south area.
  *
  *  Resources:
  *   3 × Marrowfen Spore Cluster nodes  (level 9 foraging, 45 XP, marrowfen_spore)
@@ -37,13 +37,14 @@
  *
  *  Atmosphere:
  *   A sickly, dim green-yellow fill light hangs over the fen interior.
- *   Two gas-vent glow points provide a pale sulphurous light in the north.
+ *   Two gas-vent glow points provide a pale sulphurous light in the south.
  *   Spore clusters emit a soft violet bioluminescence.
  *
  * Access:
  *   A narrow muddy corridor (z = +50 → +60, x = −8 → +8) connects the
- *   Brackroot Bog to the Marrowfen entrance.  Invisible boundary walls
- *   close the corridor on its north and south sides.
+ *   Brackroot Bog to the Marrowfen entrance.  Invisible boundary walls run
+ *   along the corridor's west and east edges, leaving its north and south
+ *   ends open for travel.
  */
 
 import * as THREE from 'three'
@@ -78,13 +79,6 @@ const matVentCrack = new THREE.MeshStandardMaterial({
   emissive: new THREE.Color(0x303010),
   emissiveIntensity: 0.5,
   roughness: 0.80,
-})
-/** Spore cluster cap — bioluminescent pale violet. */
-const matSpore = new THREE.MeshStandardMaterial({
-  color: 0xd4b8e0,
-  emissive: new THREE.Color(0x8860a8),
-  emissiveIntensity: 0.7,
-  roughness: 0.60,
 })
 /** Invisible collision boundary. */
 const matBound = new THREE.MeshStandardMaterial({ visible: false })
@@ -189,13 +183,6 @@ export function buildMarrowfen(
   _addVentCrack(scene,  8, 86)
   _addVentCrack(scene, -4, 90)
 
-  // ── Spore cluster visual emitters ─────────────────────────────────────────
-  // Decorative glowing spore beds near (but not always identical to) the
-  // forage node positions, giving the fen a distinctive bioluminescent feel.
-  _addSporeCluster(scene, -18, 66)
-  _addSporeCluster(scene,  14, 75)
-  _addSporeCluster(scene,  -8, 96)
-
   // ── Atmosphere lighting ───────────────────────────────────────────────────
   // A sickly, dim green-yellow fill unique to the fen interior.
   const fenAmbient = new THREE.PointLight(0x2a3010, 1.2, 60)
@@ -274,50 +261,16 @@ function _addMangrove(scene: THREE.Scene, x: number, z: number): THREE.Mesh {
   return trunk
 }
 
-/** Add a gas vent crack disc at (x, z) — emissive, visual only. */
+/** Add a gas vent crack disc at (x, z) — emissive, visual only, flat on the ground. */
 function _addVentCrack(scene: THREE.Scene, x: number, z: number): void {
   const mesh = new THREE.Mesh(
     new THREE.CylinderGeometry(0.55, 0.75, 0.06, 8),
     matVentCrack,
   )
   mesh.position.set(x, 0.03, z)
-  mesh.rotation.y = Math.random() * Math.PI
+  mesh.rotation.x = -Math.PI / 2
+  mesh.rotation.z = Math.random() * Math.PI
   scene.add(mesh)
-}
-
-/** Add a bioluminescent spore cluster at (x, z) — visual only. */
-function _addSporeCluster(scene: THREE.Scene, x: number, z: number): void {
-  // Central cap
-  const cap = new THREE.Mesh(
-    new THREE.SphereGeometry(0.40, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2),
-    matSpore,
-  )
-  cap.position.set(x, 0.40, z)
-  scene.add(cap)
-
-  // Stalk
-  const stalk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.07, 0.10, 0.42, 6),
-    matSpore,
-  )
-  stalk.position.set(x, 0.21, z)
-  scene.add(stalk)
-
-  // Two smaller satellite caps
-  for (let i = 0; i < 2; i++) {
-    const angle  = (i / 2) * Math.PI * 2 + 0.8
-    const radius = 0.45 + i * 0.15
-    const small  = new THREE.Mesh(
-      new THREE.SphereGeometry(0.22, 6, 5, 0, Math.PI * 2, 0, Math.PI / 2),
-      matSpore,
-    )
-    small.position.set(
-      x + Math.cos(angle) * radius,
-      0.22,
-      z + Math.sin(angle) * radius,
-    )
-    scene.add(small)
-  }
 }
 
 /** Add an invisible collision wall and return it. */

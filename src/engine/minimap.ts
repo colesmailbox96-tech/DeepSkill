@@ -25,8 +25,8 @@ export const WORLD_MAX_X = 80
  *  Quarry north cliff is z=−96 (quarry.ts). */
 export const WORLD_MIN_Z = -100
 /** Southernmost (bottom) world Z used for canvas projection.
- *  Brackroot Bog south boundary is z=+82 (brackroot.ts). */
-export const WORLD_MAX_Z = 86
+ *  Marrowfen south boundary is z=+105 (marrowfen.ts). */
+export const WORLD_MAX_Z = 110
 
 // ─── Region definitions ───────────────────────────────────────────────────────
 
@@ -71,8 +71,8 @@ export const MINIMAP_REGIONS: MinimapRegion[] = [
   {
     id: 'marrowfen',
     label: 'Marrowfen',
-    // Deep south fen: z ≥ 60, x ∈ [−28, +28].
-    contains: (x, z) => z >= 60 && x >= -28 && x <= 28,
+    // Deep south fen: z ∈ [60, 105], x ∈ [−28, +28].
+    contains: (x, z) => z >= 60 && z <= 105 && x >= -28 && x <= 28,
     color: '#1c2c1a',
     borderColor: '#304828',
   },
@@ -136,7 +136,7 @@ export interface MinimapMarker {
   icon?: string
 }
 
-/** All static markers registered in the world (22 total). */
+/** All static markers registered in the world (25 total). */
 export const MINIMAP_MARKERS: MinimapMarker[] = [
   // ── Spawn ──────────────────────────────────────────────────────────────────
   { id: 'spawn',           label: 'Spawn',           x:   0,    z:    0,   kind: 'spawn',   icon: '⭐' },

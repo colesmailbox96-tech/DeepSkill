@@ -2592,7 +2592,7 @@ function App() {
         triggerZoneExplore('hollow_vault')
       }
       // Phase 74 — Marrowfen explore trigger.
-      if (player.mesh.position.z >= 60 && player.mesh.position.x >= -28 && player.mesh.position.x <= 28) {
+      if (player.mesh.position.z >= 60 && player.mesh.position.z <= 105 && player.mesh.position.x >= -28 && player.mesh.position.x <= 28) {
         triggerZoneExplore('marrowfen')
       }
       // Phase 65 — Vault gate unseal: hide gate mesh, remove its collidable, and

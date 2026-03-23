@@ -819,8 +819,8 @@ export function getAudioRegion(x: number, z: number): AudioRegion {
   // Hollow Vault Steps — deeper than the chapel; narrow z band within the chapel x range.
   if (x <= -60 && z >= -10 && z <= 10) return 'hollow_vault'
   if (x <= -32) return 'chapel'
-  // Marrowfen — deep south fen zone, checked before the broad bog catch-all.
-  if (z >= 60 && x >= -28 && x <= 28) return 'marrowfen'
+  // Marrowfen — deep south fen zone (bounded in z), checked before the broad bog catch-all.
+  if (z >= 60 && z <= 105 && x >= -28 && x <= 28) return 'marrowfen'
   if (z >= 19)  return 'bog'
   // Ashfen Copse must be checked before the broader east/south region checks
   // because it lies in the far-northeast corner of the map.
