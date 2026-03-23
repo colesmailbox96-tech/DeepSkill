@@ -1,5 +1,6 @@
 /**
  * Phase 40 — Smithing Foundation
+ * Phase 79 — Advanced Smithing and Alloy Routes
  *
  * Provides the forging furnace engine for Veilmarch.  A single furnace station
  * is placed in the Hushwood settlement; players interact with it to smelt raw
@@ -8,6 +9,12 @@
  * Smelt recipes (ore → bar):
  *   copper_ore ×3  → copper_bar  (lvl 1, 4 s, 15 xp)
  *   iron_ore   ×4  → iron_bar    (lvl 5, 6 s, 30 xp)
+ *   duskiron_ore ×5 → duskiron_bar (lvl 10, 8 s, 45 xp)
+ *
+ * Alloy recipes (multi-material → bar/ingot):
+ *   duskiron_bar ×3 + bogfiend_scale ×4 → fensteel_bar    (lvl 14, 12 s, 80 xp)
+ *   vault_glass_shard ×3 + iron_bar ×1  → vaultglass_fitting (lvl 12, 10 s, 65 xp)
+ *   fensteel_bar ×2 + construct_plating ×2 → heartwrought_ingot (lvl 16, 15 s, 100 xp)
  *
  * The caller (App.tsx) owns the level check, timed session, item swap, and XP
  * grant.  This module provides the data, station visual, and helpers.
@@ -316,6 +323,38 @@ export const FORGE_RECIPES: readonly ForgeRecipeConfig[] = [
     xp: 60,
     tierSpeedFactor: 0.60,
   },
+  // Phase 79 — Fensteel tools: tier-4 tools forged from fensteel bar and
+  // vaultglass fittings.  Faster and longer-lasting than anything in tier 3.
+  {
+    label: 'Fensteel Hatchet',
+    toolId: 'fensteel_hatchet',
+    toolTier: 4,
+    ingredients: [
+      { id: 'fensteel_bar',       label: 'Fensteel Bar',       qty: 2 },
+      { id: 'vaultglass_fitting', label: 'Vaultglass Fitting', qty: 1 },
+      { id: 'ironbark_log',       label: 'Ironbark Log',       qty: 2 },
+    ],
+    skillReq: { skill: 'woodcutting', level: 10 },
+    forgingLevelReq: 14,
+    forgeDuration: 14,
+    xp: 100,
+    tierSpeedFactor: 0.50,
+  },
+  {
+    label: 'Fensteel Pick',
+    toolId: 'fensteel_pick',
+    toolTier: 4,
+    ingredients: [
+      { id: 'fensteel_bar',       label: 'Fensteel Bar',       qty: 2 },
+      { id: 'vaultglass_fitting', label: 'Vaultglass Fitting', qty: 1 },
+      { id: 'small_stone',        label: 'Small Stone',        qty: 4 },
+    ],
+    skillReq: { skill: 'mining', level: 10 },
+    forgingLevelReq: 14,
+    forgeDuration: 14,
+    xp: 100,
+    tierSpeedFactor: 0.50,
+  },
 ] as const
 
 /**
@@ -350,6 +389,95 @@ export function getToolSpeedFactor(tier: number): number {
  */
 export function hasIngredientsFor(
   recipe: ForgeRecipeConfig,
+  slots: ReadonlyArray<{ id: string; quantity: number }>,
+): boolean {
+  return recipe.ingredients.every((ing) => {
+    const slot = slots.find((s) => s.id === ing.id)
+    return slot != null && slot.quantity >= ing.qty
+  })
+}
+
+// ─── Phase 79 — Alloy Recipes ─────────────────────────────────────────────
+
+/**
+ * Configuration for a single alloy recipe.  Alloy routes combine multiple
+ * processed materials at the furnace into a new bar or ingot.  Unlike
+ * simple smelt recipes (single ore → bar), alloy recipes can consume any
+ * combination of bars, creature drops, and salvaged components.
+ *
+ * The panel renders these in a third "Alloy" tab alongside Smelt and Forge.
+ */
+export interface AlloyRecipeConfig {
+  /** Human-readable name of the output material. */
+  label: string
+  /** Registry ID of the produced bar or ingot. */
+  outputId: string
+  /** All ingredients consumed per batch. */
+  ingredients: ForgeIngredient[]
+  /** Minimum Forging level required. */
+  forgingLevelReq: number
+  /** Seconds at the furnace to complete the alloy. */
+  alloyDuration: number
+  /** Forging XP awarded on completion. */
+  xp: number
+}
+
+/** All alloy fusion recipes, in display order (lowest level first). */
+export const ALLOY_RECIPES: readonly AlloyRecipeConfig[] = [
+  // Vaultglass Fitting: vault-glass shards rebound with iron into a precision
+  // component used in high-tier tool cutting edges.
+  {
+    label: 'Vaultglass Fitting',
+    outputId: 'vaultglass_fitting',
+    ingredients: [
+      { id: 'vault_glass_shard', label: 'Vault Glass Shard', qty: 3 },
+      { id: 'iron_bar',          label: 'Iron Bar',          qty: 1 },
+    ],
+    forgingLevelReq: 12,
+    alloyDuration: 10,
+    xp: 65,
+  },
+  // Fensteel Bar: duskiron tempered with bogfiend essence — flexible and dense,
+  // the primary structural material for tier-4 tools.
+  {
+    label: 'Fensteel Bar',
+    outputId: 'fensteel_bar',
+    ingredients: [
+      { id: 'duskiron_bar',   label: 'Duskiron Bar',   qty: 3 },
+      { id: 'bogfiend_scale', label: 'Bogfiend Scale', qty: 4 },
+    ],
+    forgingLevelReq: 14,
+    alloyDuration: 12,
+    xp: 80,
+  },
+  // Heartwrought Ingot: the rarest alloy in the Veilmarch tradition — fensteel
+  // fused with the residual construct metal recovered from vault plating.
+  {
+    label: 'Heartwrought Ingot',
+    outputId: 'heartwrought_ingot',
+    ingredients: [
+      { id: 'fensteel_bar',      label: 'Fensteel Bar',      qty: 2 },
+      { id: 'construct_plating', label: 'Construct Plating', qty: 2 },
+    ],
+    forgingLevelReq: 16,
+    alloyDuration: 15,
+    xp: 100,
+  },
+] as const
+
+/**
+ * Return every alloy recipe.  Used by SmithingPanel to render the Alloy tab.
+ */
+export function getAllAlloyRecipes(): AlloyRecipeConfig[] {
+  return [...ALLOY_RECIPES]
+}
+
+/**
+ * Check whether the player has enough materials for the given alloy recipe.
+ * Does **not** check forging-level requirements.
+ */
+export function hasIngredientsForAlloy(
+  recipe: AlloyRecipeConfig,
   slots: ReadonlyArray<{ id: string; quantity: number }>,
 ): boolean {
   return recipe.ingredients.every((ing) => {

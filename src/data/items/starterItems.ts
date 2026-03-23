@@ -1543,4 +1543,74 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'corrosion-resistant, and faintly warm to the touch even long after the construct ' +
       'was destroyed.  A key component in late-tier armour and precision mechanisms.',
   },
+
+  // ── Phase 79 — Advanced Smithing and Alloy Routes ─────────────────────────
+
+  {
+    id: 'fensteel_bar',
+    name: 'Fensteel Bar',
+    type: 'material',
+    stackable: true,
+    value: 58,
+    icon: 'items/fensteel_bar.png',
+    description:
+      'An alloy bar produced by fusing duskiron bars with rendered bogfiend essence in the furnace. ' +
+      'The fen tempering process gives the metal a dark, slightly iridescent sheen. ' +
+      'Tougher and more flexible than raw duskiron — the foundation of advanced Fen-region tools.',
+  },
+
+  {
+    id: 'vaultglass_fitting',
+    name: 'Vaultglass Fitting',
+    type: 'material',
+    stackable: true,
+    value: 65,
+    icon: 'items/vaultglass_fitting.png',
+    description:
+      'A shaped fitting machined from raw vault-glass shards and iron, ground to precise ' +
+      'tolerances at the furnace.  The glass edge holds an extraordinary keenness while ' +
+      'the iron frame prevents shattering — used in the cutting faces of advanced tools.',
+  },
+
+  {
+    id: 'heartwrought_ingot',
+    name: 'Heartwrought Ingot',
+    type: 'material',
+    stackable: true,
+    value: 85,
+    icon: 'items/heartwrought_ingot.png',
+    description:
+      'A dense precursor alloy fused from fensteel and the residual metal recovered from ' +
+      'construct plating.  The fusion process is slow and demanding — the resulting ingot ' +
+      'resists heat, corrosion, and wear far beyond any conventional smithed material. ' +
+      'A prized foundation for the finest late-tier equipment.',
+  },
+
+  {
+    id: 'fensteel_hatchet',
+    name: 'Fensteel Hatchet',
+    type: 'tool',
+    stackable: false,
+    value: 130,
+    icon: 'items/fensteel_hatchet.png',
+    description:
+      'A heavy, precision-balanced hatchet forged from fensteel and mounted with a ' +
+      'vaultglass-edged blade.  The fen-tempered alloy head bites through even the most ' +
+      'mineralised timber with ease.  Requires serious Woodcutting skill to wield.',
+    toolMeta: { skill: 'woodcutting', tier: 4, maxDurability: 200 },
+  },
+
+  {
+    id: 'fensteel_pick',
+    name: 'Fensteel Pick',
+    type: 'tool',
+    stackable: false,
+    value: 130,
+    icon: 'items/fensteel_pick.png',
+    description:
+      'A reinforced pick forged from fensteel bars, its striking face edged with a ' +
+      'vaultglass fitting.  The glass-tipped tine fractures deep ore veins on contact. ' +
+      'Capable of cutting nodes that resist all lesser picks.',
+    toolMeta: { skill: 'mining', tier: 4, maxDurability: 200 },
+  },
 ]

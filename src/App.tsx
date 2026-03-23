@@ -65,9 +65,10 @@ import {
   findSmeltableOre,
   getForgingLevel,
   hasIngredientsFor,
+  hasIngredientsForAlloy,
   getToolSpeedFactor,
 } from './engine/smithing'
-import type { SmeltRecipeConfig, ForgeRecipeConfig } from './engine/smithing'
+import type { SmeltRecipeConfig, ForgeRecipeConfig, AlloyRecipeConfig } from './engine/smithing'
 import { useSmithingStore } from './store/useSmithingStore'
 import {
   buildWorkbenchStation,
@@ -242,6 +243,8 @@ interface CookingSession { recipe: CookRecipeConfig; elapsed: number }
 interface SmeltSession { recipe: SmeltRecipeConfig; elapsed: number }
 /** Phase 41 — Active forge session: recipe being forged + elapsed time. */
 interface ForgeSession  { recipe: ForgeRecipeConfig;  elapsed: number }
+/** Phase 79 — Active alloy session: recipe being fused + elapsed time. */
+interface AlloySession  { recipe: AlloyRecipeConfig;  elapsed: number }
 /** Phase 42 — Active carve session: recipe being carved + elapsed time. */
 interface CarveSession  { recipe: CarveRecipeConfig;  elapsed: number }
 /** Phase 43 — Active tinker session: recipe being assembled + elapsed time. */
@@ -432,6 +435,8 @@ function App() {
   const smeltFromPanelRef = useRef<(recipe: import('./engine/smithing').SmeltRecipeConfig) => void>(() => {})
   /** Forge callback set by the game loop, called by SmithingPanel forge buttons. */
   const forgeFromPanelRef = useRef<(recipe: import('./engine/smithing').ForgeRecipeConfig) => void>(() => {})
+  /** Alloy callback set by the game loop, called by SmithingPanel alloy buttons. */
+  const alloyFromPanelRef = useRef<(recipe: import('./engine/smithing').AlloyRecipeConfig) => void>(() => {})
   /** Carve callback set by the game loop, called by CarvingPanel recipe buttons. */
   const carveFromPanelRef = useRef<(recipe: import('./engine/carving').CarveRecipeConfig) => void>(() => {})
   /** Tinker callback set by the game loop, called by TinkeringPanel recipe buttons. */
@@ -909,6 +914,48 @@ function App() {
     }
 
     forgeFromPanelRef.current = (recipe) => onForgeStart(recipe)
+
+    // Phase 79 — Alloy session: fuse multiple materials into an alloy bar at the furnace.
+    const alloyRef = { current: null as AlloySession | null }
+
+    const onAlloyStart = (recipe: AlloyRecipeConfig) => {
+      // Already alloying, forging, or smelting — do nothing.
+      if (alloyRef.current || forgeRef.current || smeltRef.current) return
+
+      // Proximity check — must be at the furnace.
+      if (furnaceStation) {
+        const dist = player.mesh.position.distanceTo(furnaceStation.mesh.position)
+        if (dist > FURNACE_INTERACT_RADIUS) {
+          useNotifications.getState().push('You need to be at the furnace to alloy.', 'info')
+          return
+        }
+      }
+
+      const { inventory } = useGameStore.getState()
+      if (getForgingLevel() < recipe.forgingLevelReq) {
+        useNotifications.getState().push(
+          `You need level ${recipe.forgingLevelReq} Forging to alloy this.`,
+          'info',
+        )
+        return
+      }
+      if (!hasIngredientsForAlloy(recipe, inventory.slots)) {
+        useNotifications.getState().push(
+          `You don't have the materials to alloy ${recipe.label}.`,
+          'info',
+        )
+        return
+      }
+
+      useSmithingStore.getState().openPanel()
+      alloyRef.current = { recipe, elapsed: 0 }
+      useNotifications.getState().push(
+        `You begin alloying ${recipe.label}…`,
+        'info',
+      )
+    }
+
+    alloyFromPanelRef.current = (recipe) => onAlloyStart(recipe)
 
     // Phase 42 — Carving Foundation
     // Carve session: tracks which recipe is being carved and elapsed time.
@@ -2149,6 +2196,53 @@ function App() {
         }
       }
 
+      // Phase 79 — tick alloy session
+      if (alloyRef.current) {
+        const sess = alloyRef.current
+        const tooFar = furnaceStation
+          ? player.mesh.position.distanceTo(furnaceStation.mesh.position) > FURNACE_INTERACT_RADIUS
+          : false
+        if (player.moveState === 'walk' || tooFar) {
+          alloyRef.current = null
+          useNotifications.getState().push('You step away from the furnace.', 'info')
+        } else {
+          sess.elapsed += delta
+          if (sess.elapsed >= sess.recipe.alloyDuration) {
+            alloyRef.current = null
+            const { inventory, addItem, removeItem, grantSkillXp } = useGameStore.getState()
+            const outputName = getItem(sess.recipe.outputId)?.name ?? sess.recipe.outputId
+            // Re-validate ingredients at completion.
+            if (!hasIngredientsForAlloy(sess.recipe, inventory.slots)) {
+              useNotifications.getState().push(
+                `Materials were used up — alloy cancelled.`,
+                'info',
+              )
+              return
+            }
+            // Guard: ensure the output can be received before consuming materials.
+            const slotsFreed = sess.recipe.ingredients.reduce((freed, ing) => {
+              const slot = inventory.slots.find((s) => s.id === ing.id)
+              return slot && slot.quantity <= ing.qty ? freed + 1 : freed
+            }, 0)
+            const slotsAfterRemove = inventory.slots.length - slotsFreed
+            const hasExistingOutput = inventory.slots.some((s) => s.id === sess.recipe.outputId)
+            if (!hasExistingOutput && slotsAfterRemove >= inventory.maxSlots) {
+              useNotifications.getState().push('Your inventory is full — make room before alloying.', 'info')
+              return
+            }
+            for (const ing of sess.recipe.ingredients) {
+              removeItem(ing.id, ing.qty)
+            }
+            addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
+            grantSkillXp('forging', sess.recipe.xp, spawnLevelUpRing)
+            useNotifications.getState().push(
+              `You alloy ${outputName}!`,
+              'success',
+            )
+          }
+        }
+      }
+
       // Phase 42 — tick carve session
       if (carveRef.current) {
         const sess = carveRef.current
@@ -2874,6 +2968,7 @@ function App() {
           <SmithingPanel
             onSmelt={(recipe) => smeltFromPanelRef.current(recipe)}
             onForge={(recipe) => forgeFromPanelRef.current(recipe)}
+            onAlloy={(recipe) => alloyFromPanelRef.current(recipe)}
           />
           {/* Phase 42 — Carving panel */}
           <CarvingPanel
