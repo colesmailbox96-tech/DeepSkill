@@ -17,6 +17,9 @@
 
 import { registerDialogue } from '../../engine/dialogue'
 import { useShopStore } from '../../store/useShopStore'
+import { useFactionStore } from '../../store/useFactionStore'
+import { useNotifications } from '../../store/useNotifications'
+import { FACTION_TIER_ORDER } from '../../engine/shop'
 
 // ─── Aldric — Village Elder ───────────────────────────────────────────────────
 
@@ -445,6 +448,74 @@ const gorvenTree = {
   },
 }
 
+// ─── Olen — Union Trader (Phase 77) ──────────────────────────────────────────
+
+/**
+ * Olen guards the Quarry Union's private stock.
+ * Opening the shop requires at least Acquainted (100 rep) standing with the
+ * Quarry Union; the Duskiron Pick inside the shop is separately locked to
+ * Trusted (300 rep) standing.
+ */
+function tryOpenOlenShop(): void {
+  const tier = useFactionStore.getState().getTrustTier('quarry_union')
+  const tierIdx = FACTION_TIER_ORDER.indexOf(tier)
+  const acquaintedIdx = FACTION_TIER_ORDER.indexOf('acquainted')
+  if (tierIdx >= acquaintedIdx) {
+    useShopStore.getState().openShop('olen')
+  } else {
+    const rep = useFactionStore.getState().getRepForFaction('quarry_union')
+    useNotifications.getState().push(
+      `The Union Post requires Acquainted standing with the Quarry Union (100 rep). You have ${rep}.`,
+      'info',
+    )
+  }
+}
+
+const olenTree = {
+  npcName: 'Olen (Union Trader)',
+  rootNode: 'intro',
+  repeatNode: 'repeat',
+  nodes: {
+    intro: {
+      key: 'intro',
+      text: "Olen. I run the union post — ore, picks, the good stuff. We don't sell to just anyone. Earn your standing with the Quarry Union first and I'll see you right.",
+      choices: [
+        { label: 'Browse the union post.', nextNode: null, onSelect: tryOpenOlenShop },
+        { label: 'What do you carry?', nextNode: 'stock' },
+        { label: 'How do I earn union standing?', nextNode: 'standing' },
+        { label: "Not right now.", nextNode: null },
+      ],
+    },
+    stock: {
+      key: 'stock',
+      text: "Iron ore, duskiron ore when the seam's been worked, iron picks — standard union issue. Trusted members get access to the duskiron pick too. Finest mining tool you'll find this side of the Deep Heart.",
+      choices: [
+        { label: 'Browse the union post.', nextNode: null, onSelect: tryOpenOlenShop },
+        { label: 'How do I earn union standing?', nextNode: 'standing' },
+        { label: "I'll keep that in mind.", nextNode: null },
+      ],
+    },
+    standing: {
+      key: 'standing',
+      text: "Talk to Gorven — he'll put you on contract work. Haul ore, clear the deep face, deliver to spec. Do that and the union will vouch for you. Show up enough times and you'll be Trusted.",
+      choices: [
+        { label: 'Browse the union post.', nextNode: null, onSelect: tryOpenOlenShop },
+        { label: 'What do you carry?', nextNode: 'stock' },
+        { label: 'Understood. Farewell.', nextNode: null },
+      ],
+    },
+    repeat: {
+      key: 'repeat',
+      text: "You're back. Seam's running today — good time to stock up.",
+      choices: [
+        { label: 'Browse the union post.', nextNode: null, onSelect: tryOpenOlenShop },
+        { label: 'What do you carry?', nextNode: 'stock' },
+        { label: 'Farewell.', nextNode: null },
+      ],
+    },
+  },
+}
+
 // ─── Public registration function ─────────────────────────────────────────────
 
 /**
@@ -462,4 +533,6 @@ export function registerAllDialogues(): void {
   registerDialogue(brinSaltTree)
   // Phase 75
   registerDialogue(gorvenTree)
+  // Phase 77
+  registerDialogue(olenTree)
 }

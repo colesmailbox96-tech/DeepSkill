@@ -20,6 +20,7 @@ import { useFactionStore } from '../../store/useFactionStore'
 import { getAllFactions } from '../../data/factions/factionRegistry'
 import { tierFromRep, TIER_REP } from '../../store/useFactionStore'
 import type { FactionTier } from '../../store/useFactionStore'
+import { FACTION_TIER_ORDER } from '../../engine/shop'
 
 // ─── Tier helpers ─────────────────────────────────────────────────────────────
 
@@ -52,6 +53,18 @@ function tierProgress(rep: number, tier: FactionTier): number {
   return Math.min(1, Math.max(0, (rep - low) / (high - low)))
 }
 
+/**
+ * Phase 77 — Faction vendor perks displayed below the rep bar.
+ * These are keyed by faction id and describe what unlocks at each tier.
+ */
+const FACTION_PERKS: Partial<Record<string, { tier: FactionTier; text: string }[]>> = {
+  quarry_union: [
+    { tier: 'acquainted', text: "Olen's Union Post unlocked" },
+    { tier: 'trusted',    text: 'Duskiron Pick available + 15% sell bonus' },
+    { tier: 'honored',    text: '30% sell bonus at union post' },
+  ],
+}
+
 // ─── Faction row ──────────────────────────────────────────────────────────────
 
 interface FactionRowProps {
@@ -66,6 +79,16 @@ function FactionRow({ factionId, name, description }: FactionRowProps) {
   const fill   = tierProgress(rep, tier)
   const next   = nextThreshold(tier)
   const colour = TIER_COLOURS[tier]
+
+  // Determine next perk to show (first perk the player hasn't reached yet).
+  const perks = FACTION_PERKS[factionId]
+  const currentTierIdx = FACTION_TIER_ORDER.indexOf(tier)
+  const nextPerk = perks?.find(
+    (p) => FACTION_TIER_ORDER.indexOf(p.tier) > currentTierIdx,
+  )
+  const earnedPerks = perks?.filter(
+    (p) => FACTION_TIER_ORDER.indexOf(p.tier) <= currentTierIdx,
+  )
 
   return (
     <div className="faction-row" title={description}>
@@ -84,6 +107,22 @@ function FactionRow({ factionId, name, description }: FactionRowProps) {
           {rep} / {next}
         </span>
       </div>
+      {earnedPerks && earnedPerks.length > 0 && (
+        <div className="faction-row__perks">
+          {earnedPerks.map((p) => (
+            <span key={p.tier} className="faction-row__perk faction-row__perk--earned">
+              ✦ {p.text}
+            </span>
+          ))}
+        </div>
+      )}
+      {nextPerk && (
+        <div className="faction-row__perks">
+          <span className="faction-row__perk faction-row__perk--next">
+            Next ({nextPerk.tier}): {nextPerk.text}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

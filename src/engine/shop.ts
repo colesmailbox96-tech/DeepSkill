@@ -2,21 +2,29 @@
  * Phase 23 — Starter Shop / Trade Interface
  * Phase 24 — Currency and Economy Base (re-exports economy helpers)
  * Phase 55 — Vendor Diversity
+ * Phase 77 — Faction Vendors / Rewards
  *
- * Defines per-vendor stock and buy/sell constraints for the three distinct
+ * Defines per-vendor stock and buy/sell constraints for the four distinct
  * vendor roles in Cinderglen:
  *
- *   'general'     — Tomas (Travelling Merchant): consumables + basic materials.
- *   'toolsmith'   — Bron (Blacksmith): gathering tools + ores; only buys tools,
- *                   ores, bars, and wood materials.
- *   'fishsupplier'— Brin Salt (Fisher): fishing rods + tackle; only buys
- *                   fishing tools and raw/cooked fish.
+ *   'general'       — Tomas (Travelling Merchant): consumables + basic materials.
+ *   'toolsmith'     — Bron (Blacksmith): gathering tools + ores; only buys tools,
+ *                     ores, bars, and wood materials.
+ *   'fishsupplier'  — Brin Salt (Fisher): fishing rods + tackle; only buys
+ *                     fishing tools and raw/cooked fish.
+ *   'faction_union' — Olen (Union Trader): Quarry Union–exclusive tools and ore;
+ *                     requires Acquainted standing to trade, Trusted to unlock
+ *                     the Duskiron Pick.  Offers better sell prices to Trusted+
+ *                     members (faction sell bonus).
  *
  * Buy  price = item.value (full registry value in Marks).
  * Sell price = Math.max(1, Math.floor(item.value / 3))  — one-third, min 1 Mark.
+ *   Faction sell bonus: Trusted members receive +15%, Honored +30% when selling
+ *   to their aligned faction vendor.
  */
 
 import type { ItemDefinition } from '../data/items/itemSchema'
+import type { FactionTier } from '../store/useFactionStore'
 
 // Re-export Phase 24 economy constants so shop consumers need only one import.
 export {
@@ -42,6 +50,13 @@ export interface VendorItem {
   id: string
   /** Initial/maximum units available.  null = unlimited. */
   stock: number | null
+  /**
+   * Optional faction requirement to purchase this specific item.
+   * If present the item is shown in the buy tab but locked (greyed out with a
+   * padlock hint) until the player reaches the required trust tier with that
+   * faction.  Other items in the same vendor's stock remain purchasable.
+   */
+  factionGate?: { factionId: string; factionName: string; minTier: FactionTier }
 }
 
 // ── Vendor role ───────────────────────────────────────────────────────────────
@@ -49,7 +64,7 @@ export interface VendorItem {
 /**
  * Broad vendor classification that drives stock identity and sell constraints.
  */
-export type VendorRole = 'general' | 'toolsmith' | 'fishsupplier'
+export type VendorRole = 'general' | 'toolsmith' | 'fishsupplier' | 'faction_union'
 
 // ── Vendor definition ─────────────────────────────────────────────────────────
 
@@ -66,6 +81,12 @@ export interface VendorDef {
   tagline: string
   /** Items the vendor offers for sale. */
   stock: VendorItem[]
+  /**
+   * Faction this vendor is aligned with.
+   * When set, members at Trusted+ standing receive a sell-price bonus when
+   * selling goods to this vendor (see getFactionSellBonus).
+   */
+  factionId?: string
 }
 
 // ── Tomas — General Trader ────────────────────────────────────────────────────
@@ -138,12 +159,48 @@ const BRIN_SALT_DEF: VendorDef = {
   ],
 }
 
+// ── Olen — Quarry Union Trader (Phase 77) ─────────────────────────────────────
+
+/**
+ * Stationed at the Redwake Quarry entrance.
+ * Requires Acquainted (100 rep) with the Quarry Union to open shop.
+ * The Duskiron Pick is locked behind Trusted (300 rep).
+ */
+const OLEN_DEF: VendorDef = {
+  id: 'olen',
+  displayName: "Olen's Union Post",
+  shortName: 'Olen',
+  role: 'faction_union',
+  factionId: 'quarry_union',
+  tagline: 'Union-grade tools and ore — members preferred',
+  stock: [
+    // Ore available to any Union member (Acquainted+)
+    { id: 'iron_ore',       stock: null },
+    { id: 'duskiron_ore',   stock: 10 },
+
+    // Tools available to any Union member
+    { id: 'iron_pick',      stock: 3 },
+
+    // Tier-3 tool — Trusted standing required
+    {
+      id: 'duskiron_pick',
+      stock: 2,
+      factionGate: {
+        factionId:   'quarry_union',
+        factionName: 'Quarry Union',
+        minTier:     'trusted',
+      },
+    },
+  ],
+}
+
 // ── Vendor registry ───────────────────────────────────────────────────────────
 
 const VENDOR_REGISTRY = new Map<string, VendorDef>([
   [TOMAS_DEF.id,     TOMAS_DEF],
   [BRON_DEF.id,      BRON_DEF],
   [BRIN_SALT_DEF.id, BRIN_SALT_DEF],
+  [OLEN_DEF.id,      OLEN_DEF],
 ])
 
 /**
@@ -191,6 +248,17 @@ const FISHER_ACCEPTED_IDS = new Set<string>([
   'reinforced_hook', 'bait_basket', 'reed_fiber',
 ])
 
+/** Item IDs that Olen (Union Trader) will buy from the player. */
+const UNION_ACCEPTED_IDS = new Set<string>([
+  // Ores and bars
+  'copper_ore', 'iron_ore', 'ore_chip', 'duskiron_ore',
+  'copper_bar', 'iron_bar', 'duskiron_bar',
+  // Stone
+  'rough_stone', 'small_stone', 'flint_shard',
+  // Phase 66 salvage materials
+  'crumbled_masonry', 'iron_relic_fragment', 'vault_mortar', 'relic_rivet',
+])
+
 /**
  * Returns true when the player can sell `item` to `vendor`.
  *
@@ -198,6 +266,8 @@ const FISHER_ACCEPTED_IDS = new Set<string>([
  * General traders accept any non-quest item.
  * Toolsmiths accept tools plus smithing materials.
  * Fisher suppliers accept fishing tools plus fish and tackle.
+ * Union traders (`faction_union`) accept mining tools plus union ores, stone,
+ *   and salvage materials.
  */
 export function canSellToVendor(item: ItemDefinition, vendor: VendorDef): boolean {
   if (item.type === 'quest') return false
@@ -213,6 +283,10 @@ export function canSellToVendor(item: ItemDefinition, vendor: VendorDef): boolea
     case 'fishsupplier':
       if (item.type === 'tool' && item.toolMeta?.skill === 'fishing') return true
       return FISHER_ACCEPTED_IDS.has(item.id)
+
+    case 'faction_union':
+      if (item.type === 'tool' && item.toolMeta?.skill === 'mining') return true
+      return UNION_ACCEPTED_IDS.has(item.id)
   }
 }
 
@@ -241,3 +315,32 @@ export function getBuyPrice(itemValue: number): number {
 export function getSellPrice(itemValue: number): number {
   return Math.max(1, Math.floor(itemValue / 3))
 }
+
+// ── Faction sell bonus (Phase 77) ─────────────────────────────────────────────
+
+/**
+ * Faction-aligned sell bonus multiplier.
+ *
+ * When a player sells goods to a vendor whose `factionId` matches a faction
+ * where the player has Trusted or Honored standing, they receive a sell-price
+ * premium:
+ *   Trusted  → 1.15 (15% bonus)
+ *   Honored  → 1.30 (30% bonus)
+ *   All others → 1.00 (no bonus)
+ *
+ * @param tier  The player's current trust tier with the vendor's faction.
+ * @returns Multiplier to apply to the base sell price.
+ */
+export function getFactionSellBonus(tier: FactionTier): number {
+  if (tier === 'honored')  return 1.30
+  if (tier === 'trusted')  return 1.15
+  return 1.0
+}
+
+/** Ordered tiers for threshold comparisons. */
+export const FACTION_TIER_ORDER: FactionTier[] = [
+  'neutral',
+  'acquainted',
+  'trusted',
+  'honored',
+]

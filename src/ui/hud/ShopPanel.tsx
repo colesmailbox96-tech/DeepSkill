@@ -2,17 +2,22 @@
  * Phase 23 — Starter Shop / Trade Interface
  * Phase 24 — uses economy module for currency naming and transaction validation.
  * Phase 55 — Vendor Diversity: panel adapts to the active vendor (Tomas/Bron/Brin Salt).
+ * Phase 77 — Faction Vendors / Rewards: faction-gated items shown with lock
+ *             indicator; faction sell bonus applied for Trusted/Honored members.
  *
  * Two-tab panel (Buy / Sell) opened by interacting with any vendor NPC.
  * Close via the ✕ button or pressing Escape.
  *
  * Buy tab  — shows the vendor's specific stock with buy prices in Marks.
+ *            Items with a factionGate are shown locked if standing is too low.
  * Sell tab — shows player inventory items accepted by this vendor, with prices.
+ *            Faction-aligned vendors apply a sell bonus to Trusted+ members.
  *
  * Each vendor has distinct stock and sell constraints:
  *   Tomas (general)      — provisions and raw materials; buys anything.
  *   Bron (toolsmith)     — gathering tools and ores; buys tools + mining materials.
  *   Brin Salt (fisher)   — fishing gear and tackle; buys fish + fishing tools.
+ *   Olen (faction_union) — union-grade tools and ore; buys mining tools + ore.
  *
  * Currency: Marks (⬡) displayed in the header.
  * Buy deducts Marks; sell adds Marks.
@@ -22,6 +27,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGameStore } from '../../store/useGameStore'
 import { useShopStore } from '../../store/useShopStore'
 import { useNotifications } from '../../store/useNotifications'
+import { useFactionStore, tierFromRep } from '../../store/useFactionStore'
 import { getItem } from '../../data/items/itemRegistry'
 import {
   getBuyPrice,
@@ -33,6 +39,8 @@ import {
   validateSale,
   getVendorDef,
   canSellToVendor,
+  getFactionSellBonus,
+  FACTION_TIER_ORDER,
 } from '../../engine/shop'
 
 type ShopTab = 'buy' | 'sell'
@@ -50,6 +58,9 @@ export function ShopPanel() {
   const removeItem  = useGameStore((s) => s.removeItem)
   const addCoins    = useGameStore((s) => s.addCoins)
   const spendCoins  = useGameStore((s) => s.spendCoins)
+
+  // Faction rep for sell-bonus and gate checks.
+  const factionRep = useFactionStore((s) => s.rep)
 
   const [tab, setTab] = useState<ShopTab>('buy')
 
@@ -93,10 +104,26 @@ export function ShopPanel() {
     const { inventory } = useGameStore.getState()
     const alreadyHasItem = inventory.slots.some((s) => s.id === itemId)
 
+    // Check faction gate: if the item requires a faction tier, verify it.
+    const vendorItemDef = vendor.stock.find((v) => v.id === itemId)
+    if (vendorItemDef?.factionGate) {
+      const { factionId, factionName, minTier } = vendorItemDef.factionGate
+      const playerRep = useFactionStore.getState().getRepForFaction(factionId)
+      const playerTier = tierFromRep(playerRep)
+      const minIdx = FACTION_TIER_ORDER.indexOf(minTier)
+      const playerIdx = FACTION_TIER_ORDER.indexOf(playerTier)
+      if (playerIdx < minIdx) {
+        useNotifications.getState().push(
+          `Requires ${factionName} standing: ${minTier}. You have ${playerTier} (${playerRep} rep).`,
+          'info',
+        )
+        return
+      }
+    }
+
     // Defensive: verify remaining stock for finite-supply items.
     // Only enter this block when the item is confirmed finite-supply (stock !== null).
     const currentStocks = useShopStore.getState().vendorStocks
-    const vendorItemDef = vendor.stock.find((v) => v.id === itemId)
     if (vendorItemDef && vendorItemDef.stock !== null) {
       const remaining = currentStocks[vendorId]?.[itemId] ?? vendorItemDef.stock
       if (remaining <= 0) {
@@ -131,6 +158,16 @@ export function ShopPanel() {
 
   // ── Sell tab ─────────────────────────────────────────────────────────────────
 
+  // Compute faction sell bonus for this vendor.
+  const vendorFactionTier = vendor.factionId
+    ? tierFromRep(factionRep[vendor.factionId] ?? 0)
+    : 'neutral'
+  const sellBonus = getFactionSellBonus(vendorFactionTier)
+
+  /** Returns the effective sell price accounting for any faction bonus. */
+  const effectiveSellPrice = (itemValue: number): number =>
+    Math.max(1, Math.floor(getSellPrice(itemValue) * sellBonus))
+
   const handleSell = (itemId: string) => {
     const def = getItem(itemId)
     if (!def) return
@@ -144,7 +181,7 @@ export function ShopPanel() {
       return
     }
 
-    const price = getSellPrice(def.value)
+    const price = effectiveSellPrice(def.value)
     removeItem(itemId, 1)
     addCoins(price)
     useNotifications.getState().push(
@@ -167,6 +204,15 @@ export function ShopPanel() {
         <div className="shop-panel__title-block">
           <span className="shop-panel__title">{vendor.displayName}</span>
           <span className="shop-panel__tagline">{vendor.tagline}</span>
+          {vendor.factionId && (
+            <span className="shop-panel__faction-standing">
+              Standing: <span
+                className={`shop-panel__faction-tier shop-panel__faction-tier--${vendorFactionTier}`}
+              >
+                {vendorFactionTier.charAt(0).toUpperCase() + vendorFactionTier.slice(1)}
+              </span>
+            </span>
+          )}
         </div>
         <span className="shop-panel__coins" aria-label={`${coins} ${coins === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}`}>
           <span className="shop-panel__coin-icon">{CURRENCY_SYMBOL}</span>
@@ -204,7 +250,7 @@ export function ShopPanel() {
       {/* ── Buy list ──────────────────────────────────────────────────────── */}
       {tab === 'buy' && (
         <ul className="shop-panel__list" role="list">
-          {vendor.stock.map(({ id, stock: initialStock }) => {
+          {vendor.stock.map(({ id, stock: initialStock, factionGate }) => {
             const def = getItem(id)
             if (!def) return null
             const price = getBuyPrice(def.value)
@@ -216,26 +262,55 @@ export function ShopPanel() {
                 ? (vendorStocks[vendorId]?.[id] ?? initialStock)
                 : null
             const soldOut = remaining !== null && remaining <= 0
+
+            // Faction gate: check if the player meets the standing requirement.
+            let factionLocked = false
+            let factionLockHint = ''
+            if (factionGate) {
+              const playerRep = factionRep[factionGate.factionId] ?? 0
+              const playerTier = tierFromRep(playerRep)
+              const minIdx = FACTION_TIER_ORDER.indexOf(factionGate.minTier)
+              const playerIdx = FACTION_TIER_ORDER.indexOf(playerTier)
+              if (playerIdx < minIdx) {
+                factionLocked = true
+                factionLockHint = `Requires ${factionGate.factionName}: ${factionGate.minTier}`
+              }
+            }
+
+            const isDisabled = !canAfford || soldOut || factionLocked
             return (
-              <li key={id} className="shop-row" role="listitem">
+              <li
+                key={id}
+                className={`shop-row${factionLocked ? ' shop-row--faction-locked' : ''}`}
+                role="listitem"
+              >
                 <span className="shop-row__name">
                   {def.name}
-                  {remaining !== null && (
+                  {factionLocked && (
+                    <span className="shop-row__faction-lock" title={factionLockHint}>
+                      {' '}🔒<span className="shop-row__faction-lock-hint" aria-hidden="true">{factionLockHint}</span>
+                    </span>
+                  )}
+                  {!factionLocked && remaining !== null && (
                     <span className={`shop-row__stock${soldOut ? ' shop-row__stock--out' : ''}`}>
                       {soldOut ? ' (sold out)' : ` (${remaining} left)`}
                     </span>
                   )}
                 </span>
-                <span className={`shop-row__price${canAfford && !soldOut ? '' : ' shop-row__price--insufficient'}`}>
+                <span className={`shop-row__price${canAfford && !isDisabled ? '' : ' shop-row__price--insufficient'}`}>
                   {CURRENCY_SYMBOL} {price}
                 </span>
                 <button
                   className="shop-row__btn"
                   onClick={() => handleBuy(id)}
-                  disabled={!canAfford || soldOut}
-                  aria-label={`Buy ${def.name} for ${price} ${price === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}`}
+                  disabled={isDisabled}
+                  aria-label={
+                    factionLocked
+                      ? `${def.name} — ${factionLockHint}`
+                      : `Buy ${def.name} for ${price} ${price === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}`
+                  }
                 >
-                  Buy
+                  {factionLocked ? '🔒' : 'Buy'}
                 </button>
               </li>
             )
@@ -246,6 +321,13 @@ export function ShopPanel() {
       {/* ── Sell list ─────────────────────────────────────────────────────── */}
       {tab === 'sell' && (
         <ul className="shop-panel__list" role="list">
+          {sellBonus > 1.0 && (
+            <li className="shop-row shop-row--faction-bonus" role="listitem">
+              <span className="shop-row__faction-bonus-msg">
+                ✦ Faction member bonus: +{Math.round((sellBonus - 1) * 100)}% sell prices
+              </span>
+            </li>
+          )}
           {(() => {
             const sellableSlots = slots.filter((item) => {
               const def = getItem(item.id)
@@ -262,7 +344,9 @@ export function ShopPanel() {
             }
             return sellableSlots.map((item) => {
               const def = getItem(item.id)!
-              const price = getSellPrice(def.value)
+              const price = effectiveSellPrice(def.value)
+              const basePrice = getSellPrice(def.value)
+              const hasBonusPrice = price > basePrice
               return (
                 <li key={item.id} className="shop-row" role="listitem">
                   <span className="shop-row__name">
@@ -271,7 +355,12 @@ export function ShopPanel() {
                       <span className="shop-row__qty"> ×{item.quantity}</span>
                     )}
                   </span>
-                  <span className="shop-row__price">{CURRENCY_SYMBOL} {price}</span>
+                  <span className={`shop-row__price${hasBonusPrice ? ' shop-row__price--bonus' : ''}`}>
+                    {CURRENCY_SYMBOL} {price}
+                    {hasBonusPrice && (
+                      <span className="shop-row__price-base"> ({CURRENCY_SYMBOL}{basePrice})</span>
+                    )}
+                  </span>
                   <button
                     className="shop-row__btn"
                     onClick={() => handleSell(item.id)}
