@@ -381,12 +381,13 @@ export function buildHollowVault(
       },
     ],
   })
-  // Decorative iron banding strips on the door face
+  // Decorative iron banding strips parented to the door mesh so they
+  // hide and remove with it when the door opens.
   const bandMat = new THREE.MeshStandardMaterial({ color: 0x2a2020, roughness: 0.85 })
   for (const bz of [-2.5, 0, 2.5]) {
     const band = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.18, 0.9), bandMat)
-    band.position.set(-84, 2, bz)
-    scene.add(band)
+    band.position.set(0, 0, bz)
+    innerSanctumDoor.mesh.add(band)
   }
   collidables.push(innerSanctumDoor.mesh)
 

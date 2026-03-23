@@ -58,7 +58,7 @@ export function checkRequirement(req: GateRequirement): GateCheckResult {
   switch (req.kind) {
     case 'skill': {
       const { skills } = useGameStore.getState()
-      const level = skills.skills.find((s) => s.id === req.skillId)?.level ?? 0
+      const level = skills.skills.find((s) => s.id === req.skillId)?.level ?? 1
       if (level >= req.minLevel) return { met: true, message: '' }
       return {
         met: false,

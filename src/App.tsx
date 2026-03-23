@@ -1245,9 +1245,10 @@ function App() {
     // collidableBoxes.  Used to splice it out once the player unseals the gate.
     let vaultGateSlabIdx = collidables.indexOf(hollowVault.gateMesh)
 
-    // Phase 67 — Index of the inner sanctum door in collidables.
-    // Spliced out once the player opens the door via the task-gated interaction.
-    let innerSanctumDoorIdx = collidables.indexOf(hollowVault.innerSanctumDoor.mesh)
+    // Phase 67 — Tracks whether the inner sanctum door is still sealed.
+    // The index is computed at removal time via indexOf() to avoid staleness
+    // caused by earlier collidable splices (e.g. vault gate slab removal).
+    let innerSanctumDoorSealed = true
 
     // Phase 03 — player controller
     const player = createPlayer(scene)
@@ -2493,12 +2494,16 @@ function App() {
         }
       }
       // Phase 67 — Inner sanctum door: opened when the player satisfies the
-      // task requirement.  Remove collidable and interactable on open.
-      if (innerSanctumDoorIdx >= 0 && hollowVault.innerSanctumDoor.pollOpened()) {
+      // task requirement.  Index is computed at removal time to avoid stale
+      // values caused by earlier collidable splices (e.g. vault gate slab).
+      if (innerSanctumDoorSealed && hollowVault.innerSanctumDoor.pollOpened()) {
+        innerSanctumDoorSealed = false
         hollowVault.innerSanctumDoor.mesh.visible = false
-        collidables.splice(innerSanctumDoorIdx, 1)
-        collidableBoxes.splice(innerSanctumDoorIdx, 1)
-        innerSanctumDoorIdx = -1
+        const doorCollidableIdx = collidables.indexOf(hollowVault.innerSanctumDoor.mesh)
+        if (doorCollidableIdx >= 0) {
+          collidables.splice(doorCollidableIdx, 1)
+          collidableBoxes.splice(doorCollidableIdx, 1)
+        }
         const doorInteractableIdx = interactables.indexOf(hollowVault.innerSanctumDoor.interactable)
         if (doorInteractableIdx !== -1) {
           interactables.splice(doorInteractableIdx, 1)
