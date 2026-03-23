@@ -540,6 +540,56 @@ const CREATURE_DEFS: CreatureDef[] = [
     dropItemId: 'wraith_stone',
     dropChance: 0.60,
   },
+
+  // ── Phase 74 — Marrowfen creatures ────────────────────────────────────────
+
+  // 12. Bogfiend — Phase 74 Marrowfen creature.  A hulking, territorial biped
+  //     that wades the murky channels.  Slow but extremely durable; its thick
+  //     hide resists hits.  Drops a bogfiend scale on defeat.
+  {
+    id: 'bogfiend',
+    name: 'Bogfiend',
+    x: -8,
+    z: 82,
+    color: 0x3a5c38,
+    scale: 1.30,
+    roamRadius: 7,
+    pursuitRadius: 20,
+    leashRadius: 26,
+    speed: 1.6,
+    idleBase: 5.0,
+    aggroRadius: 9,
+    maxHp: 58,
+    attackDamage: 10,
+    attackCooldown: 2.6,
+    respawnDelay: 75,
+    dropItemId: 'bogfiend_scale',
+    dropChance: 0.65,
+  },
+
+  // 13. Mire Hound — Phase 74 Marrowfen creature.  A lean, pack-adapted
+  //     predator with mottled green-grey fur that camouflages in the fen reeds.
+  //     Fast and hit-and-run; drops a mire hound pelt on defeat.
+  {
+    id: 'mire_hound',
+    name: 'Mire Hound',
+    x: 10,
+    z: 72,
+    color: 0x4a6040,
+    scale: 0.75,
+    roamRadius: 9,
+    pursuitRadius: 24,
+    leashRadius: 30,
+    speed: 3.4,
+    idleBase: 2.8,
+    aggroRadius: 8,
+    maxHp: 26,
+    attackDamage: 6,
+    attackCooldown: 1.5,
+    respawnDelay: 40,
+    dropItemId: 'mire_hound_pelt',
+    dropChance: 0.70,
+  },
 ]
 
 /** Interaction radius for wildlife harvest. */

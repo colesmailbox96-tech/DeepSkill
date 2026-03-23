@@ -81,6 +81,21 @@ const DARK_ZONE_DEFS: DarkZoneDef[] = [
       'Your lantern pushes back the vault darkness. The way ahead is clear.',
     tickMessage: 'The vault darkness disorients you — your stamina fades.',
   },
+  // Phase 74 — Marrowfen darkness zone: a dense canopy of gnarled mangrove and
+  // hanging moss blocks most light.  A lantern is needed to navigate safely.
+  {
+    id: 'marrowfen_dark',
+    label: 'Marrowfen',
+    aabb: { minX: -28, maxX: 28, minZ: 60, maxZ: 105 },
+    intensity: 0.60,
+    tickInterval: 6.0,
+    tickAmount: 4,
+    entryDarkMessage:
+      'The fen canopy smothers all light. Shapes blur in the murk — equip a lantern to see clearly.',
+    entryLitMessage:
+      'Your lantern cuts through the fen murk. The path ahead is visible.',
+    tickMessage: 'The thick darkness of the Marrowfen saps your endurance.',
+  },
 ]
 
 // ─── Public API ───────────────────────────────────────────────────────────────

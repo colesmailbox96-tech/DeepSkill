@@ -142,13 +142,18 @@ export function buildBrackroot(
 
   // ── Zone boundary walls ────────────────────────────────────────────────────
 
-  // South wall — full width
-  const wallS = _addWall(scene, 36, 6, 0.4, 0, 3, 82, matBound)
+  // South wall — split around the Marrowfen corridor entrance (x = −8 → +8).
+  // The 36-unit span (x = −18 → +18) is broken into two 10-unit segments so
+  // the 16-unit gap in the centre aligns with the Marrowfen connecting corridor.
+  //   West half: x = −18 → −8, centre x = −13
+  //   East half: x = +8 → +18, centre x = +13
+  const wallSW = _addWall(scene, 10, 6, 0.4, -13, 3, 82, matBound)
+  const wallSE = _addWall(scene, 10, 6, 0.4,  13, 3, 82, matBound)
   // West wall
   const wallW = _addWall(scene, 0.4, 6, 36, -18, 3, 64, matBound)
   // East wall
   const wallE = _addWall(scene, 0.4, 6, 36, 18, 3, 64, matBound)
-  collidables.push(wallS, wallW, wallE)
+  collidables.push(wallSW, wallSE, wallW, wallE)
 
   // ── Set pieces ────────────────────────────────────────────────────────────
 

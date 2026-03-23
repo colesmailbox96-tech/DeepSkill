@@ -26,7 +26,7 @@ import { useGameStore } from '../store/useGameStore'
 
 // ─── Variant configuration ────────────────────────────────────────────────────
 
-export type ForageVariant = 'reed_clump' | 'marsh_herb' | 'resin_glob' | 'ashfen_resin' | 'marsh_glass_reed'
+export type ForageVariant = 'reed_clump' | 'marsh_herb' | 'resin_glob' | 'ashfen_resin' | 'marsh_glass_reed' | 'marrowfen_spore'
 
 export interface ForageVariantConfig {
   /** Interaction label shown when the node is ready. */
@@ -108,6 +108,19 @@ export const FORAGE_VARIANT_CONFIG: Readonly<Record<ForageVariant, ForageVariant
     respawnTime: 40,
     primaryColor: 0xa8d8c0,
     secondaryColor: 0xd0f0e8,
+  },
+  // Phase 74 — Marrowfen rare fungal cluster: pale glowing spore caps that
+  // push up through the fen mud.  High XP and rare; requires level 9 Foraging.
+  marrowfen_spore: {
+    label: 'Marrowfen Spore Cluster',
+    quietLabel: 'Spent Spore Bed',
+    depletedMessage: 'These spore caps have been harvested — wait for the next bloom.',
+    itemId: 'marrowfen_spore',
+    xp: 45,
+    levelReq: 9,
+    respawnTime: 55,
+    primaryColor: 0xd4b8e0,
+    secondaryColor: 0x8860a8,
   },
 } as const
 
@@ -299,6 +312,61 @@ function _buildMarshGlassReedMesh(primaryColor: number, secondaryColor: number):
   return group
 }
 
+/** Build the Three.js geometry for a marrowfen-spore node.
+ *  A central glowing cap with a short stalk and two smaller satellite caps,
+ *  matching the bioluminescent spore aesthetic of the Marrowfen zone. */
+function _buildMarrowfenSporeMesh(primaryColor: number, secondaryColor: number): THREE.Group {
+  const group = new THREE.Group()
+  const matCap = new THREE.MeshStandardMaterial({
+    color: primaryColor,
+    emissive: new THREE.Color(secondaryColor).multiplyScalar(0.55),
+    emissiveIntensity: 0.8,
+    roughness: 0.55,
+  })
+  const matStalk = new THREE.MeshStandardMaterial({
+    color: secondaryColor,
+    roughness: 0.75,
+  })
+
+  // Central cap — hemisphere
+  const cap = new THREE.Mesh(
+    new THREE.SphereGeometry(0.38, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2),
+    matCap,
+  )
+  cap.position.y = 0.38
+  group.add(cap)
+
+  // Stalk
+  const stalk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.065, 0.095, 0.40, 6),
+    matStalk,
+  )
+  stalk.position.y = 0.20
+  group.add(stalk)
+
+  // Two smaller satellite caps
+  const satOffsets: Array<[number, number]> = [
+    [ 0.46, 0.00],
+    [-0.35, 0.32],
+  ]
+  for (const [ox, oz] of satOffsets) {
+    const small = new THREE.Mesh(
+      new THREE.SphereGeometry(0.20, 7, 5, 0, Math.PI * 2, 0, Math.PI / 2),
+      matCap,
+    )
+    small.position.set(ox, 0.20, oz)
+    group.add(small)
+    const smallStalk = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.055, 0.22, 5),
+      matStalk,
+    )
+    smallStalk.position.set(ox, 0.11, oz)
+    group.add(smallStalk)
+  }
+
+  return group
+}
+
 // ─── Node builder ─────────────────────────────────────────────────────────────
 
 /** Build a single forage node at (x, z) and register its interactable. */
@@ -320,6 +388,8 @@ function _buildOneForageNode(
     clusterMesh = _buildMarshHerbMesh(cfg.primaryColor, cfg.secondaryColor)
   } else if (variant === 'marsh_glass_reed') {
     clusterMesh = _buildMarshGlassReedMesh(cfg.primaryColor, cfg.secondaryColor)
+  } else if (variant === 'marrowfen_spore') {
+    clusterMesh = _buildMarrowfenSporeMesh(cfg.primaryColor, cfg.secondaryColor)
   } else {
     clusterMesh = _buildResinGlobMesh(cfg.primaryColor, cfg.secondaryColor)
   }
