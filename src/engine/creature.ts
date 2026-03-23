@@ -67,6 +67,7 @@
 
 import * as THREE from 'three'
 import type { Interactable } from './interactable'
+import { spawnHitRing } from './vfx'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -675,6 +676,8 @@ export function damageCreature(creature: Creature, amount: number): boolean {
   creature.bodyMat.emissive.setHex(0xffffff)
   creature.bodyMat.emissiveIntensity = 0.8
   creature.hitFlashTimer = 0.15
+  // Phase 72 — Expanding hit ring at creature's feet.
+  spawnHitRing(creature.mesh.position)
 
   if (creature.hp <= 0) {
     _killCreature(creature)
