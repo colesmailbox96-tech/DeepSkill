@@ -60,7 +60,8 @@ export interface TailorRecipeConfig {
   /**
    * Secondary ingredient required alongside the primary material.
    * The sewing table always requires two distinct materials to operate —
-   * a hide body and a needle or binding to join the seams.
+   * typically a needle or binding to join the seams, but may also be a
+   * reinforcing component such as a metal ingot for advanced recipes.
    */
   secondaryIngredient: { id: string; qty: number; label: string }
   /** Registry ID of the output item produced. */

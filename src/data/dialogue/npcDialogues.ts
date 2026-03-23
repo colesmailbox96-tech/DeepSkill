@@ -19,6 +19,7 @@ import { registerDialogue } from '../../engine/dialogue'
 import { useShopStore } from '../../store/useShopStore'
 import { useFactionStore } from '../../store/useFactionStore'
 import { useNotifications } from '../../store/useNotifications'
+import { useTaskStore } from '../../store/useTaskStore'
 import { FACTION_TIER_ORDER } from '../../engine/shop'
 
 // ─── Aldric — Village Elder ───────────────────────────────────────────────────
@@ -58,7 +59,18 @@ const aldricTree = {
       choices: [
         { label: 'Tell me about the Veil.', nextNode: 'veil' },
         { label: "What's happening to the south?", nextNode: 'south' },
-        { label: 'The Belowglass Vaults have been cleared.', nextNode: 'vaults_cleared' },
+        {
+          label: 'Ask about the Belowglass Vaults.',
+          nextNode: 'vaults_cleared',
+          onSelect: () => {
+            if (!useTaskStore.getState().isCompleted('vault_heart')) {
+              useNotifications.getState().push(
+                "Aldric shakes his head slowly. \"The sealed vaults to the west hold something ancient. I hope it stays sealed.\"",
+                'info',
+              )
+            }
+          },
+        },
         { label: 'Farewell.', nextNode: null },
       ],
     },
@@ -370,7 +382,18 @@ const nairnDuskTree = {
         { label: 'Tell me about the mist again.', nextNode: 'mist' },
         { label: 'How do I protect myself?', nextNode: 'protection' },
         { label: 'Tell me about the Chapel Wisps.', nextNode: 'wisps' },
-        { label: 'The Vault-Heart Warden is destroyed.', nextNode: 'vault_cleared' },
+        {
+          label: 'Ask about the inner vault.',
+          nextNode: 'vault_cleared',
+          onSelect: () => {
+            if (!useTaskStore.getState().isCompleted('vault_heart')) {
+              useNotifications.getState().push(
+                "Nairn studies you carefully. \"The Inner Sanctum is sealed by the Warden's resonance field. Nothing and no one has passed that gate in a very long time. If you're planning to try, you'll need both salvaging skill and something stronger than luck.\"",
+                'info',
+              )
+            }
+          },
+        },
         { label: 'Farewell.', nextNode: null },
       ],
     },

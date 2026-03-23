@@ -758,7 +758,7 @@ const theVaultHeart: TaskDefinition = {
   },
   journalEntry:
     "The resonance seal inside the Belowglass Vaults finally yielded to my salvaging skill. Beyond it the Inner Sanctum stretches out — a vast chamber lit by deep vaultglass glow. At its centre, on a raised altar, something massive and ancient stirs. Nairn warned me that the Deep Hearts left guardians behind when their maintenance cycles broke down. This is one of them. I don't think I can slip past it.",
-  unlocksTaskIds: ['wardens_echo'],
+  unlocksTaskIds: ['wardens_echo', 'wardens_legacy'],
 }
 
 // ─── Phase 87 — Warden's Legacy Quest Chain ──────────────────────────────────
@@ -775,7 +775,7 @@ const wardensEcho: TaskDefinition = {
   title: "Echoes of the Warden",
   description:
     "You destroyed the Vault-Heart Warden and recovered its heartstone. Bring word to Nairn Dusk at the Tidemark Chapel — she knows more about Deep Heart technology than anyone.",
-  giverName: 'Sanctum Resonance Seal',
+  giverName: 'Nairn Dusk (Ward-Adept)',
   objectives: [
     {
       id: 'speak_to_nairn_heartstone',
@@ -793,7 +793,6 @@ const wardensEcho: TaskDefinition = {
   },
   journalEntry:
     "The Warden is destroyed. The Inner Sanctum is silent for the first time in centuries. In its chest cavity I found the heartstone — a resonance core still faintly warm, still slowly turning. Nairn knows this technology better than anyone alive. She spent years reading the ward patterns in this chapel; she may recognise what the heartstone is and whether it can be worked into something useful.",
-  unlocksTaskIds: ['wardens_legacy'],
 }
 
 /**
