@@ -34,7 +34,7 @@ import { useGameStore } from '../store/useGameStore'
 
 // ─── Variant configuration ────────────────────────────────────────────────────
 
-export type SalvageVariant = 'masonry_rubble' | 'relic_cache' | 'wax_seal'
+export type SalvageVariant = 'masonry_rubble' | 'relic_cache' | 'wax_seal' | 'vault_glass' | 'construct_core'
 
 export interface SalvageVariantConfig {
   /** Interaction label shown when the node is ready. */
@@ -90,6 +90,32 @@ export const SALVAGE_VARIANT_CONFIG: Readonly<Record<SalvageVariant, SalvageVari
     respawnTime: 60,
     primaryColor: 0x5a2a18,
     secondaryColor: 0xc08040,
+  },
+
+  // ── Phase 78 — Belowglass Vaults tier-increase variants ──────────────────
+
+  vault_glass: {
+    label: 'Shattered Vaultglass',
+    quietLabel: 'Cleared Glass Panel',
+    depletedMessage: 'These glass shards have been carefully collected — wait for new panels to fracture free.',
+    itemId: 'vault_glass_shard',
+    xp: 35,
+    levelReq: 5,
+    respawnTime: 50,
+    primaryColor: 0x7ab8d0,
+    secondaryColor: 0xaaddee,
+  },
+
+  construct_core: {
+    label: 'Construct Core',
+    quietLabel: 'Extracted Core',
+    depletedMessage: 'The core plating has already been stripped — it will slowly recharge over time.',
+    itemId: 'construct_plating',
+    xp: 55,
+    levelReq: 6,
+    respawnTime: 70,
+    primaryColor: 0x4a6878,
+    secondaryColor: 0x8ab4c4,
   },
 } as const
 
@@ -228,6 +254,97 @@ function _buildWaxSealMesh(primary: number, secondary: number): THREE.Group {
 
 // ─── Node builder ──────────────────────────────────────────────────────────
 
+/** Vault glass: scattered shards of pale blue-white fractured glass panels. */
+function _buildVaultGlassMesh(primary: number, secondary: number): THREE.Group {
+  const group    = new THREE.Group()
+  const matGlass = new THREE.MeshStandardMaterial({
+    color: primary,
+    roughness: 0.20,
+    metalness: 0.15,
+    emissive: new THREE.Color(secondary).multiplyScalar(0.12),
+    emissiveIntensity: 0.6,
+  })
+  const matBase  = new THREE.MeshStandardMaterial({ color: 0x2a3038, roughness: 0.90 })
+
+  // Floor scatter of angular glass shard fragments
+  const shardSpecs: Array<[number, number, number, number, number, number, number]> = [
+    // [w, h, d, x, y, z, rotY]
+    [0.30, 0.04, 0.18,  0.00, 0.02,  0.00,  0.3],
+    [0.18, 0.06, 0.12,  0.22, 0.03,  0.12,  1.1],
+    [0.24, 0.03, 0.14, -0.18, 0.02,  0.18,  2.4],
+    [0.14, 0.08, 0.10,  0.08, 0.04, -0.20,  0.8],
+    [0.20, 0.05, 0.08, -0.10, 0.03, -0.08,  1.9],
+    [0.10, 0.10, 0.06,  0.26, 0.05, -0.10,  3.0],
+  ]
+  // Flat stone base
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.04, 0.60), matBase)
+  base.position.set(0, 0.02, 0)
+  group.add(base)
+
+  for (const [w, h, d, x, y, z, rotY] of shardSpecs) {
+    const shard = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), matGlass)
+    shard.position.set(x, y, z)
+    shard.rotation.y = rotY
+    group.add(shard)
+  }
+
+  // Faint pale-blue glow from the glass
+  const glow = new THREE.PointLight(primary, 0.5, 2.0)
+  glow.position.set(0, 0.30, 0)
+  group.add(glow)
+
+  return group
+}
+
+/** Construct core: a deactivated mechanical core half-embedded in the floor. */
+function _buildConstructCoreMesh(primary: number, secondary: number): THREE.Group {
+  const group    = new THREE.Group()
+  const matPlate = new THREE.MeshStandardMaterial({
+    color: primary,
+    roughness: 0.55,
+    metalness: 0.60,
+  })
+  const matCore  = new THREE.MeshStandardMaterial({
+    color: secondary,
+    roughness: 0.30,
+    metalness: 0.70,
+    emissive: new THREE.Color(secondary).multiplyScalar(0.22),
+    emissiveIntensity: 0.8,
+  })
+  const matRim   = new THREE.MeshStandardMaterial({ color: 0x1a2028, roughness: 0.92 })
+
+  // Stone floor socket
+  const socket = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.32, 0.08, 10), matRim)
+  socket.position.set(0, 0.04, 0)
+  group.add(socket)
+
+  // Outer casing plates
+  const casing = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.28, 8), matPlate)
+  casing.position.set(0, 0.22, 0)
+  group.add(casing)
+
+  // Inner glowing core sphere
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 8), matCore)
+  core.position.set(0, 0.30, 0)
+  group.add(core)
+
+  // Plate flanges radiating outward
+  for (let i = 0; i < 4; i++) {
+    const angle = (i / 4) * Math.PI * 2
+    const flange = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.06, 0.08), matPlate)
+    flange.position.set(Math.cos(angle) * 0.24, 0.14, Math.sin(angle) * 0.24)
+    flange.rotation.y = angle
+    group.add(flange)
+  }
+
+  // Faint teal glow from the active core
+  const glow = new THREE.PointLight(secondary, 0.7, 2.5)
+  glow.position.set(0, 0.50, 0)
+  group.add(glow)
+
+  return group
+}
+
 /** Build a single salvage node at (x, z) and register its interactable. */
 function _buildOneSalvageNode(
   scene: THREE.Scene,
@@ -245,6 +362,10 @@ function _buildOneSalvageNode(
     clusterMesh = _buildMasonryRubbleMesh(cfg.primaryColor, cfg.secondaryColor)
   } else if (variant === 'relic_cache') {
     clusterMesh = _buildRelicCacheMesh(cfg.primaryColor, cfg.secondaryColor)
+  } else if (variant === 'vault_glass') {
+    clusterMesh = _buildVaultGlassMesh(cfg.primaryColor, cfg.secondaryColor)
+  } else if (variant === 'construct_core') {
+    clusterMesh = _buildConstructCoreMesh(cfg.primaryColor, cfg.secondaryColor)
   } else {
     clusterMesh = _buildWaxSealMesh(cfg.primaryColor, cfg.secondaryColor)
   }
@@ -333,4 +454,41 @@ export function depleteSalvageNode(node: SalvageNode): void {
 export function getSalvagingLevel(): number {
   const { skills } = useGameStore.getState()
   return skills.skills.find((s) => s.id === 'salvaging')?.level ?? 1
+}
+
+// ─── Belowglass Vaults salvage placements (Phase 78) ───────────────────────
+
+/**
+ * Higher-tier salvage node placements inside the Belowglass Vaults threshold.
+ *
+ *  vault_glass:   fractured glass panels on the threshold floor — scattered
+ *                 around the central hall (x −104 to −120).
+ *  construct_core: deactivated construct cores near the inner threshold
+ *                 (x −118 to −126).
+ */
+const BV_SALVAGE_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: SalvageVariant }> = [
+  // Shattered vaultglass — entrance and mid-threshold
+  { pos: [-106,  -4], variant: 'vault_glass' },
+  { pos: [-112,   3], variant: 'vault_glass' },
+  { pos: [-109,   0], variant: 'vault_glass' },
+
+  // Construct cores — deeper inner threshold
+  { pos: [-120,  -3], variant: 'construct_core' },
+  { pos: [-124,   4], variant: 'construct_core' },
+  { pos: [-122,   0], variant: 'construct_core' },
+]
+
+/**
+ * Spawn all Belowglass Vaults higher-tier salvage nodes.
+ * Mirrors buildSalvageNodes() — App.tsx merges the returned nodes into the
+ * master allSalvageNodes array so the shared updateSalvageNodes() handles them.
+ */
+export function buildVaultSalvageNodes(
+  scene: THREE.Scene,
+  interactables: Interactable[],
+  onSalvageStart: (node: SalvageNode) => void,
+): SalvageNode[] {
+  return BV_SALVAGE_PLACEMENTS.map(({ pos: [x, z], variant }, idx) =>
+    _buildOneSalvageNode(scene, interactables, `bv_salvage_${idx}`, x, z, variant, onSalvageStart),
+  )
 }

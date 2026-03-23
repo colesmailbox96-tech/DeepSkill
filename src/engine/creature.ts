@@ -590,6 +590,56 @@ const CREATURE_DEFS: CreatureDef[] = [
     dropItemId: 'mire_hound_pelt',
     dropChance: 0.70,
   },
+
+  // ── Phase 78 — Belowglass Vaults construct creatures ──────────────────────
+
+  // 14. Shard Construct — Phase 78 Belowglass Vaults creature.  A fast,
+  //     angular crystalline automaton assembled from shattered vaultglass.
+  //     Agile and aggressive; drops vault_glass_shard on defeat.
+  {
+    id: 'shard_construct',
+    name: 'Shard Construct',
+    x: -110,
+    z: -4,
+    color: 0x7ab8d0,
+    scale: 0.90,
+    roamRadius: 6,
+    pursuitRadius: 18,
+    leashRadius: 24,
+    speed: 3.2,
+    idleBase: 3.0,
+    aggroRadius: 7,
+    maxHp: 35,
+    attackDamage: 8,
+    attackCooldown: 1.6,
+    respawnDelay: 45,
+    dropItemId: 'vault_glass_shard',
+    dropChance: 0.70,
+  },
+
+  // 15. Glass Warden — Phase 78 Belowglass Vaults creature.  A slow, heavily
+  //     armoured sentinel built from construct plating and vaultglass panels.
+  //     High durability; hits hard.  Drops construct_plating on defeat.
+  {
+    id: 'glass_warden',
+    name: 'Glass Warden',
+    x: -124,
+    z: 3,
+    color: 0x3a5868,
+    scale: 1.35,
+    roamRadius: 5,
+    pursuitRadius: 14,
+    leashRadius: 20,
+    speed: 1.6,
+    idleBase: 5.5,
+    aggroRadius: 8,
+    maxHp: 65,
+    attackDamage: 12,
+    attackCooldown: 3.0,
+    respawnDelay: 80,
+    dropItemId: 'construct_plating',
+    dropChance: 0.60,
+  },
 ]
 
 /** Interaction radius for wildlife harvest. */

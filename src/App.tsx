@@ -121,8 +121,11 @@ import { buildAshfenCopse } from './engine/ashfen_copse'
 import { buildHollowVault, pollGateUnsealed } from './engine/hollow_vault'
 import { buildMarrowfen } from './engine/marrowfen'
 import type { MarrowfenResult } from './engine/marrowfen'
+import { buildBelowglassVaults } from './engine/belowglass_vaults'
+import type { BelowglassVaultsResult } from './engine/belowglass_vaults'
 import {
   buildSalvageNodes,
+  buildVaultSalvageNodes,
   updateSalvageNodes,
   depleteSalvageNode,
   getSalvagingLevel,
@@ -737,6 +740,18 @@ function App() {
     const marrowfen: MarrowfenResult = buildMarrowfen(scene, interactables, onForageStart)
     collidables.push(...marrowfen.collidables)
     allForageNodes.push(...marrowfen.forageNodes)
+
+    // Phase 78 — Belowglass Vaults Entrance Slice
+    // Build the late-game crystalline threshold zone west of the Hollow Vault.
+    // The access gate slab is collidable until the player has completed the
+    // "Echoes of the Sealed Shaft" task; pollOpened() checks each frame.
+    const belowglassVaults: BelowglassVaultsResult = buildBelowglassVaults(scene, interactables)
+    collidables.push(...belowglassVaults.collidables)
+    let bvGateSealed = true
+
+    // Higher-tier salvage nodes inside the Belowglass Vaults.
+    const bvSalvageNodes = buildVaultSalvageNodes(scene, interactables, onSalvageStart)
+    allSalvageNodes.push(...bvSalvageNodes)
 
     // Phase 22 — Cooking System Foundation
     // Phase 59 — Panel-based recipe selection replaces auto-cook.
@@ -2613,6 +2628,10 @@ function App() {
       if (player.mesh.position.z >= 60 && player.mesh.position.z <= 105 && player.mesh.position.x >= -28 && player.mesh.position.x <= 28) {
         triggerZoneExplore('marrowfen')
       }
+      // Phase 78 — Belowglass Vaults explore trigger.
+      if (player.mesh.position.x <= -98 && player.mesh.position.z >= -10 && player.mesh.position.z <= 10) {
+        triggerZoneExplore('belowglass_vaults')
+      }
       // Phase 75 — Redwake Quarry explore trigger (quarry basin begins at z ≤ −52).
       if (player.mesh.position.z <= -52) {
         triggerZoneExplore('quarry')
@@ -2661,6 +2680,21 @@ function App() {
         const cacheInteractableIdx = interactables.indexOf(quarry.supplyCache.interactable)
         if (cacheInteractableIdx !== -1) {
           interactables.splice(cacheInteractableIdx, 1)
+        }
+      }
+      // Phase 78 — Belowglass Vaults gate: opened when the player has
+      // completed "Echoes of the Sealed Shaft".  Removes the glass slab.
+      if (bvGateSealed && belowglassVaults.gateDoor.pollOpened()) {
+        bvGateSealed = false
+        belowglassVaults.gateDoor.mesh.visible = false
+        const bvGateCollidableIdx = collidables.indexOf(belowglassVaults.gateDoor.mesh as THREE.Mesh)
+        if (bvGateCollidableIdx >= 0) {
+          collidables.splice(bvGateCollidableIdx, 1)
+          collidableBoxes.splice(bvGateCollidableIdx, 1)
+        }
+        const bvGateInteractableIdx = interactables.indexOf(belowglassVaults.gateDoor.interactable)
+        if (bvGateInteractableIdx !== -1) {
+          interactables.splice(bvGateInteractableIdx, 1)
         }
       }
       // Sync live target HP to the combat store so the React overlay stays current.
