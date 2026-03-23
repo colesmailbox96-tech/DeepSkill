@@ -35,6 +35,7 @@ import type { TaskDefinition } from '../engine/task'
 import { useGameStore } from './useGameStore'
 import { useNotifications } from './useNotifications'
 import { getItem as _getItemDef } from '../data/items/itemRegistry'
+import { useFactionStore } from './useFactionStore'
 
 // ─── Runtime record ──────────────────────────────────────────────────────────
 
@@ -133,6 +134,14 @@ function _grantRewards(def: TaskDefinition): void {
   if (def.reward.xp) {
     for (const xpReward of def.reward.xp) {
       gameStore.grantSkillXp(xpReward.skill, xpReward.amount)
+    }
+  }
+
+  // Phase 76 — grant faction reputation rewards.
+  if (def.reward.factionRep) {
+    const factionStore = useFactionStore.getState()
+    for (const repReward of def.reward.factionRep) {
+      factionStore.gainRep(repReward.factionId, repReward.amount)
     }
   }
 }

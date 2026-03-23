@@ -8,9 +8,10 @@
  *
  * Requirement kinds
  * ─────────────────
- *  'skill' — player's level in skillId must reach minLevel.
- *  'task'  — task taskId must be in the completed list.
- *  'item'  — player's inventory must contain at least one itemId.
+ *  'skill'   — player's level in skillId must reach minLevel.
+ *  'task'    — task taskId must be in the completed list.
+ *  'item'    — player's inventory must contain at least one itemId.
+ *  'faction' — player's trust tier with factionId must reach minTier.
  *
  * Physical helpers
  * ────────────────
@@ -33,14 +34,21 @@ import { useGameStore } from '../store/useGameStore'
 import { useTaskStore } from '../store/useTaskStore'
 import { useNotifications } from '../store/useNotifications'
 import { useGatingStore } from '../store/useGatingStore'
+import { useFactionStore } from '../store/useFactionStore'
+import type { FactionTier } from '../store/useFactionStore'
+import { TIER_REP } from '../store/useFactionStore'
 
 // ─── Requirement types ────────────────────────────────────────────────────────
 
 /** A single condition the player must satisfy to pass a gate. */
 export type GateRequirement =
-  | { kind: 'skill'; skillId: string; skillName: string; minLevel: number }
-  | { kind: 'task';  taskId: string;  taskTitle: string }
-  | { kind: 'item';  itemId: string;  itemName: string }
+  | { kind: 'skill';   skillId: string;   skillName: string;   minLevel: number }
+  | { kind: 'task';    taskId: string;     taskTitle: string }
+  | { kind: 'item';    itemId: string;     itemName: string }
+  | { kind: 'faction'; factionId: string; factionName: string; minTier: FactionTier }
+
+// Re-export for convenience.
+export type { FactionTier }
 
 // ─── Evaluation ───────────────────────────────────────────────────────────────
 
@@ -80,6 +88,19 @@ export function checkRequirement(req: GateRequirement): GateCheckResult {
       return {
         met: false,
         message: `You need ${req.itemName} to pass.`,
+      }
+    }
+    case 'faction': {
+      const tier = useFactionStore.getState().getTrustTier(req.factionId)
+      const tierOrder: FactionTier[] = ['neutral', 'acquainted', 'trusted', 'honored']
+      const playerIdx = tierOrder.indexOf(tier)
+      const requiredIdx = tierOrder.indexOf(req.minTier)
+      if (playerIdx >= requiredIdx) return { met: true, message: '' }
+      const needed = TIER_REP[req.minTier]
+      const current = useFactionStore.getState().getRepForFaction(req.factionId)
+      return {
+        met: false,
+        message: `Requires ${req.factionName} standing: ${req.minTier} (${needed} rep). You have ${current}.`,
       }
     }
   }

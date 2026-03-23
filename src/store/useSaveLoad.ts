@@ -12,6 +12,7 @@
 import { useCallback } from 'react'
 import { useGameStore } from './useGameStore'
 import { useShopStore } from './useShopStore'
+import { useFactionStore } from './useFactionStore'
 import type { PlayerStats, InventoryState, EquipmentState, Settings } from './useGameStore'
 import type { SkillsState } from './useGameStore'
 
@@ -27,6 +28,8 @@ interface SaveSnapshot {
   /** Remaining stock counts for finite-supply vendor items. Optional for
    *  backward compatibility with saves created before Phase 55. */
   vendorStocks?: Record<string, Record<string, number>>
+  /** Phase 76 — faction reputation values. Optional for backward compatibility. */
+  factionRep?: Record<string, number>
 }
 
 /** Runtime guard: verify that `v` is a finite, non-NaN number. */
@@ -41,6 +44,7 @@ export function useSaveGame(): () => boolean {
       const { playerStats, inventory, skills, equipment, settings } =
         useGameStore.getState()
       const { vendorStocks } = useShopStore.getState()
+      const { rep: factionRep } = useFactionStore.getState()
       const snapshot: SaveSnapshot = {
         version: 1,
         playerStats,
@@ -49,6 +53,7 @@ export function useSaveGame(): () => boolean {
         equipment,
         settings,
         vendorStocks,
+        factionRep,
       }
       localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot))
       return true
@@ -132,6 +137,33 @@ export function useLoadGame(): () => void {
       // Absent in saves from before Phase 55; the store will use its defaults.
       if (snapshot.vendorStocks && typeof snapshot.vendorStocks === 'object') {
         useShopStore.getState().setVendorStocks(snapshot.vendorStocks)
+      }
+
+      // Phase 76 — restore faction rep if present.
+      // Absent in saves from before Phase 76; the store will use its defaults.
+      // Only restore rep for faction ids that exist in the registry; this
+      // prevents a crafted or corrupt save from injecting arbitrary keys into
+      // the runtime rep map.
+      if (snapshot.factionRep && typeof snapshot.factionRep === 'object') {
+        const knownRep = useFactionStore.getState().rep
+        const validatedRep: Record<string, number> = {}
+        for (const [factionId, amount] of Object.entries(snapshot.factionRep)) {
+          // Allow 0 here (exact restore semantics); gainRep rejects <= 0
+          // because it is an incremental add, not a restoration.
+          if (
+            factionId in knownRep &&
+            typeof amount === 'number' &&
+            Number.isFinite(amount) &&
+            amount >= 0
+          ) {
+            validatedRep[factionId] = Math.floor(amount)
+          }
+        }
+        if (Object.keys(validatedRep).length > 0) {
+          useFactionStore.setState((s) => ({
+            rep: { ...s.rep, ...validatedRep },
+          }))
+        }
       }
     } catch (err) {
       console.warn('[Load] failed to restore game state:', err)
