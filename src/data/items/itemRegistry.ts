@@ -75,3 +75,47 @@ registerItems([
 // ── Starter item set — Phase 12 ──────────────────────────────────────────────
 
 registerItems(STARTER_ITEMS)
+
+// ── Phase 73 — Shared tool-tier helpers ─────────────────────────────────────
+
+/**
+ * Returns the highest tier among all tools in `slots` that match `skill`.
+ *
+ * Uses the item-registry `toolMeta` as the single source of truth for tier,
+ * so adding a new tool only requires updating its ItemDefinition — no
+ * hardcoded skill→tier maps to keep in sync.
+ *
+ * @param skill - Skill id, e.g. 'woodcutting', 'mining', 'fishing'.
+ * @param slots - Inventory slots to search (only the `id` field is read).
+ * @returns Best tier found, or 0 when no matching tool is present.
+ */
+export function getToolTierForSkill(
+  skill: string,
+  slots: ReadonlyArray<{ id: string }>,
+): number {
+  let best = 0
+  for (const s of slots) {
+    const def = getItem(s.id)
+    if (def?.type === 'tool' && def.toolMeta?.skill === skill) {
+      const tier = def.toolMeta.tier
+      if (tier > best) best = tier
+    }
+  }
+  return best
+}
+
+/**
+ * Returns true when `slots` contains at least one tool that matches `skill`.
+ *
+ * @param skill - Skill id, e.g. 'woodcutting', 'mining', 'fishing'.
+ * @param slots - Inventory slots to search.
+ */
+export function hasToolForSkill(
+  skill: string,
+  slots: ReadonlyArray<{ id: string }>,
+): boolean {
+  return slots.some((s) => {
+    const def = getItem(s.id)
+    return def?.type === 'tool' && def.toolMeta?.skill === skill
+  })
+}

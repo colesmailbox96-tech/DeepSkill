@@ -107,6 +107,15 @@ export function InventoryPanel() {
       ? meetsEquipRequirements(tooltipDef, skillMap)
       : true
 
+  // Phase 73 — Durability display values, computed once outside JSX.
+  const toolMaxDur = tooltipDef?.type === 'tool' ? tooltipDef.toolMeta?.maxDurability ?? 0 : 0
+  const rawDur = tooltip && toolMaxDur > 0 ? tooltip.item.durability : null
+  const safeDur =
+    typeof rawDur === 'number' && Number.isFinite(rawDur) ? rawDur : toolMaxDur
+  const toolCurDur = toolMaxDur > 0 ? Math.max(0, Math.min(toolMaxDur, safeDur)) : 0
+  const toolDurPct = toolMaxDur > 0 ? toolCurDur / toolMaxDur : 0
+  const toolDurColor = toolDurPct > 0.6 ? '#60c870' : toolDurPct > 0.25 ? '#f0b830' : '#d85040'
+
   return (
     <div
       ref={panelRef}
@@ -185,6 +194,20 @@ export function InventoryPanel() {
             <span className="inv-tooltip__value">
               Value: {tooltipDef.value} {tooltipDef.value === 1 ? CURRENCY_NAME : CURRENCY_PLURAL}
             </span>
+          )}
+          {/* Phase 73 — Durability bar for tool items */}
+          {tooltipDef?.type === 'tool' && toolMaxDur > 0 && (
+            <div className="inv-tooltip__durability">
+              <span className="inv-tooltip__durability-label">
+                Durability: {toolCurDur}/{toolMaxDur}
+              </span>
+              <div className="inv-tooltip__durability-bar">
+                <div
+                  className="inv-tooltip__durability-fill"
+                  style={{ width: `${toolDurPct * 100}%`, background: toolDurColor }}
+                />
+              </div>
+            </div>
           )}
           {/* Phase 27 — Equipment stat bonuses */}
           {tooltipDef?.equipMeta && (

@@ -21,20 +21,12 @@ import * as THREE from 'three'
 import type { Interactable } from './interactable'
 import { useNotifications } from '../store/useNotifications'
 import { useGameStore } from '../store/useGameStore'
+import { getToolTierForSkill, hasToolForSkill } from '../data/items/itemRegistry'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 /** Seconds before a fished-out spot becomes active again. */
 export const FISH_RESPAWN_TIME = 20.0
-
-/** Item IDs that qualify as a valid fishing rod, mapped to their tool tier. */
-const ROD_TIERS: Readonly<Record<string, number>> = {
-  reedline_rod: 1,
-  reinforced_rod: 2,
-}
-
-/** Item IDs that qualify as a valid fishing rod (baitless starter mode). */
-const ROD_IDS = new Set(Object.keys(ROD_TIERS))
 
 // ── Variant system ────────────────────────────────────────────────────────────
 
@@ -290,13 +282,12 @@ export function depleteFishSpot(node: FishingNode): void {
 /**
  * Returns the tier of the best fishing rod currently in the player's inventory.
  * Returns 0 when no rod is held.
+ *
+ * Phase 73: delegates to the shared registry-backed helper so this and
+ * `degradeTool` always agree on which tool counts as "best".
  */
 export function getRodTier(): number {
-  const { slots } = useGameStore.getState().inventory
-  return slots.reduce((best, s) => {
-    const t = s != null ? (ROD_TIERS[s.id] ?? 0) : 0
-    return t > best ? t : best
-  }, 0)
+  return getToolTierForSkill('fishing', useGameStore.getState().inventory.slots)
 }
 
 /**
@@ -304,8 +295,7 @@ export function getRodTier(): number {
  * qualifies as a fishing rod (baitless starter mode — no bait required).
  */
 export function hasRod(): boolean {
-  const { slots } = useGameStore.getState().inventory
-  return slots.some((s) => s != null && ROD_IDS.has(s.id))
+  return hasToolForSkill('fishing', useGameStore.getState().inventory.slots)
 }
 
 /**

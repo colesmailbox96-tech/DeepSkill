@@ -52,13 +52,18 @@ export type EquipSlot =
 /**
  * Extra data attached to items of type 'tool'.
  *
- * skill — the skill ID this tool applies to (e.g. 'woodcutting', 'mining').
- * tier  — quality tier starting at 1 (starter); higher tiers improve gather
- *         speed and unlock harder nodes.
+ * skill         — the skill ID this tool applies to (e.g. 'woodcutting', 'mining').
+ * tier          — quality tier starting at 1 (starter); higher tiers improve gather
+ *                 speed and unlock harder nodes.
+ * maxDurability — maximum number of uses before the tool breaks.  Each successful
+ *                 gather action consumes one point.  Higher tiers last longer.
+ *                 Phase 73.
  */
 export interface ToolMeta {
   skill: string
   tier: number
+  /** Phase 73 — total uses before this tool breaks. */
+  maxDurability: number
 }
 
 // ── Consumable metadata ──────────────────────────────────────────────────────

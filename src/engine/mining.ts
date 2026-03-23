@@ -14,20 +14,12 @@ import * as THREE from 'three'
 import type { Interactable } from './interactable'
 import { useNotifications } from '../store/useNotifications'
 import { useGameStore } from '../store/useGameStore'
+import { getToolTierForSkill, hasToolForSkill } from '../data/items/itemRegistry'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 /** Seconds before a depleted rock respawns as an interactable node. */
 export const ROCK_RESPAWN_TIME = 30.0
-
-/** Item IDs that count as a valid mining pickaxe, mapped to their tool tier. */
-const PICKAXE_TIERS: Readonly<Record<string, number>> = {
-  quarry_pick: 1,
-  iron_pick: 2,
-}
-
-/** Item IDs that count as a valid mining pickaxe. */
-const PICKAXE_IDS = new Set(Object.keys(PICKAXE_TIERS))
 
 // ── Variant system ────────────────────────────────────────────────────────────
 
@@ -316,13 +308,12 @@ export function depleteRock(node: RockNode): void {
 /**
  * Returns the tier of the best pickaxe currently in the player's inventory.
  * Returns 0 when no pickaxe is held.
+ *
+ * Phase 73: delegates to the shared registry-backed helper so this and
+ * `degradeTool` always agree on which tool counts as "best".
  */
 export function getPickaxeTier(): number {
-  const { slots } = useGameStore.getState().inventory
-  return slots.reduce((best, s) => {
-    const t = s != null ? (PICKAXE_TIERS[s.id] ?? 0) : 0
-    return t > best ? t : best
-  }, 0)
+  return getToolTierForSkill('mining', useGameStore.getState().inventory.slots)
 }
 
 /**
@@ -330,8 +321,7 @@ export function getPickaxeTier(): number {
  * qualifies as a mining pickaxe.
  */
 export function hasPickaxe(): boolean {
-  const { slots } = useGameStore.getState().inventory
-  return slots.some((s) => s != null && PICKAXE_IDS.has(s.id))
+  return hasToolForSkill('mining', useGameStore.getState().inventory.slots)
 }
 
 /**

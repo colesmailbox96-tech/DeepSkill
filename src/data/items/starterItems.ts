@@ -24,7 +24,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     description:
       'A hatchet head lashed to a short ash-wood handle with rawhide cord. ' +
       'Serviceable for felling young trees, though the edge dulls quickly on hardwood.',
-    toolMeta: { skill: 'woodcutting', tier: 1 },
+    toolMeta: { skill: 'woodcutting', tier: 1, maxDurability: 50 },
   },
 
   {
@@ -37,7 +37,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     description:
       'A narrow iron pick with a weighted back face, stamped with the Redwake Quarry mark. ' +
       'Chips loose stone and surface ore veins with reasonable efficiency.',
-    toolMeta: { skill: 'mining', tier: 1 },
+    toolMeta: { skill: 'mining', tier: 1, maxDurability: 50 },
   },
 
   {
@@ -50,7 +50,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     description:
       'A light reed pole strung with braided marsh-fiber line and a carved bone hook. ' +
       'Suitable for calm shallows and geothermal seep pools alike.',
-    toolMeta: { skill: 'fishing', tier: 1 },
+    toolMeta: { skill: 'fishing', tier: 1, maxDurability: 50 },
   },
 
   // ── Consumables ────────────────────────────────────────────────────────────
@@ -335,7 +335,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     description:
       'A hatchet with a copper head set into a seasoned ashwood handle. ' +
       'Noticeably heavier than the rough starter axe; the harder edge stays keen through ironbark and aged hardwood.',
-    toolMeta: { skill: 'woodcutting', tier: 2 },
+    toolMeta: { skill: 'woodcutting', tier: 2, maxDurability: 100 },
   },
 
   {
@@ -348,7 +348,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     description:
       'A pick forged from iron bar stock, weighted for deep-seam work. ' +
       'The balanced swing drives through dense ore veins in fewer blows than any surface quarry tool.',
-    toolMeta: { skill: 'mining', tier: 2 },
+    toolMeta: { skill: 'mining', tier: 2, maxDurability: 100 },
   },
 
   {
@@ -361,7 +361,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
     description:
       'A stout reed rod fitted with copper guides and a tightly woven reed-fiber line. ' +
       'The stiffer blank handles deeper pools; bites register faster than with a plain bone hook.',
-    toolMeta: { skill: 'fishing', tier: 2 },
+    toolMeta: { skill: 'fishing', tier: 2, maxDurability: 100 },
   },
 
   // ── Phase 58 — Tier 3 Woodcutting Tool ───────────────────────────────────
@@ -377,7 +377,7 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'A hatchet forged from duskiron bar, hafted with dense ironbark hardwood. ' +
       'The dark blade holds its edge far longer than copper or iron; it shears through ' +
       'Mineral Ashwood and ironbark alike with swift, decisive blows.',
-    toolMeta: { skill: 'woodcutting', tier: 3 },
+    toolMeta: { skill: 'woodcutting', tier: 3, maxDurability: 150 },
   },
 
   // ── Phase 40 — Smithing bars ──────────────────────────────────────────────
