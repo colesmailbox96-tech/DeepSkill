@@ -801,13 +801,17 @@ function App() {
     // Phase 40 — Smithing Foundation
     // Smelt session: tracks which recipe is being smelted and elapsed time.
     const smeltRef = { current: null as SmeltSession | null }
+    // Phase 41 — Forge session: forge tool upgrade at the furnace.
+    const forgeRef = { current: null as ForgeSession | null }
+    // Phase 79 — Alloy session: fuse multiple materials into an alloy bar at the furnace.
+    const alloyRef = { current: null as AlloySession | null }
     // Captured after buildFurnaceStation(); read by onSmeltStart and the tick.
     let furnaceStation: import('./engine/smithing').FurnaceStation | null = null
     const FURNACE_INTERACT_RADIUS = 2.0
 
     const onSmeltStart = (recipe?: SmeltRecipeConfig) => {
-      // Already smelting — do nothing.
-      if (smeltRef.current) return
+      // Already smelting, forging, or alloying at the furnace — do nothing.
+      if (smeltRef.current || forgeRef.current || alloyRef.current) return
 
       // Proximity check — player must be standing at the furnace.
       if (furnaceStation) {
@@ -859,12 +863,9 @@ function App() {
     furnaceStation = buildFurnaceStation(scene, interactables, () => onSmeltStart())
     smeltFromPanelRef.current = (recipe) => onSmeltStart(recipe)
 
-    // Phase 41 — Forge session: forge tool upgrade at the furnace.
-    const forgeRef = { current: null as ForgeSession | null }
-
     const onForgeStart = (recipe: ForgeRecipeConfig) => {
-      // Already forging or smelting — do nothing.
-      if (forgeRef.current || smeltRef.current) return
+      // Already forging, smelting, or alloying at the furnace — do nothing.
+      if (forgeRef.current || smeltRef.current || alloyRef.current) return
 
       // Proximity check — must be at the furnace.
       if (furnaceStation) {
@@ -915,11 +916,8 @@ function App() {
 
     forgeFromPanelRef.current = (recipe) => onForgeStart(recipe)
 
-    // Phase 79 — Alloy session: fuse multiple materials into an alloy bar at the furnace.
-    const alloyRef = { current: null as AlloySession | null }
-
     const onAlloyStart = (recipe: AlloyRecipeConfig) => {
-      // Already alloying, forging, or smelting — do nothing.
+      // Already alloying, forging, or smelting at the furnace — do nothing.
       if (alloyRef.current || forgeRef.current || smeltRef.current) return
 
       // Proximity check — must be at the furnace.
