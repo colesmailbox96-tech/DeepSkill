@@ -2813,7 +2813,7 @@ function App() {
           const hsIntIdx = interactables.indexOf(hs.interactable)
           if (hsIntIdx !== -1) interactables.splice(hsIntIdx, 1)
           // Register on minimap so the secret marker appears.
-          useMinimapStore.getState().addDiscoveredShortcut(HIDDEN_SHORTCUT_CONFIGS[_si].id)
+          useMinimapStore.getState().addDiscoveredShortcut(hs.id)
           hiddenShortcuts.splice(_si, 1)
         }
       }

@@ -602,6 +602,8 @@ export const HIDDEN_SHORTCUT_CONFIGS: Readonly<HiddenShortcutConfig[]> = [
 
 /** Result handle returned by buildHiddenShortcut. */
 export interface HiddenShortcutResult {
+  /** Shortcut id — matches HiddenShortcutConfig.id; used for minimap registration. */
+  id: string
   /** The blocking rubble mesh — push into collidables and hide on open. */
   mesh: THREE.Mesh
   /** The interaction target — splice from interactables on open. */
@@ -665,6 +667,7 @@ export function buildHiddenShortcut(
   interactables.push(interactable)
 
   return {
+    id: config.id,
     mesh,
     interactable,
     pollOpened() {
