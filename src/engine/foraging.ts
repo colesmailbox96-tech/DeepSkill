@@ -50,6 +50,7 @@ export interface ForageVariantConfig {
 }
 
 export const FORAGE_VARIANT_CONFIG: Readonly<Record<ForageVariant, ForageVariantConfig>> = {
+  // Phase 85 — respawn times doubled across all variants to pace gathering.
   reed_clump: {
     label: 'Reed Cluster',
     quietLabel: 'Bare Reed Patch',
@@ -57,7 +58,7 @@ export const FORAGE_VARIANT_CONFIG: Readonly<Record<ForageVariant, ForageVariant
     itemId: 'reed_fiber',
     xp: 8,
     levelReq: 1,
-    respawnTime: 15,
+    respawnTime: 30,
     primaryColor: 0x7a9e52,
     secondaryColor: 0x8b6c3a,
   },
@@ -68,7 +69,7 @@ export const FORAGE_VARIANT_CONFIG: Readonly<Record<ForageVariant, ForageVariant
     itemId: 'marsh_herb',
     xp: 12,
     levelReq: 1,
-    respawnTime: 20,
+    respawnTime: 40,
     primaryColor: 0x4a7a3a,
     secondaryColor: 0x6aaa5a,
   },
@@ -79,7 +80,7 @@ export const FORAGE_VARIANT_CONFIG: Readonly<Record<ForageVariant, ForageVariant
     itemId: 'resin_glob',
     xp: 18,
     levelReq: 3,
-    respawnTime: 25,
+    respawnTime: 50,
     primaryColor: 0xc88820,
     secondaryColor: 0x7a4a18,
   },
@@ -92,7 +93,7 @@ export const FORAGE_VARIANT_CONFIG: Readonly<Record<ForageVariant, ForageVariant
     itemId: 'ashfen_resin',
     xp: 28,
     levelReq: 5,
-    respawnTime: 35,
+    respawnTime: 70,
     primaryColor: 0x6a3a10,
     secondaryColor: 0x2a1a08,
   },
@@ -105,7 +106,7 @@ export const FORAGE_VARIANT_CONFIG: Readonly<Record<ForageVariant, ForageVariant
     itemId: 'marsh_glass_reed',
     xp: 35,
     levelReq: 7,
-    respawnTime: 40,
+    respawnTime: 80,
     primaryColor: 0xa8d8c0,
     secondaryColor: 0xd0f0e8,
   },
@@ -118,7 +119,7 @@ export const FORAGE_VARIANT_CONFIG: Readonly<Record<ForageVariant, ForageVariant
     itemId: 'marrowfen_spore',
     xp: 45,
     levelReq: 9,
-    respawnTime: 55,
+    respawnTime: 110,
     primaryColor: 0xd4b8e0,
     secondaryColor: 0x8860a8,
   },

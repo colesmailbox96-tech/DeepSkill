@@ -3,6 +3,7 @@
  * Phase 24 — Currency and Economy Base (re-exports economy helpers)
  * Phase 55 — Vendor Diversity
  * Phase 77 — Faction Vendors / Rewards
+ * Phase 85 — Loot Table Balance Pass (sell-price tuning)
  *
  * Defines per-vendor stock and buy/sell constraints for the four distinct
  * vendor roles in Cinderglen:
@@ -19,6 +20,8 @@
  *
  * Buy  price = item.value (full registry value in Marks).
  * Sell price = Math.max(1, Math.floor(item.value / 3))  — one-third, min 1 Mark.
+ *   Exception (Phase 85): consumable items sell for Math.max(1, Math.floor(item.value / 4))
+ *   to reduce the profitability of cook-and-sell loops.
  *   Faction sell bonus: Trusted members receive +15%, Honored +30% when selling
  *   to their aligned faction vendor.
  */
@@ -45,11 +48,20 @@ export {
  * Remaining stock is tracked separately in useShopStore so that purchases
  * actually decrement the available count and the runtime state stays in sync
  * with what the player sees.
+ *
+ * resetEachSession — when true, this item's stock is NOT persisted across
+ * save/load cycles; it resets to its initial `stock` value each time the
+ * game loads.  Use for consumables that should restock every session.
  */
 export interface VendorItem {
   id: string
   /** Initial/maximum units available.  null = unlimited. */
   stock: number | null
+  /**
+   * When true, this item's remaining stock resets to its initial value on
+   * every game load rather than persisting across save/load cycles.
+   */
+  resetEachSession?: boolean
   /**
    * Optional faction requirement to purchase this specific item.
    * If present the item is shown in the buy tab but locked (greyed out with a
@@ -98,8 +110,9 @@ const TOMAS_DEF: VendorDef = {
   role: 'general',
   tagline: 'General provisions & sundries',
   stock: [
-    // Consumables
-    { id: 'camp_rations',  stock: null },
+    // Consumables — limited stock per session to prevent infinite healing purchases.
+    // Phase 85 — camp_rations capped at 20 units; resets to 20 on every session load.
+    { id: 'camp_rations',  stock: 20, resetEachSession: true },
 
     // Basic materials
     { id: 'reed_fiber',    stock: null },
@@ -311,9 +324,13 @@ export function getBuyPrice(itemValue: number): number {
 /**
  * Returns the sell price for an item (what the vendor pays the player).
  * Always at least 1 coin so every item is sellable.
+ *
+ * Phase 85 — consumables (food, tonics) sell for 1/4 of their value instead
+ * of the standard 1/3 to reduce the profitability of cook-and-sell loops.
  */
-export function getSellPrice(itemValue: number): number {
-  return Math.max(1, Math.floor(itemValue / 3))
+export function getSellPrice(itemValue: number, isConsumable = false): number {
+  const divisor = isConsumable ? 4 : 3
+  return Math.max(1, Math.floor(itemValue / divisor))
 }
 
 // ── Faction sell bonus (Phase 77) ─────────────────────────────────────────────

@@ -25,8 +25,11 @@ import { getToolTierForSkill, hasToolForSkill } from '../data/items/itemRegistry
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-/** Seconds before a fished-out spot becomes active again. */
-export const FISH_RESPAWN_TIME = 20.0
+/**
+ * Seconds before a fished-out spot becomes active again.
+ * Phase 85 — increased from 20 s to pace fish-gathering and prevent spot spam.
+ */
+export const FISH_RESPAWN_TIME = 45.0
 
 // ── Variant system ────────────────────────────────────────────────────────────
 

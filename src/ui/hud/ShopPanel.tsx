@@ -165,8 +165,8 @@ export function ShopPanel() {
   const sellBonus = getFactionSellBonus(vendorFactionTier)
 
   /** Returns the effective sell price accounting for any faction bonus. */
-  const effectiveSellPrice = (itemValue: number): number =>
-    Math.max(1, Math.floor(getSellPrice(itemValue) * sellBonus))
+  const effectiveSellPrice = (itemValue: number, isConsumable = false): number =>
+    Math.max(1, Math.floor(getSellPrice(itemValue, isConsumable) * sellBonus))
 
   const handleSell = (itemId: string) => {
     const def = getItem(itemId)
@@ -181,7 +181,7 @@ export function ShopPanel() {
       return
     }
 
-    const price = effectiveSellPrice(def.value)
+    const price = effectiveSellPrice(def.value, def.type === 'consumable')
     removeItem(itemId, 1)
     addCoins(price)
     useNotifications.getState().push(
@@ -344,8 +344,8 @@ export function ShopPanel() {
             }
             return sellableSlots.map((item) => {
               const def = getItem(item.id)!
-              const price = effectiveSellPrice(def.value)
-              const basePrice = getSellPrice(def.value)
+              const price = effectiveSellPrice(def.value, def.type === 'consumable')
+              const basePrice = getSellPrice(def.value, def.type === 'consumable')
               const hasBonusPrice = price > basePrice
               return (
                 <li key={item.id} className="shop-row" role="listitem">

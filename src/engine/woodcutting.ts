@@ -24,8 +24,11 @@ import { getToolTierForSkill, hasToolForSkill } from '../data/items/itemRegistry
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-/** Seconds before a felled tree regrows into an interactable tree. */
-export const RESPAWN_TIME = 30.0
+/**
+ * Seconds before a felled tree regrows into an interactable tree.
+ * Phase 85 — doubled from 30 s to pace wood-gathering and prevent node spam.
+ */
+export const RESPAWN_TIME = 60.0
 
 // ── Variant system ────────────────────────────────────────────────────────────
 

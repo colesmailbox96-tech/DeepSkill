@@ -18,8 +18,11 @@ import { getToolTierForSkill, hasToolForSkill } from '../data/items/itemRegistry
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-/** Seconds before a depleted rock respawns as an interactable node. */
-export const ROCK_RESPAWN_TIME = 30.0
+/**
+ * Seconds before a depleted rock respawns as an interactable node.
+ * Phase 85 — doubled from 30 s to pace ore-gathering and prevent node spam.
+ */
+export const ROCK_RESPAWN_TIME = 60.0
 
 // ── Variant system ────────────────────────────────────────────────────────────
 
