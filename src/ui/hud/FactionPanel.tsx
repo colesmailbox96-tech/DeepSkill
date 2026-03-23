@@ -20,6 +20,7 @@ import { useFactionStore } from '../../store/useFactionStore'
 import { getAllFactions } from '../../data/factions/factionRegistry'
 import { tierFromRep, TIER_REP } from '../../store/useFactionStore'
 import type { FactionTier } from '../../store/useFactionStore'
+import { FACTION_TIER_ORDER } from '../../engine/shop'
 
 // ─── Tier helpers ─────────────────────────────────────────────────────────────
 
@@ -81,13 +82,12 @@ function FactionRow({ factionId, name, description }: FactionRowProps) {
 
   // Determine next perk to show (first perk the player hasn't reached yet).
   const perks = FACTION_PERKS[factionId]
-  const TIER_ORDER: FactionTier[] = ['neutral', 'acquainted', 'trusted', 'honored']
-  const currentTierIdx = TIER_ORDER.indexOf(tier)
+  const currentTierIdx = FACTION_TIER_ORDER.indexOf(tier)
   const nextPerk = perks?.find(
-    (p) => TIER_ORDER.indexOf(p.tier) > currentTierIdx,
+    (p) => FACTION_TIER_ORDER.indexOf(p.tier) > currentTierIdx,
   )
   const earnedPerks = perks?.filter(
-    (p) => TIER_ORDER.indexOf(p.tier) <= currentTierIdx,
+    (p) => FACTION_TIER_ORDER.indexOf(p.tier) <= currentTierIdx,
   )
 
   return (

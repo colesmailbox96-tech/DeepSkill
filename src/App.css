@@ -1081,10 +1081,25 @@ p {
 .shop-row__faction-lock {
   font-size: 0.68rem;
   color: #94a3b8;
+  position: relative;
 }
 
+/* Hint text is visually hidden by default; revealed on row hover/focus */
 .shop-row__faction-lock-hint {
   font-style: italic;
+  font-size: 0.65rem;
+  color: #94a3b8;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+  margin-left: 0.25rem;
+}
+
+.shop-row:hover .shop-row__faction-lock-hint,
+.shop-row:focus-within .shop-row__faction-lock-hint {
+  visibility: visible;
+  opacity: 1;
 }
 
 /* Phase 77 — faction sell bonus */

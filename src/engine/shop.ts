@@ -248,14 +248,6 @@ const FISHER_ACCEPTED_IDS = new Set<string>([
   'reinforced_hook', 'bait_basket', 'reed_fiber',
 ])
 
-/**
- * Returns true when the player can sell `item` to `vendor`.
- *
- * Quest items are universally non-sellable.
- * General traders accept any non-quest item.
- * Toolsmiths accept tools plus smithing materials.
- * Fisher suppliers accept fishing tools plus fish and tackle.
- */
 /** Item IDs that Olen (Union Trader) will buy from the player. */
 const UNION_ACCEPTED_IDS = new Set<string>([
   // Ores and bars
@@ -267,6 +259,16 @@ const UNION_ACCEPTED_IDS = new Set<string>([
   'crumbled_masonry', 'iron_relic_fragment', 'vault_mortar', 'relic_rivet',
 ])
 
+/**
+ * Returns true when the player can sell `item` to `vendor`.
+ *
+ * Quest items are universally non-sellable.
+ * General traders accept any non-quest item.
+ * Toolsmiths accept tools plus smithing materials.
+ * Fisher suppliers accept fishing tools plus fish and tackle.
+ * Union traders (`faction_union`) accept mining tools plus union ores, stone,
+ *   and salvage materials.
+ */
 export function canSellToVendor(item: ItemDefinition, vendor: VendorDef): boolean {
   if (item.type === 'quest') return false
 

@@ -288,7 +288,7 @@ export function ShopPanel() {
                   {def.name}
                   {factionLocked && (
                     <span className="shop-row__faction-lock" title={factionLockHint}>
-                      {' '}🔒 <span className="shop-row__faction-lock-hint">{factionLockHint}</span>
+                      {' '}🔒<span className="shop-row__faction-lock-hint" aria-hidden="true">{factionLockHint}</span>
                     </span>
                   )}
                   {!factionLocked && remaining !== null && (
@@ -324,7 +324,7 @@ export function ShopPanel() {
           {sellBonus > 1.0 && (
             <li className="shop-row shop-row--faction-bonus" role="listitem">
               <span className="shop-row__faction-bonus-msg">
-                ✦ Union member bonus: +{Math.round((sellBonus - 1) * 100)}% sell prices
+                ✦ Faction member bonus: +{Math.round((sellBonus - 1) * 100)}% sell prices
               </span>
             </li>
           )}
