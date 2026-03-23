@@ -433,13 +433,6 @@ const CREATURE_LOOT_TABLES: Record<string, LootTable> = {
         maxQty: 2,
         rarity: 'common',
       },
-      {
-        itemId: 'small_stone',
-        chance: 0.40,
-        minQty: 1,
-        maxQty: 3,
-        rarity: 'common',
-      },
     ],
     currencyMin: 6,
     currencyMax: 14,
