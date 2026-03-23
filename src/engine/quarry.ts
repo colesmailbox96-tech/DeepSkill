@@ -65,7 +65,7 @@ export interface QuarryResult {
   npcs: Npc[]
   /**
    * Phase 75 — Gated supply cache alcove.  Requires task 'quarry_deep_seam'
-   * completion to open.  App.tsx must poll pollOpened() each frame and
+   * completion to open.  App.tsx must poll `pollOpened()` each frame and
    * remove the mesh/collidable when it fires.
    */
   supplyCache: GatedDoorResult
@@ -74,12 +74,13 @@ export interface QuarryResult {
 // ─── Quarry mining node placements ───────────────────────────────────────────
 
 /**
- * Eight mining nodes inside the quarry basin.
+ * Ten mining nodes inside the quarry basin.
  * Positions are world-space (x, z) absolute coordinates.
  *
  *   2 × Loose Stone   — scattered near the quarry entrance
  *   3 × Copper Vein   — mid-basin oxidized seams
  *   3 × Iron Vein     — deeper back of the basin (lore: iron-rich seams)
+ *   2 × Duskiron Seam — deep north end of the basin (Phase 75)
  */
 const QUARRY_ROCK_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: 'loose_stone' | 'copper' | 'iron' | 'duskiron' }> = [
   { pos: [-14, -57], variant: 'loose_stone' },

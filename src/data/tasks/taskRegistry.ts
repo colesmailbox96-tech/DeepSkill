@@ -648,13 +648,13 @@ const surveyReport: TaskDefinition = {
   id: 'survey_report',
   title: 'Full Report to the Elder',
   description:
-    "Deliver the three frontier samples to Aldric (Village Elder) to complete the survey commission.",
+    "Return to Aldric (Village Elder) with all three frontier samples to complete the survey commission.",
   giverName: 'Aldric (Village Elder)',
   objectives: [
     {
       id: 'deliver_survey_to_aldric',
-      description: 'Deliver all samples to Aldric (Village Elder)',
-      type: 'deliver',
+      description: 'Return to Aldric (Village Elder) with all samples',
+      type: 'talk',
       targetId: 'Aldric (Village Elder)',
       required: 1,
     },

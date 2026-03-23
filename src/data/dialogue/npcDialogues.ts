@@ -427,7 +427,7 @@ const gorvenTree = {
     },
     deep_seam: {
       key: 'deep_seam',
-      text: "Good work on the iron. Now the real job: there's a duskiron seam deeper in, past the locked supply alcove. Bring me three chunks of duskiron ore and I'll see the cache opened for you. What's in there is worth the effort.",
+      text: "Good work on the iron. Now the real job: there's a duskiron seam deeper in along the north wall, just before the locked supply alcove. Bring me three chunks of duskiron ore and I'll see the cache opened for you. What's in there is worth the effort.",
       choices: [
         { label: "I'll get the duskiron.", nextNode: null },
         { label: 'Tell me about the quarry.', nextNode: 'quarry_lore' },
