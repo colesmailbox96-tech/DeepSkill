@@ -1730,4 +1730,63 @@ export const STARTER_ITEMS: ItemDefinition[] = [
       'ambient light into slow-shifting hues — the result of centuries of saturation by the ' +
       'Warden\'s resonance field. Highly valued by tinkers and artificers.',
   },
+
+  // ── Phase 87 — Warden's Legacy crafting outputs ────────────────────────────
+
+  {
+    id: 'warden_focus',
+    name: "Warden's Focus",
+    type: 'equipment',
+    stackable: false,
+    value: 500,
+    icon: 'items/warden_focus.png',
+    description:
+      "A resonance amulet assembled from the Vault-Heart Warden's heartstone and two " +
+      'prismatic vault shards. The three pieces lock together without fastening — held ' +
+      'by residual field energy — and pulse faintly when worn at the neck. Provides ' +
+      'exceptional protection and emits enough ambient light to banish the deep dark.',
+    equipMeta: {
+      slot: 'neck',
+      defenceBonus: 5,
+      providesLight: true,
+      requirements: { tinkering: 9 },
+    },
+  },
+
+  {
+    id: 'deep_warden_mantle',
+    name: "Deep Warden's Mantle",
+    type: 'equipment',
+    stackable: false,
+    value: 450,
+    icon: 'items/deep_warden_mantle.png',
+    description:
+      "A hardened chest piece stitched from triple-layered husk membrane — the dense " +
+      "carapace material shed by deep husks in the inner vault — and reinforced with " +
+      'heartwrought ingot plates. Nearly as heavy as stone armour and significantly ' +
+      'more flexible. Favoured by those who descend into the deepest vault chambers.',
+    equipMeta: {
+      slot: 'chest',
+      defenceBonus: 8,
+      requirements: { tailoring: 8 },
+    },
+  },
+
+  {
+    id: 'lantern_eel_broth',
+    name: 'Lantern Eel Broth',
+    type: 'consumable',
+    stackable: true,
+    value: 60,
+    icon: 'items/lantern_eel_broth.png',
+    description:
+      "A rich golden broth rendered from a lantern eel's bioluminescent organ. The " +
+      'marrow carries a residual electrical charge that, when consumed, sharpens the ' +
+      'senses and restores considerable stamina. Smells strongly of deep fen and faint ' +
+      'phosphor. Commonly brewed by Marrowfen scavengers before long dives.',
+    consumableMeta: {
+      healsHp: 20,
+      restoresStamina: 30,
+    },
+  },
 ]

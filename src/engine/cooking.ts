@@ -2,6 +2,7 @@
  * Phase 22 — Cooking System Foundation
  * Phase 59 — Cooking Expansion: hushfang_meat and ember_ram_meat added.
  * Phase 62 — Creature Loot Expansion: toad_gland → marsh_tonic added.
+ * Phase 87 — Warden's Legacy: eel_lantern_organ → lantern_eel_broth added.
  *
  * Provides the hearthcraft cooking engine for Veilmarch.  A single campfire
  * cook station is placed in the Hushwood settlement; players interact with it
@@ -13,6 +14,7 @@
  *   gloomfin        → cooked_gloomfin  (lvl 5, 4 s, 30 xp, heals 25 HP)
  *   cinderhare_meat → cooked_cinderhare(lvl 1, 3 s, 15 xp, heals 18 HP)
  *   toad_gland      → marsh_tonic      (lvl 3, 5 s, 20 xp, heals 12 HP + stamina) [Phase 62]
+ *   eel_lantern_organ→lantern_eel_broth(lvl 6, 5 s, 42 xp, heals 20 HP + 30 stamina) [Phase 87]
  *
  * The caller (App.tsx) owns the level check, timed session, item swap, and XP
  * grant.  This module provides the data, station visual, and helpers.
@@ -33,6 +35,7 @@ export type CookableId =
   | 'hushfang_meat'
   | 'ember_ram_meat'
   | 'toad_gland'
+  | 'eel_lantern_organ'
 
 export interface CookRecipeConfig {
   /** Human-readable ingredient name for notification messages. */
@@ -121,6 +124,21 @@ export const COOK_RECIPE_CONFIG: Readonly<Record<CookableId, CookRecipeConfig>> 
     healsHp: 12,
     restoresStamina: 20,
   },
+  // Phase 87 — Warden's Legacy: eel_lantern_organ rendered into lantern_eel_broth.
+  // The bioluminescent organ of a Lantern Eel is simmered into a rich golden broth
+  // that restores a moderate amount of HP and a large portion of stamina.  The
+  // electrical charge in the marrow passes harmlessly through the digestive system
+  // but leaves the drinker unusually alert — perfect before a long vault descent.
+  eel_lantern_organ: {
+    label: 'Lantern Eel Organ',
+    rawId: 'eel_lantern_organ',
+    cookedId: 'lantern_eel_broth',
+    levelReq: 6,
+    cookDuration: 5,
+    xp: 42,
+    healsHp: 20,
+    restoresStamina: 30,
+  },
 } as const
 
 /**
@@ -132,6 +150,7 @@ export const COOK_RECIPE_CONFIG: Readonly<Record<CookableId, CookRecipeConfig>> 
 const COOK_PRIORITY: CookableId[] = [
   'ember_ram_meat',
   'hushfang_meat',
+  'eel_lantern_organ',
   'gloomfin',
   'cinderhare_meat',
   'perch',
