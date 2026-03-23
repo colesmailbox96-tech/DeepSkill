@@ -6,6 +6,8 @@
  *
  * Saved fields: playerStats, inventory, skills, equipment, settings, and
  * vendor stock counts (so finite-supply items stay depleted across sessions).
+ * Items marked resetEachSession in their VendorItem definition are excluded
+ * from the restored stock and reset to their initial supply on every load.
  * Large/transient state (NPC positions, combat, active sessions) is
  * intentionally excluded — it is rebuilt from defaults on each load.
  */
@@ -13,6 +15,7 @@ import { useCallback } from 'react'
 import { useGameStore } from './useGameStore'
 import { useShopStore } from './useShopStore'
 import { useFactionStore } from './useFactionStore'
+import { getAllVendorDefs } from '../engine/shop'
 import type { PlayerStats, InventoryState, EquipmentState, Settings } from './useGameStore'
 import type { SkillsState } from './useGameStore'
 
@@ -135,8 +138,34 @@ export function useLoadGame(): () => void {
 
       // Restore vendor stock counts if present (Phase 55+).
       // Absent in saves from before Phase 55; the store will use its defaults.
+      // Phase 85 — items with resetEachSession: true are stripped from the
+      // saved snapshot so they reset to their initial stock on every load
+      // (e.g. camp_rations replenishes to 20 each session).
       if (snapshot.vendorStocks && typeof snapshot.vendorStocks === 'object') {
-        useShopStore.getState().setVendorStocks(snapshot.vendorStocks)
+        // Build the set of session-resetting items so we can exclude them.
+        const sessionResetKeys = new Set<string>()
+        for (const vendor of getAllVendorDefs()) {
+          for (const item of vendor.stock) {
+            if (item.resetEachSession) {
+              sessionResetKeys.add(`${vendor.id}::${item.id}`)
+            }
+          }
+        }
+        // Clone the saved stocks, removing any session-reset entries so they
+        // fall back to the defaults provided by buildDefaultVendorStocks().
+        const filteredStocks: Record<string, Record<string, number>> = {}
+        for (const [vendorId, itemMap] of Object.entries(snapshot.vendorStocks)) {
+          const filteredItems: Record<string, number> = {}
+          for (const [itemId, qty] of Object.entries(itemMap)) {
+            if (!sessionResetKeys.has(`${vendorId}::${itemId}`)) {
+              filteredItems[itemId] = qty
+            }
+          }
+          if (Object.keys(filteredItems).length > 0) {
+            filteredStocks[vendorId] = filteredItems
+          }
+        }
+        useShopStore.getState().setVendorStocks(filteredStocks)
       }
 
       // Phase 76 — restore faction rep if present.
