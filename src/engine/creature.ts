@@ -215,6 +215,19 @@ export interface Creature {
    * Decrements each frame; when it reaches 0 the creature respawns.
    */
   respawnTimer: number
+
+  // ── Phase 71 animation fields ─────────────────────────────────────────────
+
+  /**
+   * Direct reference to the body MeshStandardMaterial so hit-react can
+   * apply a white emissive flash without traversing the scene graph.
+   */
+  bodyMat: THREE.MeshStandardMaterial
+  /**
+   * Seconds remaining in the current hit-flash (0 = no flash active).
+   * Decremented each frame; emissive is restored when it reaches 0.
+   */
+  hitFlashTimer: number
 }
 
 // ─── Creature definitions ─────────────────────────────────────────────────────
@@ -548,7 +561,7 @@ export function spawnCreature(
   interactables?: Interactable[],
   onHarvest?: (creature: Creature) => void,
 ): Creature {
-  const mesh = _buildMesh(def)
+  const { mesh, bodyMat } = _buildMesh(def)
   scene.add(mesh)
 
   const spawnPos = new THREE.Vector3(def.x, 0, def.z)
@@ -564,6 +577,8 @@ export function spawnCreature(
     hp: def.maxHp ?? 0,
     attackTimer: 0,
     respawnTimer: 0,
+    bodyMat,
+    hitFlashTimer: 0,
   }
 
   // Register as an interactable if it has a drop and a harvest callback.
@@ -603,6 +618,15 @@ export function updateCreatures(
     if (creature.dropCooldown > 0) {
       creature.dropCooldown = Math.max(0, creature.dropCooldown - delta)
     }
+
+    // Phase 71 — Tick hit-flash timer and restore body emissive when done.
+    if (creature.hitFlashTimer > 0) {
+      creature.hitFlashTimer = Math.max(0, creature.hitFlashTimer - delta)
+      if (creature.hitFlashTimer <= 0) {
+        creature.bodyMat.emissive.setHex(0x000000)
+        creature.bodyMat.emissiveIntensity = 0
+      }
+    }
     _stepCreature(creature, delta, playerPos, creatures, onAttack)
   }
 }
@@ -618,11 +642,18 @@ export function updateCreatures(
  * the 'dead' state, or when `amount` is not a positive number.
  *
  * Phase 31 will call this from the player-attack handler.
+ * Phase 71: triggers a brief white emissive hit-flash on the body material.
  */
 export function damageCreature(creature: Creature, amount: number): boolean {
   if (amount <= 0) return false
   if (creature.state === 'dead' || !_isHostile(creature.def)) return false
   creature.hp = Math.max(0, creature.hp - amount)
+
+  // Phase 71 — Brief white emissive hit-react flash.
+  creature.bodyMat.emissive.setHex(0xffffff)
+  creature.bodyMat.emissiveIntensity = 0.8
+  creature.hitFlashTimer = 0.15
+
   if (creature.hp <= 0) {
     _killCreature(creature)
     return true
@@ -1006,8 +1037,11 @@ function _resetToSpawn(c: Creature): void {
  * Build the visual mesh for a creature.
  * Uses a capsule body scaled by `def.scale` — consistent with the NPC visual
  * style.  A small emissive eye-point differentiates creatures from inert NPCs.
+ *
+ * Phase 71: returns the body material alongside the group so the Creature
+ * instance can hold a direct reference for hit-flash colour overrides.
  */
-function _buildMesh(def: CreatureDef): THREE.Group {
+function _buildMesh(def: CreatureDef): { mesh: THREE.Group; bodyMat: THREE.MeshStandardMaterial } {
   const group = new THREE.Group()
   group.position.set(def.x, 0, def.z)
 
@@ -1035,5 +1069,5 @@ function _buildMesh(def: CreatureDef): THREE.Group {
   eye.position.set(0, r + h, r * 0.85)   // front-centre, near the top
   group.add(eye)
 
-  return group
+  return { mesh: group, bodyMat }
 }

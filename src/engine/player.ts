@@ -1,11 +1,17 @@
 import * as THREE from 'three'
 
-export type MoveState = 'idle' | 'walk'
+/**
+ * Phase 71 — Animation Integration Pass adds 'gather', 'attack', and
+ * 'interact' states so animatePlayer() can drive distinct procedural loops.
+ */
+export type MoveState = 'idle' | 'walk' | 'gather' | 'attack' | 'interact'
 
 export interface Player {
   mesh: THREE.Group
   moveState: MoveState
   speed: number
+  /** Phase 71 — running timer (seconds) used as the phase input for procedural animations. */
+  animPhase: number
 }
 
 /**
@@ -34,7 +40,7 @@ export function createPlayer(scene: THREE.Scene): Player {
 
   scene.add(group)
 
-  return { mesh: group, moveState: 'idle', speed: 5 }
+  return { mesh: group, moveState: 'idle', speed: 5, animPhase: 0 }
 }
 
 export function updatePlayer(
@@ -115,6 +121,63 @@ export function updatePlayer(
       else if (m === dR) player.mesh.position.x = EX
       else if (m === dF) player.mesh.position.z = ez
       else player.mesh.position.z = EZ
+    }
+  }
+}
+
+// ── Phase 71 — Procedural animation ──────────────────────────────────────────
+
+/** Natural resting Y of the player body capsule mesh. */
+const BODY_BASE_Y = 0.8
+
+/**
+ * Phase 71 — Animate the player body with simple procedural sine-wave offsets.
+ *
+ * Call once per animation frame *after* updatePlayer() and any moveState
+ * overrides so the correct state drives the correct loop.
+ *
+ * States:
+ *   walk    — gentle vertical bob (footstep rhythm).
+ *   gather  — rhythmic dip simulating axe-swing / fishing cast / mining strike.
+ *   attack  — fast oscillating pulse while auto-attacking in melee.
+ *   interact — single smooth dip-and-rise on [E] press.
+ *   idle    — body smoothly returns to rest height.
+ */
+export function animatePlayer(player: Player, delta: number): void {
+  player.animPhase += delta
+
+  const body = player.mesh.children[0] as THREE.Mesh
+  if (!body) return
+
+  switch (player.moveState) {
+    case 'walk': {
+      // Gentle vertical bob — simulates weight shifting between feet.
+      body.position.y = BODY_BASE_Y + Math.sin(player.animPhase * 8) * 0.04
+      break
+    }
+    case 'gather': {
+      // Rhythmic downward dip — chop/mine/cast repeating cycle.
+      // Math.max(0, sin(t)) produces [0,1] during the positive half-cycle and 0
+      // during the negative half.  Subtracting it from BODY_BASE_Y moves the
+      // body downward (lower Y = dip) on each stroke, then snaps back to rest.
+      const t = player.animPhase * 3.0
+      body.position.y = BODY_BASE_Y - Math.max(0, Math.sin(t)) * 0.12
+      break
+    }
+    case 'attack': {
+      // Sharp rapid pulse while auto-attacking — faster oscillation, larger amplitude.
+      body.position.y = BODY_BASE_Y + Math.sin(player.animPhase * 12) * 0.06
+      break
+    }
+    case 'interact': {
+      // Single dip-and-rise: abs(sin) gives a smooth arc down and back up.
+      body.position.y = BODY_BASE_Y - Math.abs(Math.sin(player.animPhase * Math.PI * 2.5)) * 0.08
+      break
+    }
+    default: {
+      // Idle: smoothly lerp back to the natural resting height.
+      body.position.y = THREE.MathUtils.lerp(body.position.y, BODY_BASE_Y, delta * 6)
+      break
     }
   }
 }
