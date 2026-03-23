@@ -409,7 +409,7 @@ class AudioManager {
     this.noiseFilter.frequency.setTargetAtTime(cfg.filterFreq, now, crossfadeTau)
     this.noiseFilter.Q.setTargetAtTime(cfg.filterQ, now, crossfadeTau)
 
-    // Fade in noise if this is the first region
+    // Ensure the base noise layer is active and smoothly crossfaded for this region
     this.noiseNodeGain.gain.setTargetAtTime(0.25, now, crossfadeTau)
 
     // Drone
@@ -421,7 +421,7 @@ class AudioManager {
       // keeping it running silently and wasting CPU.
       this.droneGain.gain.setTargetAtTime(0, now, crossfadeTau)
       if (this.droneOsc) {
-        const stopAt = now + 4.0 // allow gain to reach ~0 before stopping
+        const stopAt = now + crossfadeTau * 5.0 // allow gain to reach ~0 before stopping
         try {
           this.droneOsc.stop(stopAt)
         } catch {
@@ -443,8 +443,10 @@ class AudioManager {
     // Phase 69 — Secondary air-noise layer level.
     this.airGain.gain.setTargetAtTime(cfg.airLevel, now, crossfadeTau)
 
-    // Phase 69 — Reset music motif so the region's phrase starts fresh.
-    this.noteIndex = 0
+    // Phase 69 — Reset peaceful music motif so the region's phrase starts fresh.
+    if (this.currentMusicMode === 'peaceful') {
+      this.noteIndex = 0
+    }
   }
 
   // ── Music mode ──────────────────────────────────────────────────────────────
