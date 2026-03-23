@@ -1345,6 +1345,8 @@ function App() {
       let repelled = 0
       for (const creature of creatures) {
         if (creature.state === 'dead') continue
+        // Only repel hostile creatures (those with both an aggro radius and HP pool).
+        if (!creature.def.aggroRadius || creature.def.maxHp == null) continue
         const dist = creature.mesh.position.distanceTo(player.mesh.position)
         if (dist <= DEEP_RUIN_WARD_CLEAR_RADIUS) {
           triggerFlee(creature, player.mesh.position)

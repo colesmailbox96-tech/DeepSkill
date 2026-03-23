@@ -459,7 +459,7 @@ const CREATURE_DEFS: CreatureDef[] = [
     dropItemId: 'wisp_ember',
     dropChance: 0.70,
     wardRepelId: 'ember_ward_seal',
-    wardRepelRadius: 10,
+    wardRepelRadius: EMBER_WARD_REPEL_RADIUS,
   },
 
   // ── Phase 57 — Ashfen Copse creatures ────────────────────────────────────
@@ -784,7 +784,8 @@ export function updateCreatures(
         const repelRadius = creature.def.wardRepelRadius ?? EMBER_WARD_REPEL_RADIUS
         const dx = creature.mesh.position.x - playerPos.x
         const dz = creature.mesh.position.z - playerPos.z
-        if (Math.sqrt(dx * dx + dz * dz) < repelRadius) {
+        const distSq = dx * dx + dz * dz
+        if (distSq < repelRadius * repelRadius) {
           _startFlee(creature, playerPos)
         }
       }
