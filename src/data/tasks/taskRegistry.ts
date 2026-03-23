@@ -758,9 +758,89 @@ const theVaultHeart: TaskDefinition = {
   },
   journalEntry:
     "The resonance seal inside the Belowglass Vaults finally yielded to my salvaging skill. Beyond it the Inner Sanctum stretches out — a vast chamber lit by deep vaultglass glow. At its centre, on a raised altar, something massive and ancient stirs. Nairn warned me that the Deep Hearts left guardians behind when their maintenance cycles broke down. This is one of them. I don't think I can slip past it.",
+  unlocksTaskIds: ['wardens_echo', 'wardens_legacy'],
 }
 
-/** Complete list of all task definitions (Phase 37 + Phase 38 + Phase 64 + Phase 75 + Phase 84). */
+// ─── Phase 87 — Warden's Legacy Quest Chain ──────────────────────────────────
+
+/**
+ * "Echoes of the Warden" — first task in the post-boss chain.
+ *
+ * Auto-accepted when vault_heart completes.  The player is directed to speak
+ * with Nairn Dusk about what they found in the Inner Sanctum — specifically
+ * the heartstone — so she can provide context on what it is and how to use it.
+ */
+const wardensEcho: TaskDefinition = {
+  id: 'wardens_echo',
+  title: "Echoes of the Warden",
+  description:
+    "You destroyed the Vault-Heart Warden and recovered its heartstone. Bring word to Nairn Dusk at the Tidemark Chapel — she knows more about Deep Heart technology than anyone.",
+  giverName: 'Nairn Dusk (Ward-Adept)',
+  objectives: [
+    {
+      id: 'speak_to_nairn_heartstone',
+      description: 'Speak with Nairn Dusk (Ward-Adept) about the heartstone',
+      type: 'talk',
+      targetId: 'Nairn Dusk (Ward-Adept)',
+      required: 1,
+    },
+  ],
+  reward: {
+    coins: 30,
+    items: [],
+    xp: [{ skill: 'wayfaring', amount: 50 }],
+    factionRep: [{ factionId: 'tidebound_keepers', amount: 30 }],
+  },
+  journalEntry:
+    "The Warden is destroyed. The Inner Sanctum is silent for the first time in centuries. In its chest cavity I found the heartstone — a resonance core still faintly warm, still slowly turning. Nairn knows this technology better than anyone alive. She spent years reading the ward patterns in this chapel; she may recognise what the heartstone is and whether it can be worked into something useful.",
+}
+
+/**
+ * "Warden's Legacy" — second task in the post-boss chain.
+ *
+ * Auto-accepted when wardens_echo completes.  The player crafts a Warden's
+ * Focus — a resonance amulet assembled from the heartstone and two prismatic
+ * vault shards — then delivers it to Aldric as a symbol of the vaults' clearing.
+ */
+const wardensLegacy: TaskDefinition = {
+  id: 'wardens_legacy',
+  title: "Warden's Legacy",
+  description:
+    "Nairn believes the heartstone can be worked into a resonance focus at the Tinkerer's Bench. Craft it and present it to Aldric — proof that the Belowglass Vaults have been cleared.",
+  giverName: 'Nairn Dusk (Ward-Adept)',
+  objectives: [
+    {
+      id: 'craft_warden_focus',
+      description: "Assemble the Warden's Focus at the Tinkerer's Bench",
+      type: 'gather',
+      targetId: 'warden_focus',
+      required: 1,
+    },
+    {
+      id: 'deliver_focus_to_aldric',
+      description: 'Show the focus to Aldric (Village Elder)',
+      type: 'talk',
+      targetId: 'Aldric (Village Elder)',
+      required: 1,
+    },
+  ],
+  reward: {
+    coins: 100,
+    items: [],
+    xp: [
+      { skill: 'tinkering', amount: 60 },
+      { skill: 'wayfaring', amount: 40 },
+    ],
+    factionRep: [
+      { factionId: 'tidebound_keepers', amount: 50 },
+      { factionId: 'underline_syndics', amount: 30 },
+    ],
+  },
+  journalEntry:
+    "Nairn confirmed what I suspected — the heartstone is the Warden's resonance core, a piece of Deep Heart engineering that has been running on residual charge for centuries. With the right technique it can be fused with prismatic vault shards into a focus amulet. She sketched the assembly process; the Tinkerer's Bench should handle it. Once it's done I should show Aldric — the settlement has been living under the shadow of the sealed vaults for generations. He deserves to know they've been cleared.",
+}
+
+/** Complete list of all task definitions (Phase 37 + Phase 38 + Phase 64 + Phase 75 + Phase 84 + Phase 87). */
 export const ALL_TASKS: TaskDefinition[] = [
   wordFromTheElder,
   warmRunoff,
@@ -786,6 +866,9 @@ export const ALL_TASKS: TaskDefinition[] = [
   surveyReport,
   // Phase 84 — First Boss Encounter
   theVaultHeart,
+  // Phase 87 — Warden's Legacy quest chain
+  wardensEcho,
+  wardensLegacy,
 ]
 
 // ─── Initialiser ─────────────────────────────────────────────────────────────

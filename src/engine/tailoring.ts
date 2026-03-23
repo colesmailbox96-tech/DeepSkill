@@ -1,5 +1,6 @@
 /**
  * Phase 63 — Armor and Clothing Craft Routes
+ * Phase 87 — Warden's Legacy: deep_warden_mantle added.
  *
  * Provides a sewing-table station and the assembly interface for Veilmarch.
  * A single sewing table is placed in the Hushwood settlement; players interact
@@ -16,6 +17,7 @@
  *   thornling_hide ×2 + bone_needle    ×1 → gatherer_wraps    (lvl 1,  6 s, 12 xp)
  *   thornling_hide ×3 + rough_binding  ×1 → woodcutter_smock  (lvl 2,  8 s, 16 xp)
  *   ember_ram_hide ×2 + bone_needle    ×1 → miner_gloves      (lvl 3,  8 s, 20 xp)
+ *   husk_membrane  ×3 + heartwrought_ingot×2→deep_warden_mantle(lvl 8, 14 s, 45 xp) [Phase 87]
  *
  * The caller (App.tsx) owns the level check, timed session, item swap, and XP
  * grant.  This module provides the data, station visual, and helpers.
@@ -33,6 +35,7 @@ export type TailorMaterialId =
   | 'thornling_hide'
   | 'ember_ram_hide'
   | 'char_pad'
+  | 'husk_membrane'
 
 /** Union of every tailoring output ID. */
 export type TailorOutputId =
@@ -45,6 +48,7 @@ export type TailorOutputId =
   | 'gatherer_wraps'
   | 'woodcutter_smock'
   | 'miner_gloves'
+  | 'deep_warden_mantle'
 
 export interface TailorRecipeConfig {
   /** Human-readable label for notifications. */
@@ -56,7 +60,8 @@ export interface TailorRecipeConfig {
   /**
    * Secondary ingredient required alongside the primary material.
    * The sewing table always requires two distinct materials to operate —
-   * a hide body and a needle or binding to join the seams.
+   * typically a needle or binding to join the seams, but may also be a
+   * reinforcing component such as a metal ingot for advanced recipes.
    */
   secondaryIngredient: { id: string; qty: number; label: string }
   /** Registry ID of the output item produced. */
@@ -172,6 +177,22 @@ export const TAILOR_RECIPE_CONFIG: Readonly<Record<TailorOutputId, TailorRecipeC
     tailorDuration: 12,
     xp: 32,
   },
+
+  // ── Phase 87 — Warden's Legacy ────────────────────────────────────────
+  // Deep Warden's Mantle: triple-layered husk membrane stitched over heartwrought
+  // ingot plates.  The membrane is harvested from Deep Husks in the inner vault;
+  // the ingots are the highest alloy tier available.  Together they form the
+  // most protective chest piece in the current progression.
+  deep_warden_mantle: {
+    label: "Deep Warden's Mantle",
+    materialId: 'husk_membrane',
+    materialQty: 3,
+    secondaryIngredient: { id: 'heartwrought_ingot', qty: 2, label: 'Heartwrought Ingot' },
+    outputId: 'deep_warden_mantle',
+    levelReq: 8,
+    tailorDuration: 14,
+    xp: 45,
+  },
 } as const
 
 /**
@@ -188,6 +209,7 @@ const TAILOR_DISPLAY_ORDER: TailorOutputId[] = [
   'hide_jerkin',
   'patchplate_coif',
   'patchplate_vest',
+  'deep_warden_mantle',
 ]
 
 // ─── Sewing table station type ────────────────────────────────────────────

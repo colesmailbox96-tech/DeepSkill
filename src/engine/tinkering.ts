@@ -4,6 +4,7 @@
  * Phase 62 — Creature Loot Expansion: sealing_pitch, hide_wrap, char_pad added.
  * Phase 66 — Salvage System: vault_mortar, relic_rivet added.
  * Phase 68 — Light and Visibility Mechanics: hollow_lantern added.
+ * Phase 87 — Warden's Legacy: warden_focus added.
  *
  * Provides a tinkerer's bench station and the assembly interface for
  * Veilmarch.  A single bench is placed in the Hushwood settlement; players
@@ -22,6 +23,7 @@
  *   crumbled_masonry×2                       → vault_mortar     (lvl 5, 11 s, 28 xp) [Phase 66]
  *   iron_relic_fragment×1                    → relic_rivet      (lvl 6, 14 s, 32 xp) [Phase 66]
  *   lantern_parts×1 + vault_seal_wax×1       → hollow_lantern   (lvl 3, 12 s, 22 xp) [Phase 68]
+ *   warden_heartstone×1+prismatic_vault_shard×2→warden_focus    (lvl 9, 18 s, 60 xp) [Phase 87]
  *
  * The caller (App.tsx) owns the level check, timed session, item swap, and XP
  * grant.  This module provides the data, station visual, and helpers.
@@ -34,10 +36,10 @@ import { useGameStore } from '../store/useGameStore'
 // ─── Recipe configuration ─────────────────────────────────────────────────
 
 /** All tinkerable material IDs. */
-export type TinkerableId = 'copper_bar' | 'iron_bar' | 'ashwood_shaft' | 'duskiron_bar' | 'crumbled_masonry' | 'iron_relic_fragment' | 'lantern_parts'
+export type TinkerableId = 'copper_bar' | 'iron_bar' | 'ashwood_shaft' | 'duskiron_bar' | 'crumbled_masonry' | 'iron_relic_fragment' | 'lantern_parts' | 'warden_heartstone'
 
 /** Union of every tinkering output ID. */
-export type TinkerOutputId = 'lantern_parts' | 'reinforced_hook' | 'bait_basket' | 'repair_clamp' | 'dusk_lens_mount' | 'sealing_pitch' | 'hide_wrap' | 'char_pad' | 'vault_mortar' | 'relic_rivet' | 'hollow_lantern'
+export type TinkerOutputId = 'lantern_parts' | 'reinforced_hook' | 'bait_basket' | 'repair_clamp' | 'dusk_lens_mount' | 'sealing_pitch' | 'hide_wrap' | 'char_pad' | 'vault_mortar' | 'relic_rivet' | 'hollow_lantern' | 'warden_focus'
 
 export interface TinkerRecipeConfig {
   /** Human-readable label for notifications. */
@@ -195,6 +197,21 @@ export const TINKER_RECIPE_CONFIG: Readonly<Record<TinkerOutputId, TinkerRecipeC
     tinkerDuration: 12,
     xp: 22,
   },
+
+  // Phase 87 — Warden's Legacy: the Warden's Focus is a resonance amulet
+  // assembled from the Vault-Heart Warden's heartstone and two prismatic vault
+  // shards.  The three pieces are locked together by residual field energy and
+  // provide substantial defence while emitting enough light to negate darkness.
+  warden_focus: {
+    label: "Warden's Focus",
+    materialId: 'warden_heartstone',
+    materialQty: 1,
+    secondaryIngredient: { id: 'prismatic_vault_shard', qty: 2, label: 'Prismatic Vault Shard' },
+    outputId: 'warden_focus',
+    levelReq: 9,
+    tinkerDuration: 18,
+    xp: 60,
+  },
 } as const
 
 /**
@@ -214,6 +231,7 @@ const TINKER_DISPLAY_ORDER: TinkerOutputId[] = [
   'vault_mortar',
   'relic_rivet',
   'hollow_lantern',
+  'warden_focus',
 ]
 
 // ─── Tinkerer's bench station type ───────────────────────────────────────

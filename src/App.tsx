@@ -2472,6 +2472,7 @@ function App() {
             }
             addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
             grantSkillXp('tinkering', sess.recipe.xp, spawnLevelUpRing)
+            advanceGatherObjectives(sess.recipe.outputId)
             useNotifications.getState().push(
               `You assemble ${outputName}!`,
               'success',
@@ -2532,6 +2533,7 @@ function App() {
             removeItem(sec.id, sec.qty)
             addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
             grantSkillXp('tailoring', sess.recipe.xp, spawnLevelUpRing)
+            advanceGatherObjectives(sess.recipe.outputId)
             useNotifications.getState().push(
               `You stitch together ${outputName}!`,
               'success',

@@ -19,6 +19,7 @@ import { registerDialogue } from '../../engine/dialogue'
 import { useShopStore } from '../../store/useShopStore'
 import { useFactionStore } from '../../store/useFactionStore'
 import { useNotifications } from '../../store/useNotifications'
+import { useTaskStore } from '../../store/useTaskStore'
 import { FACTION_TIER_ORDER } from '../../engine/shop'
 
 // ─── Aldric — Village Elder ───────────────────────────────────────────────────
@@ -58,7 +59,34 @@ const aldricTree = {
       choices: [
         { label: 'Tell me about the Veil.', nextNode: 'veil' },
         { label: "What's happening to the south?", nextNode: 'south' },
+        {
+          label: 'Ask about the Belowglass Vaults.',
+          nextNode: 'vaults_cleared',
+          onSelect: () => {
+            if (!useTaskStore.getState().isCompleted('vault_heart')) {
+              useNotifications.getState().push(
+                "Aldric shakes his head slowly. \"The sealed vaults to the west hold something ancient. I hope it stays sealed.\"",
+                'info',
+              )
+            }
+          },
+        },
         { label: 'Farewell.', nextNode: null },
+      ],
+    },
+    vaults_cleared: {
+      key: 'vaults_cleared',
+      text: "The Vault-Heart Warden... gone? That creature has haunted those chambers since before I came to Cinderglen. Generations of settlers heard the resonance humming through the rock at night and told themselves it was the earth settling. It wasn't. It was that thing. You've done something today that I was not sure could be done. What is that you're holding?",
+      choices: [
+        { label: "A Warden's Focus — crafted from its heartstone.", nextNode: 'focus_gift' },
+        { label: 'A memory of what it cost. Farewell.', nextNode: null },
+      ],
+    },
+    focus_gift: {
+      key: 'focus_gift',
+      text: "Extraordinary. The same light that kept the Inner Sanctum sealed, now worn at your neck. Keep it. You earned it — and I suspect the vaults will test you again before long. The Veil does not give ground easily. But today? Today is a rare good day. Thank you.",
+      choices: [
+        { label: 'Farewell, elder.', nextNode: null },
       ],
     },
   },
@@ -354,7 +382,51 @@ const nairnDuskTree = {
         { label: 'Tell me about the mist again.', nextNode: 'mist' },
         { label: 'How do I protect myself?', nextNode: 'protection' },
         { label: 'Tell me about the Chapel Wisps.', nextNode: 'wisps' },
+        {
+          label: 'Ask about the inner vault.',
+          nextNode: 'vault_cleared',
+          onSelect: () => {
+            if (!useTaskStore.getState().isCompleted('vault_heart')) {
+              useNotifications.getState().push(
+                "Nairn studies you carefully. \"The Inner Sanctum is sealed by the Warden's resonance field. Nothing and no one has passed that gate in a very long time. If you're planning to try, you'll need both salvaging skill and something stronger than luck.\"",
+                'info',
+              )
+            }
+          },
+        },
         { label: 'Farewell.', nextNode: null },
+      ],
+    },
+    vault_cleared: {
+      key: 'vault_cleared',
+      text: "You... destroyed it? The Warden? I felt something shift in the resonance this morning — I thought it was my instruments. But if you reached the Inner Sanctum and brought the Warden down, that would explain it. The field holding the sanctum closed would have collapsed entirely. What did you find in its chest?",
+      choices: [
+        { label: 'A heartstone — still warm.', nextNode: 'heartstone_warm' },
+        { label: 'Prismatic shards. Vault glass.', nextNode: 'heartstone_shards' },
+        { label: 'Nothing yet. I only just reached you.', nextNode: null },
+      ],
+    },
+    heartstone_warm: {
+      key: 'heartstone_warm',
+      text: "That warmth is residual charge — the Warden was running on it for centuries after its maintenance cycle failed. The heartstone is essentially a compressed resonance cell. It is unlike anything recoverable from the vault walls alone. With two prismatic vault shards as conduit facets, a skilled tinkerer could assemble it into a resonance focus — a pendant that draws on the field instead of blocking it. Bring it to the Tinkerer's Bench in Hushwood.",
+      choices: [
+        { label: 'What should I do with the focus?', nextNode: 'heartstone_purpose' },
+        { label: 'Understood. I will make it. Farewell.', nextNode: null },
+      ],
+    },
+    heartstone_shards: {
+      key: 'heartstone_shards',
+      text: "Prismatic shards come loose as the resonance field destabilises — they are ordinary vault glass, just deeply saturated. Useful as conduit facets if you find a heartstone in the warden's chest cavity. Take both back to the Tinkerer's Bench in Hushwood.",
+      choices: [
+        { label: 'I have the heartstone too.', nextNode: 'heartstone_warm' },
+        { label: 'I will keep looking. Farewell.', nextNode: null },
+      ],
+    },
+    heartstone_purpose: {
+      key: 'heartstone_purpose',
+      text: "Show it to Aldric. He was here before the vaults sealed — he has carried the weight of whatever is down there for longer than I have. Knowing the Warden is gone and that something useful came out of the sanctum may mean more to him than you expect.",
+      choices: [
+        { label: 'I will do that. Farewell.', nextNode: null },
       ],
     },
   },
