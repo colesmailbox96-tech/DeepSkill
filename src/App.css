@@ -3414,6 +3414,13 @@ p {
   gap: 0.15rem;
 }
 
+.surveying-panel__shortcut-hint {
+  list-style: none;
+  font-size: 0.72rem;
+  color: rgba(204, 136, 255, 0.8);
+  margin-top: 0.25rem;
+}
+
 /* Hint bar */
 .surveying-panel__hint {
   flex-shrink: 0;
