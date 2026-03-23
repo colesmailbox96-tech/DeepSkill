@@ -20,21 +20,12 @@ import * as THREE from 'three'
 import type { Interactable } from './interactable'
 import { useNotifications } from '../store/useNotifications'
 import { useGameStore } from '../store/useGameStore'
+import { getToolTierForSkill, hasToolForSkill } from '../data/items/itemRegistry'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 /** Seconds before a felled tree regrows into an interactable tree. */
 export const RESPAWN_TIME = 30.0
-
-/** Item IDs that count as a valid woodcutting hatchet, mapped to their tool tier. */
-const HATCHET_TIERS: Readonly<Record<string, number>> = {
-  rough_ash_hatchet: 1,
-  copper_hatchet: 2,
-  duskiron_hatchet: 3,
-}
-
-/** Item IDs that count as a valid woodcutting hatchet. */
-const HATCHET_IDS = new Set(Object.keys(HATCHET_TIERS))
 
 // ── Variant system ────────────────────────────────────────────────────────────
 
@@ -324,13 +315,12 @@ export function fellTree(node: TreeNode): void {
 /**
  * Returns the tier of the best hatchet currently in the player's inventory.
  * Returns 0 when no hatchet is held.
+ *
+ * Phase 73: delegates to the shared registry-backed helper so this and
+ * `degradeTool` always agree on which tool counts as "best".
  */
 export function getHatchetTier(): number {
-  const { slots } = useGameStore.getState().inventory
-  return slots.reduce((best, s) => {
-    const t = s != null ? (HATCHET_TIERS[s.id] ?? 0) : 0
-    return t > best ? t : best
-  }, 0)
+  return getToolTierForSkill('woodcutting', useGameStore.getState().inventory.slots)
 }
 
 /**
@@ -338,8 +328,7 @@ export function getHatchetTier(): number {
  * qualifies as a woodcutting hatchet.
  */
 export function hasHatchet(): boolean {
-  const { slots } = useGameStore.getState().inventory
-  return slots.some((s) => s != null && HATCHET_IDS.has(s.id))
+  return hasToolForSkill('woodcutting', useGameStore.getState().inventory.slots)
 }
 
 /**

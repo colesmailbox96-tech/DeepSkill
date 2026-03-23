@@ -109,8 +109,11 @@ export function InventoryPanel() {
 
   // Phase 73 — Durability display values, computed once outside JSX.
   const toolMaxDur = tooltipDef?.type === 'tool' ? tooltipDef.toolMeta?.maxDurability ?? 0 : 0
-  const toolCurDur = tooltip && toolMaxDur > 0 ? (tooltip.item.durability ?? toolMaxDur) : 0
-  const toolDurPct = toolMaxDur > 0 ? Math.max(0, Math.min(1, toolCurDur / toolMaxDur)) : 0
+  const rawDur = tooltip && toolMaxDur > 0 ? tooltip.item.durability : null
+  const safeDur =
+    typeof rawDur === 'number' && Number.isFinite(rawDur) ? rawDur : toolMaxDur
+  const toolCurDur = toolMaxDur > 0 ? Math.max(0, Math.min(toolMaxDur, safeDur)) : 0
+  const toolDurPct = toolMaxDur > 0 ? toolCurDur / toolMaxDur : 0
   const toolDurColor = toolDurPct > 0.6 ? '#60c870' : toolDurPct > 0.25 ? '#f0b830' : '#d85040'
 
   return (

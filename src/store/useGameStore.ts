@@ -522,7 +522,17 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     const def = getItem(bestSlot.id)!
     const maxDur = def.toolMeta!.maxDurability
-    const current = bestSlot.durability ?? maxDur
+
+    // If max durability is not a positive finite number we cannot safely degrade this tool.
+    if (!Number.isFinite(maxDur) || maxDur <= 0) {
+      return
+    }
+
+    const rawCurrent = bestSlot.durability
+    const current =
+      rawCurrent === undefined || !Number.isFinite(rawCurrent) || rawCurrent < 0
+        ? maxDur
+        : rawCurrent
     const next = current - 1
 
     if (next <= 0) {
