@@ -266,6 +266,7 @@ import { useWeatherStore } from './store/useWeatherStore'
 import { WeatherHud } from './ui/hud/WeatherHud'
 import { useDemoStore } from './store/useDemoStore'
 import { DemoWelcomeOverlay } from './ui/hud/DemoWelcomeOverlay'
+import { recordNewGame, recordPlayerDefeated, recordAreaEntered } from './engine/telemetry'
 import './App.css'
 
 // Register NPC dialogue trees once at module load time.
@@ -448,6 +449,8 @@ function App() {
     useTaskStore.setState({ active: [], completed: [] })
     // Phase 96 — reset demo welcome so the overlay appears for each new game.
     useDemoStore.getState().setWelcomeSeen(false)
+    // Phase 98 — Telemetry: record new game start.
+    recordNewGame()
     hideMenu()
     // Phase 86 — brief welcome hint pointing the player toward their first step.
     // Phase 97 — improved intro message to better set the demo scene.
@@ -1647,6 +1650,8 @@ function App() {
       carveRef.current = null
       tinkerRef.current = null
       tailorRef.current = null
+      // Phase 98 — Telemetry: record player defeat.
+      recordPlayerDefeated()
       // Show the blocking respawn overlay.
       useRespawnStore.getState().triggerDefeat(RESPAWN_LOCATION_LABEL)
     }
@@ -3040,6 +3045,8 @@ function App() {
         const region = getAudioRegion(pos.x, pos.z)
         if (region !== prevAudioRegion) {
           audioManager.setRegion(region)
+          // Phase 98 — Telemetry: record area transition.
+          recordAreaEntered(region)
           prevAudioRegion = region
         }
         const inCombat = combatRef.current.target !== null
