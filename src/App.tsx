@@ -525,7 +525,7 @@ function App() {
     scene.background = getSkyColor(START_HOUR)
 
     const camera = new THREE.PerspectiveCamera(
-      60,
+      55,
       container.clientWidth / container.clientHeight,
       0.1,
       100,
