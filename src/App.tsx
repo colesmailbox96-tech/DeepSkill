@@ -6,7 +6,6 @@ import {
   updateOrbitCamera,
   applyOrbitDrag,
   applyZoom,
-  TOUCH_ORBIT_SENSITIVITY,
 } from './engine/followCamera'
 import type { Interactable } from './engine/interactable'
 import { createInteractionState } from './engine/interactable'
@@ -2008,15 +2007,13 @@ function App() {
     const onContextMenu = (e: Event) => e.preventDefault()
 
     // ── Touch controls (mobile) ──────────────────────────────────────────────
-    // Single-finger drag → camera orbit; two-finger pinch → zoom.
-    // Phase 52 — short single-finger taps (no significant movement, < 350 ms)
-    // are used for creature targeting instead of starting an orbit.
-    // The virtual joystick (MobileControls component) handles movement separately.
-    type TouchPhase = 'none' | 'orbit' | 'pinch'
+    // Camera stabilisation pass: single-finger orbit is **disabled** on mobile
+    // to prevent accidental camera spinning while using the joystick or tapping.
+    // Single-finger touch is reserved for tap-targeting only.
+    // Two-finger pinch → zoom is preserved.
+    // Desktop orbit (right-click pointer drag) is unaffected.
+    type TouchPhase = 'none' | 'tap' | 'pinch'
     let touchPhase: TouchPhase = 'none'
-    let orbitTouchId = -1
-    let orbitLastX = 0
-    let orbitLastY = 0
     let pinchLastDist = 0
 
     // Phase 52 — tap targeting state
@@ -2035,11 +2032,8 @@ function App() {
       // Prevent page scroll / zoom on the canvas.
       e.preventDefault()
       if (e.touches.length === 1) {
-        touchPhase = 'orbit'
-        orbitTouchId = e.touches[0].identifier
-        orbitLastX = e.touches[0].clientX
-        orbitLastY = e.touches[0].clientY
-        // Phase 52 — begin tap detection for targeting
+        // Single-finger: tap detection only — no orbit.
+        touchPhase = 'tap'
         tapStartX    = e.touches[0].clientX
         tapStartY    = e.touches[0].clientY
         tapStartTime = performance.now()
@@ -2057,20 +2051,17 @@ function App() {
 
     const onTouchMove = (e: TouchEvent) => {
       e.preventDefault()
-      if (touchPhase === 'orbit' && e.touches.length === 1) {
-        const touch = Array.from(e.touches).find((t) => t.identifier === orbitTouchId)
-        if (!touch) return
-        // Phase 52 — cancel tap when the finger travels beyond the dead-zone.
+      if (touchPhase === 'tap' && e.touches.length === 1) {
+        // Cancel tap when the finger travels beyond the dead-zone.
         if (!tapCancelled) {
+          const touch = e.touches[0]
           const dx = touch.clientX - tapStartX
           const dy = touch.clientY - tapStartY
           if (Math.sqrt(dx * dx + dy * dy) > TAP_MAX_MOVE_PX) {
             tapCancelled = true
           }
         }
-        applyOrbitDrag(camState, touch.clientX - orbitLastX, touch.clientY - orbitLastY, TOUCH_ORBIT_SENSITIVITY)
-        orbitLastX = touch.clientX
-        orbitLastY = touch.clientY
+        // No orbit drag — single-finger drag is intentionally inert on mobile.
       } else if (e.touches.length >= 2) {
         touchPhase = 'pinch'
         const t0 = e.touches[0]
@@ -2143,10 +2134,8 @@ function App() {
       if (e.touches.length === 0) {
         touchPhase = 'none'
       } else if (e.touches.length === 1) {
-        touchPhase = 'orbit'
-        orbitTouchId = e.touches[0].identifier
-        orbitLastX = e.touches[0].clientX
-        orbitLastY = e.touches[0].clientY
+        // After lifting one finger from a pinch, revert to tap phase (no orbit).
+        touchPhase = 'tap'
       }
     }
 
@@ -3478,7 +3467,7 @@ function App() {
         <h1>Veilmarch</h1>
         <p id="scene-description" className="app-header__desc">
           Playing as <strong>{playerName}</strong>.
-          WASD / joystick to move · drag to orbit · pinch/scroll to zoom · E / tap to interact · tap or click creature to target.
+          WASD / joystick to move · right-drag to orbit · pinch/scroll to zoom · E / tap to interact · tap or click creature to target.
           I = inventory, K = skills, B = shop, L = ledger hall, Q = equipment, J = journal, F = smithing, V = carving, T = tinkering, H = tailoring, Y = surveying, G = warding, M = audio, P = save, N = map.
         </p>
       </header>

@@ -38,9 +38,9 @@ const COLLISION_RADIUS_MIN = 0.75
 /** Follow smoothing factor – higher = tighter target tracking. */
 const FOLLOW_LERP_FACTOR = 14
 /** Seconds of orbit-idle before the camera begins drifting behind the player. */
-const SNAP_BACK_DELAY = 2.0
+const SNAP_BACK_DELAY = 0.5
 /** Rate at which the camera yaw drifts toward "behind the player" (rad/s). */
-const SNAP_BACK_SPEED = 1.5
+const SNAP_BACK_SPEED = 2.5
 
 // ─── Per-frame scratch objects (no per-frame heap allocations) ────────────────
 
