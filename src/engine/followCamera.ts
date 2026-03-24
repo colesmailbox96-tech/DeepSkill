@@ -79,11 +79,13 @@ export interface CameraState {
 export function createCameraState(): CameraState {
   return {
     thetaTarget: 0,
-    phiTarget: 1.2,
-    radiusTarget: 10,
+    // phi ~0.75 rad ≈ 43° from vertical (i.e. 47° pitch downward from
+    // horizontal) — the classic RuneScape third-person angle.
+    phiTarget: 0.75,
+    radiusTarget: 12,
     theta: 0,
-    phi: 1.2,
-    radius: 10,
+    phi: 0.75,
+    radius: 12,
     followTarget: new THREE.Vector3(),
     followInitialized: false,
     orbitIdleTime: 0,

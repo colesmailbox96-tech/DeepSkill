@@ -1751,6 +1751,14 @@ function App() {
 
     // Phase 04 — orbit camera state
     const camState = createCameraState()
+    // Align initial yaw so the camera spawns directly behind the player rather
+    // than at an arbitrary angle.  target.rotation.y + π is the "behind" yaw.
+    const initialBehindYaw = player.mesh.rotation.y + Math.PI
+    camState.thetaTarget = initialBehindYaw
+    camState.theta = initialBehindYaw
+
+    // Ensure player spawns at ground level (y=0).
+    player.mesh.position.set(0, 0, 0)
 
     const interactionState = createInteractionState()
 
@@ -2252,6 +2260,7 @@ function App() {
     })
     // Per-frame audio-region tracker.
     let prevAudioRegion: AudioRegion | null = null
+    let _debugFramePrinted = false
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
       const delta = clock.getDelta()
@@ -2265,6 +2274,18 @@ function App() {
         updatePlayer(player, keys, delta, camState.theta, collidableBoxes, mobileJoystickRef.current)
       }
       updateOrbitCamera(camera, player.mesh, camState, delta, collidables)
+
+      // First-frame diagnostic: verify camera and player spawn values are sane.
+      if (!_debugFramePrinted) {
+        _debugFramePrinted = true
+        const rd = camera.rotation.clone()
+        rd.x = THREE.MathUtils.radToDeg(rd.x)
+        rd.y = THREE.MathUtils.radToDeg(rd.y)
+        rd.z = THREE.MathUtils.radToDeg(rd.z)
+        console.log('[Camera spawn] global_position:', camera.position.toArray().map(v => +v.toFixed(2)))
+        console.log('[Camera spawn] rotation_degrees (x=pitch, y=yaw, z=roll):', rd.x.toFixed(2), rd.y.toFixed(2), rd.z.toFixed(2))
+        console.log('[Player spawn] global_position:', player.mesh.position.toArray().map(v => +v.toFixed(2)))
+      }
 
       // Phase 08 — advance NPC ambient idle sway
       updateNpcs(allNpcs, delta)
