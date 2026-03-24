@@ -35,6 +35,7 @@ import type { FishingNode } from './fishing'
 import { buildForageNodesAt } from './foraging'
 import type { ForageNode } from './foraging'
 import { useDialogueStore } from '../store/useDialogueStore'
+import { useNotifications } from '../store/useNotifications'
 
 // ─── Shared materials ────────────────────────────────────────────────────────
 const matSand    = new THREE.MeshStandardMaterial({ color: 0xc8b882, roughness: 0.95 })
@@ -156,7 +157,57 @@ export function buildShoreline(
   const corrS = _addWall(scene, 23, 6, 0.4, 30.5, 3,  3.1, matBound)
   collidables.push(corrN, corrS)
 
-  // ── Bank ground (x = +42 → +62, z = −18 → +18) ───────────────────────────
+  // ── Phase 91 — Trail corridor landmarks ──────────────────────────────────
+
+  // Shoreline direction sign post at x = +23, z = −2.2 — a sun-bleached post
+  // with a carved board pointing east toward the bank.  Readable interaction.
+  const sSignGroup = new THREE.Group()
+  sSignGroup.position.set(23, 0, -2.2)
+  const sShaft = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.9, 0.14), matWood)
+  sShaft.position.y = 0.95
+  sSignGroup.add(sShaft)
+  const sBoard = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.28, 0.1), matVerge)
+  sBoard.position.set(0.44, 1.76, 0)
+  sBoard.rotation.y = Math.PI / 10
+  sSignGroup.add(sBoard)
+  scene.add(sSignGroup)
+
+  const sSignInteractable: Interactable = {
+    mesh: sSignGroup,
+    label: 'Trail Sign',
+    interactRadius: 1.8,
+    onInteract: () => {
+      useNotifications
+        .getState()
+        .push('A salt-bleached post reads: "Gloamwater Bank — East. Rods welcome."', 'info')
+    },
+  }
+  interactables.push(sSignInteractable)
+
+  // Driftwood log on the south verge at x = +37, z = +2.8 — washed-up ambient prop.
+  const driftLog = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.18, 0.24, 3.5, 7),
+    matDarkWood,
+  )
+  driftLog.position.set(37, 0.2, 2.8)
+  driftLog.rotation.z = Math.PI / 2
+  driftLog.rotation.y = 0.35
+  scene.add(driftLog)
+
+  // Small smooth stones scattered near the driftwood — ambient texture.
+  const stonePositions: [number, number, number][] = [
+    [35.6, 0.08, 2.4], [36.8, 0.06, 3.2], [38.2, 0.07, 2.9],
+  ]
+  const matSmooth = new THREE.MeshStandardMaterial({ color: 0xa09888, roughness: 0.75 })
+  for (const [sx, sy, sz] of stonePositions) {
+    const s = new THREE.Mesh(new THREE.DodecahedronGeometry(0.14, 0), matSmooth)
+    s.scale.y = 0.55
+    s.position.set(sx, sy, sz)
+    s.rotation.y = Math.random() * Math.PI
+    scene.add(s)
+  }
+
+
   const bankFloor = new THREE.Mesh(new THREE.PlaneGeometry(20, 36), matSand)
   bankFloor.rotation.x = -Math.PI / 2
   bankFloor.position.set(52, 0.01, 0) // centre: (42 + 62) / 2 = 52

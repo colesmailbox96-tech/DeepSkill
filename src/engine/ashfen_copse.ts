@@ -43,6 +43,7 @@ import { buildForageNodesAt } from './foraging'
 import type { ForageNode } from './foraging'
 import { buildRockNodesAt } from './mining'
 import type { RockNode } from './mining'
+import { useNotifications } from '../store/useNotifications'
 
 // ─── Shared materials ─────────────────────────────────────────────────────────
 
@@ -160,6 +161,33 @@ export function buildAshfenCopse(
   const corrN = _addWall(scene, 14, 6, 0.4, 27, 3, -76.2, matBound)
   const corrS = _addWall(scene, 14, 6, 0.4, 27, 3, -69.8, matBound)
   collidables.push(corrN, corrS)
+
+  // ── Phase 91 — Ashfen corridor landmark ──────────────────────────────────
+  // A mineral-veined marker stone at x = +27, z = −73 (corridor midpoint).
+  // Its faint glint hints at the copse's mineral-rich character.
+  const markerStone = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(0.32, 0),
+    matBoulder,
+  )
+  markerStone.scale.set(1.0, 1.5, 0.9)
+  markerStone.position.set(27, 0.48, -73)
+  markerStone.rotation.y = 0.6
+  scene.add(markerStone)
+
+  const markerStoneInteractable: Interactable = {
+    mesh: markerStone,
+    label: 'Mineral-Veined Stone',
+    interactRadius: 1.6,
+    onInteract: () => {
+      useNotifications
+        .getState()
+        .push(
+          'A fist-sized stone with dark iron veins. The Ashfen Copse must be close.',
+          'info',
+        )
+    },
+  }
+  interactables.push(markerStoneInteractable)
 
   // ── Copse ground (x = +34 → +72, z = −54 → −92) ─────────────────────────
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(38, 38), matCopseGround)

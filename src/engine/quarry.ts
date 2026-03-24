@@ -37,6 +37,7 @@ import type { RockNode } from './mining'
 import { buildGatedDoor } from './gating'
 import type { GatedDoorResult } from './gating'
 import { useDialogueStore } from '../store/useDialogueStore'
+import { useNotifications } from '../store/useNotifications'
 
 // ─── Shared materials ────────────────────────────────────────────────────────
 
@@ -143,6 +144,53 @@ export function buildQuarry(
   const corrW = _addWall(scene, 0.4, 6, 33, -3.2, 3, -35.5, matBound)
   const corrE = _addWall(scene, 0.4, 6, 33,  3.2, 3, -35.5, matBound)
   collidables.push(corrW, corrE)
+
+  // ── Phase 91 — Trail corridor landmarks ──────────────────────────────────
+
+  // Quarry direction sign post (z = −26) — a timber post with a carved wooden
+  // plaque pointing toward the quarry.  Readable interaction.
+  const qSignGroup = new THREE.Group()
+  qSignGroup.position.set(3.5, 0, -26)
+  const qShaft = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.0, 0.16), matWood)
+  qShaft.position.y = 1.0
+  qSignGroup.add(qShaft)
+  const qBoard = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.3, 0.1), matCrate)
+  qBoard.position.set(0, 1.88, 0)
+  qBoard.rotation.y = -Math.PI / 8
+  qSignGroup.add(qBoard)
+  scene.add(qSignGroup)
+
+  const qSignInteractable: Interactable = {
+    mesh: qSignGroup,
+    label: 'Trail Sign',
+    interactRadius: 1.8,
+    onInteract: () => {
+      useNotifications
+        .getState()
+        .push('Carved into the plaque: "Redwake Quarry — North. Hard hats advised."', 'info')
+    },
+  }
+  interactables.push(qSignInteractable)
+
+  // Stone cairn at z = −38 (mid-trail landmark).
+  const qCairnBase = new THREE.Mesh(new THREE.DodecahedronGeometry(0.38, 0), matCliffDark)
+  qCairnBase.scale.y = 0.55
+  qCairnBase.position.set(-2, 0.21, -38)
+  scene.add(qCairnBase)
+  const qCairnMid = new THREE.Mesh(new THREE.DodecahedronGeometry(0.27, 0), matCliffDark)
+  qCairnMid.scale.y = 0.60
+  qCairnMid.position.set(-1.96, 0.58, -37.94)
+  scene.add(qCairnMid)
+  const qCairnTop = new THREE.Mesh(new THREE.DodecahedronGeometry(0.19, 0), matCliffDark)
+  qCairnTop.position.set(-2.02, 0.90, -38.06)
+  scene.add(qCairnTop)
+
+  // Abandoned ore sack at z = −46 — a lumpy burlap bundle left by the roadside.
+  const oreSack = new THREE.Mesh(new THREE.DodecahedronGeometry(0.42, 0), matCrate)
+  oreSack.scale.set(1.2, 0.82, 1.0)
+  oreSack.position.set(2.8, 0.34, -46)
+  oreSack.rotation.y = 0.7
+  scene.add(oreSack)
 
   // ── Quarry basin floor (z = −52 → −96, x = −20 → +20) ───────────────────
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 44), matRockyGround)
