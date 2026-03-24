@@ -113,7 +113,14 @@ function applySaveMigrations(raw: unknown): SaveSnapshot | null {
       return null
     }
     obj = migrate(obj)
-    version = obj.version as number
+    const nextVersion = obj.version
+    // Guard: every migration must advance the version; a bad implementation
+    // that leaves version unchanged would cause an infinite loop.
+    if (typeof nextVersion !== 'number' || !Number.isFinite(nextVersion) || nextVersion <= version) {
+      console.warn(`[Save] migration from v${version} did not advance version — aborting.`)
+      return null
+    }
+    version = nextVersion
   }
 
   return obj as unknown as SaveSnapshot
@@ -185,7 +192,9 @@ export function useLoadGame(): () => void {
         const snapshot = applySaveMigrations(parsed)
         if (!snapshot) return null
         const wasMigrated =
-          typeof originalVersion === 'number' && originalVersion !== SAVE_VERSION
+          typeof originalVersion === 'number' &&
+          originalVersion < SAVE_VERSION &&
+          snapshot.version === SAVE_VERSION
         return { snapshot, wasMigrated }
       } catch {
         return null
@@ -215,9 +224,14 @@ export function useLoadGame(): () => void {
     if (snapshot === null) {
       // Both primary and backup are absent or corrupt; check whether data
       // existed at all (vs. a genuine first-run with no save).
-      const hadData =
-        localStorage.getItem(SAVE_KEY) !== null ||
-        localStorage.getItem(BACKUP_KEY) !== null
+      let hadData = false
+      try {
+        hadData =
+          localStorage.getItem(SAVE_KEY) !== null ||
+          localStorage.getItem(BACKUP_KEY) !== null
+      } catch {
+        hadData = false
+      }
       if (hadData) {
         notify('⚠ Save data could not be loaded — starting fresh.', 'warning')
         console.warn('[Load] both primary and backup saves are unreadable.')
@@ -415,10 +429,13 @@ export function useLoadGame(): () => void {
   }, [])
 }
 
-/** Returns true if a save snapshot exists in localStorage. */
+/** Returns true if a save snapshot exists in localStorage (primary or backup). */
 export function hasSaveData(): boolean {
   try {
-    return localStorage.getItem(SAVE_KEY) !== null
+    return (
+      localStorage.getItem(SAVE_KEY) !== null ||
+      localStorage.getItem(BACKUP_KEY) !== null
+    )
   } catch {
     return false
   }
