@@ -35,6 +35,8 @@ const FOLLOW_LERP_FACTOR = 8
 
 const _offset = new THREE.Vector3()
 const _lookAt = new THREE.Vector3()
+const _desiredCameraPos = new THREE.Vector3()
+const _clampedCameraPos = new THREE.Vector3()
 const _rayDir = new THREE.Vector3()
 const _raycaster = new THREE.Raycaster()
 
@@ -110,24 +112,28 @@ export function updateOrbitCamera(
   _lookAt.copy(state.followTarget)
   _applyShoulderOffset(_lookAt, state.theta, SHOULDER_OFFSET)
 
-  // Compute the spherical offset at the smoothed radius.
+  // Compute the spherical offset at the smoothed radius and desired camera position.
   _sphereOffset(state.theta, state.phi, state.radius, _offset)
+  _desiredCameraPos.copy(_lookAt).add(_offset)
 
-  // Collision-aware radius: cast a ray from lookAt toward the camera.
-  let clippedRadius = state.radius
+  // Collision check from un-offset follow target to desired camera position.
+  _clampedCameraPos.copy(_desiredCameraPos)
   if (collidables.length > 0) {
-    _rayDir.copy(_offset).normalize()
-    _raycaster.set(_lookAt, _rayDir)
-    _raycaster.far = state.radius
+    _rayDir.copy(_desiredCameraPos).sub(state.followTarget)
+    const rayLength = _rayDir.length()
+    if (rayLength > 0.0001) {
+      _rayDir.divideScalar(rayLength)
+      _raycaster.set(state.followTarget, _rayDir)
+      _raycaster.far = rayLength
     const hits = _raycaster.intersectObjects(collidables, true)
-    if (hits.length > 0 && hits[0].distance < state.radius) {
-      clippedRadius = Math.max(COLLISION_RADIUS_MIN, hits[0].distance - COLLISION_MARGIN)
-      // Recompute offset at the clipped radius.
-      _sphereOffset(state.theta, state.phi, clippedRadius, _offset)
+      if (hits.length > 0 && hits[0].distance < rayLength) {
+        const clampedDistance = Math.max(COLLISION_RADIUS_MIN, hits[0].distance - COLLISION_MARGIN)
+        _clampedCameraPos.copy(state.followTarget).addScaledVector(_rayDir, clampedDistance)
+      }
     }
   }
 
-  camera.position.copy(_lookAt).add(_offset)
+  camera.position.copy(_clampedCameraPos)
   camera.lookAt(_lookAt)
 }
 
