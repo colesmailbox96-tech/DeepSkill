@@ -3,7 +3,7 @@
  *
  * Tracks the current weather state, display name, and icon so React HUD
  * components can subscribe without polling the Three.js scene every render.
- * Updated each frame (on transition) from App.tsx.
+ * Updated on each weather transition from App.tsx.
  */
 
 import { create } from 'zustand'
