@@ -1,5 +1,6 @@
 /**
  * Phase 51 — Main Menu Screen
+ * Phase 100 — RC build label wired in.
  *
  * Full-screen title overlay shown on boot.  Presents three choices:
  *
@@ -15,6 +16,7 @@
  */
 import { useEffect, useRef } from 'react'
 import { useAudioStore } from '../../store/useAudioStore'
+import { RC_BUILD_LABEL } from '../../engine/releaseCandidate'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -54,6 +56,7 @@ export function MainMenuScreen({ hasSave, onContinue, onNewGame }: MainMenuScree
         <div className="main-menu__logo">
           <h1 className="main-menu__title">Veilmarch</h1>
           <p className="main-menu__subtitle">An open-world crafting RPG</p>
+          <span className="main-menu__build-badge">{RC_BUILD_LABEL}</span>
         </div>
 
         {/* ── Navigation buttons ──────────────────────────────────────── */}

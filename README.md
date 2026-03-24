@@ -2,8 +2,8 @@
 
 Low-poly over-the-shoulder RPG prototype built with **Vite + React 18 + TypeScript + Three.js + Zustand**.
 
-> **Stabilization Pass A — Mobile + Execution Hardening** has been applied to this repository.
-> The next planned content phase is **Phase 46 (Warding Skill Foundation)**.
+> **Phase 100 — Release Candidate Stabilization** has been applied to this repository.  
+> Build label: **RC-1**.  All 100 development phases are complete.
 
 ---
 
@@ -64,10 +64,14 @@ The game is designed to run in a mobile browser (PWA-ready). To test:
 | L | Ledger Hall / Storage |
 | Q | Equipment |
 | J | Journal |
-| F | Smithing |
+| F | Smithing (Forging) |
 | V | Carving |
 | T | Tinkering |
+| H | Tailoring |
+| G | Warding |
 | Y | Surveying |
+| P | Save / Load panel |
+| KeyB | Accessibility settings |
 | Left-click creature | Target for combat |
 
 ### Mobile (touch)
@@ -100,37 +104,88 @@ A standalone orbit-camera module. All tunable constants (`PHI_MIN`, `PHI_MAX`, `
 - Pinch-zoom at the browser level is disabled via `user-scalable=no` in the viewport meta tag; pinch-zoom inside the game is handled by the camera's `applyZoom()`.
 
 ### Save / load (`src/store/useSaveLoad.ts`)
-`useSaveGame()` / `useLoadGame()` persist a versioned JSON snapshot (`veilmarch_save_v1`) to `localStorage`. Saved fields: `playerStats`, `inventory`, `skills`, `equipment`, `settings`. Transient state (NPC positions, active gather sessions, combat) is not saved and rebuilds from defaults on each load. The load path is intentionally defensive — a missing or malformed save simply starts the game fresh.
+`useSaveGame()` / `useLoadGame()` persist a versioned JSON snapshot (`veilmarch_save_v1`) to `localStorage`.
+- **Schema version:** 2 (incremented in Phase 90; migration runner supports step-by-step upgrades).
+- **Storage key:** `veilmarch_save_v1` (name preserved from Phase 50 for backward compatibility with existing player saves; the key name is intentionally decoupled from the schema version number).
+- **Saved fields:** `playerStats`, `inventory`, `skills`, `equipment`, `settings`, `vendorStocks`, `factionRep`, `taskState`.
+- **Backup key:** every save also writes a backup (`veilmarch_save_backup`) so corruption of the primary can be recovered.
+- **Corruption recovery:** if the primary save fails migration, the load path falls back to the backup and notifies the player via a toast.
+- Transient state (NPC positions, active gather sessions, combat, opened gated doors) is not saved and rebuilds from defaults on each load.
+
+### LOD / streaming (`src/engine/lod.ts`)
+Eight region chunks are managed with a hysteresis-band show/hide (20-unit gap) to avoid thrashing. `updateRegionLOD()` is called once per frame from `App.tsx`.
+
+### Telemetry (`src/engine/telemetry.ts`)
+Local-only, in-memory ring-buffer (max 500 events). No data is transmitted externally. `exportTelemetry()` returns a JSON string safe to copy-paste into a feedback form. Recorded events: `session_start`, `new_game`, `area_entered`, `skill_level_up`, `quest_complete`, `player_defeated`, `demo_overlay_dismissed`.
+
+### Demo slice (`src/engine/demoSlice.ts`)
+The public demo exposes 4 regions (Hushwood, Quarry, Shoreline, Ashfen Copse), 6 skills (Woodcutting, Mining, Fishing, Foraging, Hearthcraft/Cooking, Forging/Smithing), and 3 questlines. All expansion content is locked behind `DEMO_CONTENT_LOCK`.
 
 ---
 
-## Current Implementation State (after Stabilization Pass A)
+## Current Implementation State (Phase 100 — RC-1)
 
-Phases 01–45 complete. Last content phase: **Phase 45 — Hidden Cache System**.
+All 100 development phases complete. Full phase log available in `src/engine/releaseCandidate.ts`.
 
-Key systems present:
-- 3-D world: Hushwood settlement, Redwake Quarry, Gloamwater Bank shoreline, Brackroot Trail
-- Skills: Woodcutting, Mining, Fishing, Foraging, Cooking, Smithing, Carving, Tinkering, Surveying
-- Crafting: Smithing (smelt + forge), Carving workbench, Tinkerer's bench
-- Economy: Marks currency, Shop, Ledger Hall storage
-- Combat: Hostile creatures, targeting, respawn
-- NPCs: Dialogue trees, task system with gather/deliver/talk objectives
-- HUD: Player strip (HP/stamina), notification feed, inventory, skills, equipment, journal, task tracker, surveying panel
-- Mobile: Virtual joystick, touch orbit/pinch, safe-area-aware layout
+### World
+- 9 traversable regions: Hushwood Settlement, Redwake Quarry, Gloamwater Shoreline, Ashfen Copse, Marrowfen, Tidemark Chapel, Belowglass Vaults, Hollow Vault, Brackroot Trail
+- LOD-managed region chunks with hysteresis-band loading
+- Day/night cycle (10 keyframes, period notifications)
+- Dynamic weather system (clear / overcast / rain / storm / fog)
+- Environmental hazard zones with persistent warning HUD
+
+### Skills (11 total)
+| Skill | Station | Category |
+|---|---|---|
+| Woodcutting | Ash trees | Gathering |
+| Mining | Ore nodes | Gathering |
+| Fishing | Shore/seep nodes | Gathering |
+| Foraging | Herb/berry nodes | Gathering |
+| Hearthcraft (Cooking) | Campfire | Processing |
+| Forging (Smithing) | Forge | Processing |
+| Carving | Carving bench | Craft |
+| Tinkering | Tinkerer's bench | Craft |
+| Tailoring | Loom | Craft |
+| Warding | Warding basin | Specialist |
+| Surveying | Survey chalk | Specialist |
+
+### Economy & Progression
+- Marks currency, vendor shops with finite stock, session-reset consumables
+- Ledger Hall off-player storage
+- Faction reputation system (neutral → acquainted → trusted → honored)
+- Multi-step questlines with gather / deliver / talk objectives
+
+### Combat
+- Hostile creatures: Cinderhare, Mossback Toad, Thornling, Slatebeak, Mireling
+- Melee and ranged combat, creature aggro, respawn overlay
+- Boss encounter: Vault Heart
+
+### Systems
+- Save/load: versioned schema v2, backup/recovery, per-field validation
+- Gated progression doors (skill / task / item / faction requirements)
+- Hidden surveying caches across all regions
+- Accessibility: reduced-motion toggle, font-scale (sm / md / lg)
+- Audio: background music, region stinger, gather/craft/combat SFX
+- Telemetry: local-only session event ring-buffer
+- PWA manifest for installable mobile deployment
 
 ---
 
-## Known Limitations
+## Known Limitations (RC-1)
 
 | Severity | Issue |
 |---|---|
-| Medium | Save/load does not persist task progress, surveying cache state, or ledger storage — these reset on refresh. |
-| Medium | Some secondary panels (Ledger Hall, Equipment) may overlap on very narrow screens (< 320 px). |
-| Low | No visual FPS counter on mobile (desktop `showFps` setting is wired but not rendered). |
-| Low | Web Audio is not implemented; volume settings exist in state but are not connected to any audio. |
+| Medium | Opened gated doors are not persisted — they re-evaluate requirements on load and reappear until re-interacted with. |
+| Medium | Draw-call count approaches mobile GPU limits with 10+ simultaneous creature spawns; InstancedMesh migration is in the expansion backlog. |
+| Low | AudioContext node limits on Safari/iOS may cause SFX drops during dense combat. |
+| Low | LOD hysteresis band (20 units) may need re-tuning once mid-game expansion regions load at higher prop density. |
 
 ---
 
+## Expansion Backlog
+
+Post-demo expansion work is tracked in `src/engine/expansionBacklog.ts`, organized by priority (P0–P3), feature bucket, cut/keep decisions, and risk notes.
+
 ## Next Step
 
-Resume the normal game roadmap at **Phase 46 — Warding Skill Foundation**.
+Monitor telemetry from demo players, address P0 items from `EXPANSION_BACKLOG`, and increment to post-RC expansion phases.
