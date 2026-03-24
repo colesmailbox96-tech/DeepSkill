@@ -240,6 +240,20 @@ import {
 import type { BossArenaEntry, BossPhaseThreshold, BossSpecialMove } from './engine/boss'
 import { useBossStore } from './store/useBossStore'
 import { BossHealthBar } from './ui/hud/BossHealthBar'
+import {
+  tickDayNight,
+  getPeriodName,
+  getSkyColor,
+  getAmbientColor,
+  getAmbientIntensity,
+  getDirectionalColor,
+  getDirectionalIntensity,
+  getFogColor,
+  getFogDensity,
+  START_HOUR,
+} from './engine/daynight'
+import { useDayNightStore } from './store/useDayNightStore'
+import { DayNightHud } from './ui/hud/DayNightHud'
 import './App.css'
 
 // Register NPC dialogue trees once at module load time.
@@ -488,7 +502,7 @@ function App() {
     }
 
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x1b2024)
+    scene.background = getSkyColor(START_HOUR)
 
     const camera = new THREE.PerspectiveCamera(
       60,
@@ -531,10 +545,34 @@ function App() {
     const resizeObserver = new ResizeObserver(updateViewport)
     resizeObserver.observe(renderer.domElement)
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.45)
-    const directionalLight = new THREE.DirectionalLight(0xffe2c2, 1.25)
+    // Phase 92 — Day/Night Cycle: initialise lights from the starting hour so
+    // the scene already has the correct colours on first render.
+    const initHour = START_HOUR
+    const ambientLight = new THREE.AmbientLight(
+      getAmbientColor(initHour),
+      getAmbientIntensity(initHour),
+    )
+    const directionalLight = new THREE.DirectionalLight(
+      getDirectionalColor(initHour),
+      getDirectionalIntensity(initHour),
+    )
     directionalLight.position.set(6, 10, 4)
     scene.add(ambientLight, directionalLight)
+
+    // Phase 92 — Exponential atmospheric fog; density is driven by time-of-day.
+    scene.fog = new THREE.FogExp2(getFogColor(initHour), getFogDensity(initHour))
+
+    // Phase 92 — Mutable time accumulator for the day/night tick.
+    let dayNightTime = initHour
+    // Track the last period so we can fire a notification on each transition.
+    let prevDayPeriod = getPeriodName(initHour)
+    // Track the last store-synced minute to throttle Zustand updates.
+    let prevDayNightMinute = Math.floor(initHour * 60)
+    // Reusable THREE.Color instances to avoid per-frame heap allocations.
+    const _skyColorScratch         = new THREE.Color()
+    const _ambientColorScratch     = new THREE.Color()
+    const _directionalColorScratch = new THREE.Color()
+    const _fogColorScratch         = new THREE.Color()
 
     // Phase 07 — Hushwood settlement blockout; Phase 08 — NPC placement
     const { collidables, interactables, npcs } = buildHushwood(scene)
@@ -2939,6 +2977,44 @@ function App() {
       // Phase 88 — LOD / Streaming Pass: update region group visibility.
       updateRegionLOD(player.mesh.position, regionLODEntries)
 
+      // Phase 92 — Day/Night Cycle: advance time and update scene lighting.
+      {
+        dayNightTime = tickDayNight(dayNightTime, delta)
+        const newPeriod = getPeriodName(dayNightTime)
+
+        // Update Three.js lights and scene background/fog each frame, reusing
+        // pre-allocated THREE.Color instances to avoid per-frame GC pressure.
+        ambientLight.color.copy(getAmbientColor(dayNightTime, _ambientColorScratch))
+        ambientLight.intensity = getAmbientIntensity(dayNightTime)
+        directionalLight.color.copy(getDirectionalColor(dayNightTime, _directionalColorScratch))
+        directionalLight.intensity = getDirectionalIntensity(dayNightTime)
+        ;(scene.background as THREE.Color).copy(getSkyColor(dayNightTime, _skyColorScratch))
+        if (scene.fog instanceof THREE.FogExp2) {
+          scene.fog.color.copy(getFogColor(dayNightTime, _fogColorScratch))
+          scene.fog.density = getFogDensity(dayNightTime)
+        }
+
+        // Push a notification when the period changes.
+        if (newPeriod !== prevDayPeriod) {
+          const msgs: Record<typeof newPeriod, string> = {
+            dawn:  'The horizon brightens — dawn breaks over Cinderglen Reach.',
+            day:   'Sunlight floods the valley. The day is fully underway.',
+            dusk:  'The sun dips below the ridgeline. Dusk settles across the Reach.',
+            night: 'Darkness falls. Night has come to Cinderglen Reach.',
+          }
+          useNotifications.getState().push(msgs[newPeriod], 'info')
+          prevDayPeriod = newPeriod
+        }
+
+        // Keep the Zustand store in sync for the HUD.  Only update when the
+        // displayed minute changes to avoid triggering React re-renders at 60 fps.
+        const currentMinute = Math.floor(dayNightTime * 60)
+        if (currentMinute !== prevDayNightMinute) {
+          useDayNightStore.getState().setTime(dayNightTime)
+          prevDayNightMinute = currentMinute
+        }
+      }
+
       // Phase 54 — Update minimap store with current player position and facing.
       {
         const pos = player.mesh.position
@@ -3389,6 +3465,8 @@ function App() {
           <SaveLoadPanel />
           {/* Phase 54 — Minimap / Region Map */}
           <MinimapHud />
+          {/* Phase 92 — Day/Night clock */}
+          <DayNightHud />
           {/* Phase 76 — Faction standings panel */}
           <FactionPanel />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}

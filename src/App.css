@@ -5498,3 +5498,55 @@ a:focus-visible,
     width: 220px;
   }
 }
+
+/* ─── Phase 92 — Day/Night Clock HUD ─────────────────────────────────────────
+ *
+ * Small widget anchored below the minimap in the top-right corner.
+ * Displays current in-game time and the named period with an icon.
+ */
+.hud-daynight {
+  position: absolute;
+  top: 200px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.28rem 0.55rem 0.32rem;
+  background: rgba(6, 8, 18, 0.72);
+  border: 1px solid rgba(120, 150, 210, 0.25);
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+  user-select: none;
+  z-index: 60;
+  min-width: 72px;
+}
+
+.hud-daynight__icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.hud-daynight__clock {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(200, 220, 255, 0.92);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-daynight__period {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: rgba(140, 165, 220, 0.72);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+@media (pointer: coarse) {
+  .hud-daynight {
+    top: 200px;
+    right: 0.75rem;
+  }
+}
