@@ -572,16 +572,19 @@ export function getRisksBySeverity(minSeverity: RiskSeverity): RiskNote[] {
   return RISK_NOTES.filter((r) => order.indexOf(r.severity) <= threshold)
 }
 
+/** Shared constant used as the default for {@link getUnblockedItems}. */
+const _EMPTY_SET: ReadonlySet<string> = new Set()
+
 /**
  * Returns all backlog items that are immediately actionable (no unresolved blockers).
  *
  * @param shippedIds  Set of backlog item ids that have already been shipped.
  *                    Callers should populate this from whatever tracking mechanism
  *                    records completed items (e.g. a persisted backlog-status store or
- *                    a build-time constant updated each phase).  When called with the
- *                    default empty set it returns all items with no declared blockers.
+ *                    a build-time constant updated each phase).  When called without an
+ *                    argument it returns all items with no declared blockers.
  */
-export function getUnblockedItems(shippedIds: ReadonlySet<string> = new Set()): BacklogItem[] {
+export function getUnblockedItems(shippedIds: ReadonlySet<string> = _EMPTY_SET): BacklogItem[] {
   return EXPANSION_BACKLOG.filter((i) =>
     i.blockedBy.every((dep) => shippedIds.has(dep)),
   )
