@@ -34,6 +34,7 @@ export type InputAction =
   | 'toggle-warding'
   | 'toggle-map'
   | 'toggle-faction'
+  | 'toggle-accessibility'
 
 /**
  * Map from keyboard code to InputAction.  Used by App.tsx's `onKeyDown` to
@@ -59,6 +60,7 @@ export const KEY_TO_ACTION: Readonly<Record<string, InputAction>> = {
   KeyY: 'toggle-surveying',
   KeyG: 'toggle-warding',
   KeyN: 'toggle-map',
+  KeyB: 'toggle-accessibility',
 }
 
 /**

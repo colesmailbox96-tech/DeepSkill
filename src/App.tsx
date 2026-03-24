@@ -196,6 +196,8 @@ import { HazardWarningHud } from './ui/hud/HazardWarningHud'
 import { GateBlockedHud } from './ui/hud/GateBlockedHud'
 import { DarknessHud } from './ui/hud/DarknessHud'
 import { AudioSettingsPanel } from './ui/hud/AudioSettingsPanel'
+import { AccessibilityPanel } from './ui/hud/AccessibilityPanel'
+import { useAccessibilityStore } from './store/useAccessibilityStore'
 import { audioManager, getAudioRegion } from './engine/audio'
 import type { AudioRegion } from './engine/audio'
 import { useAudioStore } from './store/useAudioStore'
@@ -1813,6 +1815,10 @@ function App() {
         useMinimapStore.getState().toggleExpanded()
         return
       }
+      if (action === 'toggle-accessibility') {
+        useAccessibilityStore.getState().togglePanel()
+        return
+      }
     }
 
     // Wire the action dispatcher into the ref so MobileControls can call it.
@@ -1828,6 +1834,7 @@ function App() {
       // panel via keyboard as well.
       if (isMenuVisible) {
         if (e.code === 'KeyM') useAudioStore.getState().togglePanel()
+        if (e.code === 'KeyB') useAccessibilityStore.getState().togglePanel()
         return
       }
       keys.add(e.code)
@@ -2108,6 +2115,20 @@ function App() {
     const unsubscribeAudio = useAudioStore.subscribe((s) => {
       audioManager.setVolumes(s.masterVolume, s.musicVolume, s.sfxVolume, s.ambientVolume)
       audioManager.setMuted(s.isMuted)
+    })
+
+    // Phase 89 — apply accessibility preferences to <html> whenever they change.
+    const applyAccessibility = (reducedMotion: boolean, fontScale: string) => {
+      const html = document.documentElement
+      html.classList.toggle('reduce-motion', reducedMotion)
+      html.classList.remove('font-scale--sm', 'font-scale--md', 'font-scale--lg')
+      if (fontScale !== 'md') html.classList.add(`font-scale--${fontScale}`)
+    }
+    const { reducedMotion: initRM, fontScale: initFS } =
+      useAccessibilityStore.getState()
+    applyAccessibility(initRM, initFS)
+    const unsubscribeAccessibility = useAccessibilityStore.subscribe((s) => {
+      applyAccessibility(s.reducedMotion, s.fontScale)
     })
     // Per-frame audio-region tracker.
     let prevAudioRegion: AudioRegion | null = null
@@ -3232,6 +3253,7 @@ function App() {
       resizeObserver.disconnect()
       unsubscribeRespawn()
       unsubscribeAudio()
+      unsubscribeAccessibility()
       unsubscribeMenu()
       audioManager.dispose()
       window.removeEventListener('resize', updateViewport)
@@ -3350,6 +3372,8 @@ function App() {
           <DarknessHud />
           {/* Phase 49 — Audio settings panel */}
           <AudioSettingsPanel />
+          {/* Phase 89 — Accessibility settings panel */}
+          <AccessibilityPanel />
           {/* Phase 50 — Save / Load panel */}
           <SaveLoadPanel />
           {/* Phase 54 — Minimap / Region Map */}
