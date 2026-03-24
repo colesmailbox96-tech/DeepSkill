@@ -122,10 +122,7 @@ export function updateOrbitCamera(
     const behindYaw = target.rotation.y + Math.PI
 
     // Compute shortest angular difference (wrapping-safe).
-    let diff = behindYaw - state.thetaTarget
-    diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI
-    // Handle negative modulo edge case.
-    if (diff < -Math.PI) diff += Math.PI * 2
+    const diff = Math.atan2(Math.sin(behindYaw - state.thetaTarget), Math.cos(behindYaw - state.thetaTarget))
 
     // Only drift when the difference is noticeable to avoid micro-jitter.
     if (Math.abs(diff) > 0.02) {
