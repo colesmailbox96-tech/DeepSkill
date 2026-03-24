@@ -2124,11 +2124,26 @@ p {
   flex-shrink: 0;
 }
 
+.dialogue-panel__npc-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
 .dialogue-panel__npc-name {
   font-size: 0.88rem;
   font-weight: 700;
   color: #e8d090;
   letter-spacing: 0.03em;
+}
+
+.dialogue-panel__npc-summary {
+  font-size: 0.72rem;
+  color: rgba(180, 165, 130, 0.75);
+  font-style: italic;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
 }
 
 .dialogue-panel__close {

@@ -40,6 +40,7 @@
 import * as THREE from 'three'
 import type { Interactable } from './interactable'
 import { buildGatedDoor, type GatedDoorResult } from './gating'
+import { useNotifications } from '../store/useNotifications'
 
 // ─── Zone bounds (exported for App.tsx region checks) ─────────────────────────
 
@@ -129,6 +130,26 @@ export function buildBelowglassVaults(
   const boundEN = _addWall(scene, 0.4, 6, 4,  -101.8, 3, -8, matBound)
   const boundES = _addWall(scene, 0.4, 6, 4,  -101.8, 3,  8, matBound)
   collidables.push(boundN, boundS, boundW, boundEN, boundES)
+
+  // ── Lore inscription tablet ────────────────────────────────────────────────
+  // A low stone slab propped against the north wall near the entrance,
+  // carrying a worn Deep Heart maintenance inscription.
+  const matTablet = new THREE.MeshStandardMaterial({ color: 0x1a2030, roughness: 0.92 })
+  const tablet = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.4, 0.8), matTablet)
+  tablet.position.set(-103.5, 0.7, -8.5)
+  scene.add(tablet)
+  interactables.push({
+    mesh: tablet,
+    label: 'Vault Inscription',
+    interactRadius: 1.8,
+    onInteract: () => useNotifications.getState().push(
+      'An inscription in archaic Deep Heart script, partially eroded: ' +
+      '"THRESHOLD CHAMBER — AUTHORISED MAINTENANCE ONLY. Resonance ward active. ' +
+      'Warden unit operational. Seal integrity: nominal." ' +
+      'The date notation beneath it means nothing to you — a calendar that stopped long ago.',
+      'info',
+    ),
+  })
 
   // ── Rubble-fill side sections ──────────────────────────────────────────────
   // Low rubble piles along the north and south walls give the hall a partially-
