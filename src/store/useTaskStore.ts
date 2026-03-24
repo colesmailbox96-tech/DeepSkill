@@ -36,6 +36,7 @@ import { useGameStore } from './useGameStore'
 import { useNotifications } from './useNotifications'
 import { getItem as _getItemDef } from '../data/items/itemRegistry'
 import { useFactionStore } from './useFactionStore'
+import { recordQuestComplete } from '../engine/telemetry'
 
 // ─── Runtime record ──────────────────────────────────────────────────────────
 
@@ -249,6 +250,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         get().acceptTask(nextId)
       }
     }
+
+    // Phase 98 — Telemetry: record quest completion after all side effects.
+    recordQuestComplete(taskId)
   },
 
   isActive: (taskId) => get().active.some((r) => r.taskId === taskId),

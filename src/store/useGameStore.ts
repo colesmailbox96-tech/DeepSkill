@@ -10,6 +10,7 @@ import {
   meetsEquipRequirements,
 } from '../engine/equipment'
 import type { EquipStats } from '../engine/equipment'
+import { recordSkillLevelUp } from '../engine/telemetry'
 
 // Re-export so consumers can get the full definition alongside store types.
 export type { ItemDefinition, EquipSlot }
@@ -368,6 +369,8 @@ export const useGameStore = create<GameState>((set, get) => ({
           const gainedLevel = target.level + i
           push(`${target.name} reached level ${gainedLevel}!`, 'success')
           onLevelUp?.(target.name, gainedLevel)
+          // Phase 98 — Telemetry: record each skill level gained.
+          recordSkillLevelUp(id, gainedLevel)
         }
       }
 

@@ -26,6 +26,7 @@ import {
   DEMO_SUBTITLE,
   DEMO_ESTIMATED_PLAYTIME,
 } from '../../engine/demoSlice'
+import { recordDemoOverlayDismissed } from '../../engine/telemetry'
 
 export function DemoWelcomeOverlay() {
   const welcomeSeen = useDemoStore((s) => s.welcomeSeen)
@@ -54,6 +55,7 @@ export function DemoWelcomeOverlay() {
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        recordDemoOverlayDismissed()
         setWelcomeSeen(true)
         return
       }
@@ -76,6 +78,11 @@ export function DemoWelcomeOverlay() {
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [welcomeSeen, setWelcomeSeen])
+
+  const handleBeginAdventure = () => {
+    recordDemoOverlayDismissed()
+    setWelcomeSeen(true)
+  }
 
   if (welcomeSeen) return null
 
@@ -159,7 +166,7 @@ export function DemoWelcomeOverlay() {
 
         <button
           className="demo-overlay__btn"
-          onClick={() => setWelcomeSeen(true)}
+          onClick={handleBeginAdventure}
         >
           Begin Adventure
         </button>
