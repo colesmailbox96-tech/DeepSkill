@@ -26,6 +26,7 @@ import { FACTION_TIER_ORDER } from '../../engine/shop'
 
 const aldricTree = {
   npcName: 'Aldric (Village Elder)',
+  summary: 'Village Elder · Cinderglen Settlement',
   rootNode: 'intro',
   repeatNode: 'repeat',
   nodes: {
@@ -96,6 +97,7 @@ const aldricTree = {
 
 const bronTree = {
   npcName: 'Bron (Blacksmith)',
+  summary: 'Blacksmith · Hushwood Forge',
   rootNode: 'intro',
   repeatNode: 'repeat',
   nodes: {
@@ -142,6 +144,7 @@ const bronTree = {
 
 const miraTree = {
   npcName: 'Mira (Innkeeper)',
+  summary: 'Innkeeper · The Mudroot Inn',
   rootNode: 'intro',
   repeatNode: 'repeat',
   nodes: {
@@ -192,6 +195,7 @@ const miraTree = {
 
 const dwynTree = {
   npcName: 'Dwyn (Guard)',
+  summary: 'Settlement Guard · Hushwood Watch',
   rootNode: 'intro',
   repeatNode: 'repeat',
   nodes: {
@@ -235,6 +239,7 @@ const dwynTree = {
 
 const seraTree = {
   npcName: 'Sera (Herbalist)',
+  summary: 'Herbalist · Hushwood Commons',
   rootNode: 'intro',
   repeatNode: 'repeat',
   nodes: {
@@ -277,6 +282,7 @@ const seraTree = {
 
 const tomasTree = {
   npcName: 'Tomas (Merchant)',
+  summary: 'Travelling Merchant · General Supplies',
   rootNode: 'intro',
   repeatNode: 'repeat',
   nodes: {
@@ -311,6 +317,7 @@ const tomasTree = {
 
 const nairnDuskTree = {
   npcName: 'Nairn Dusk (Ward-Adept)',
+  summary: 'Ward-Adept · Tidebound Keepers',
   rootNode: 'intro',
   repeatNode: 'repeat',
   nodes: {
@@ -436,6 +443,7 @@ const nairnDuskTree = {
 
 const brinSaltTree = {
   npcName: 'Brin Salt (Fisher)',
+  summary: 'Fisher & Tackle Vendor · Gloamwater Bank',
   rootNode: 'intro',
   repeatNode: 'repeat',
   nodes: {
@@ -472,6 +480,7 @@ const brinSaltTree = {
 
 const gorvenTree = {
   npcName: 'Gorven (Quarry Foreman)',
+  summary: 'Quarry Foreman · Redwake Quarry',
   rootNode: 'intro',
   repeatNode: 'repeat',
   nodes: {
@@ -545,6 +554,7 @@ function tryOpenOlenShop(): void {
 
 const olenTree = {
   npcName: 'Olen (Union Trader)',
+  summary: 'Union Post Trader · Quarry Union',
   rootNode: 'intro',
   repeatNode: 'repeat',
   nodes: {

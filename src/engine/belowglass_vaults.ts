@@ -40,6 +40,7 @@
 import * as THREE from 'three'
 import type { Interactable } from './interactable'
 import { buildGatedDoor, type GatedDoorResult } from './gating'
+import { useNotifications } from '../store/useNotifications'
 
 // ─── Zone bounds (exported for App.tsx region checks) ─────────────────────────
 
@@ -129,6 +130,23 @@ export function buildBelowglassVaults(
   const boundEN = _addWall(scene, 0.4, 6, 4,  -101.8, 3, -8, matBound)
   const boundES = _addWall(scene, 0.4, 6, 4,  -101.8, 3,  8, matBound)
   collidables.push(boundN, boundS, boundW, boundEN, boundES)
+
+  // ── Lore inscription tablet ────────────────────────────────────────────────
+  // A stone slab propped against the north wall near the entrance,
+  // carrying a worn Deep Heart maintenance inscription.
+  const matTablet = new THREE.MeshStandardMaterial({ color: 0x1a2030, roughness: 0.92 })
+  const tablet = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.08), matTablet)
+  tablet.position.set(-103.5, 0.7, -9.76)
+  scene.add(tablet)
+  interactables.push({
+    mesh: tablet,
+    label: 'Vault Inscription',
+    interactRadius: 1.8,
+    onInteract: () => useNotifications.getState().push(
+      'A worn Deep Heart maintenance plaque reads: "THRESHOLD CHAMBER — AUTHORISED MAINTENANCE ONLY. Resonance ward and warden unit active; seal integrity nominal."',
+      'info',
+    ),
+  })
 
   // ── Rubble-fill side sections ──────────────────────────────────────────────
   // Low rubble piles along the north and south walls give the hall a partially-

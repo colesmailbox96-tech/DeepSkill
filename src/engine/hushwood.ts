@@ -118,7 +118,11 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
     mesh: hall,
     label: 'Village Hall',
     interactRadius: 3.5,
-    onInteract: () => useNotifications.getState().push('Entered Village Hall', 'info'),
+    onInteract: () => useNotifications.getState().push(
+      'Cinderglen Village Hall — the oldest standing structure in the settlement. ' +
+      'Aldric convenes the council here each dusk.',
+      'info',
+    ),
   })
 
   // 2. Forge / Smithy — east
@@ -129,7 +133,11 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
     mesh: forge,
     label: 'Smithy Forge',
     interactRadius: 3.5,
-    onInteract: () => useNotifications.getState().push('Approached Smithy Forge', 'info'),
+    onInteract: () => useNotifications.getState().push(
+      "Bron's Smithy — the forge has burned continuously since the settlement was founded. " +
+      'The heat can be felt thirty paces out on a still night.',
+      'info',
+    ),
   })
 
   // Forge area: glowing ember box in front of smithy
@@ -161,7 +169,11 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
     mesh: inn,
     label: 'Mudroot Inn',
     interactRadius: 3.5,
-    onInteract: () => useNotifications.getState().push('Entered Mudroot Inn', 'info'),
+    onInteract: () => useNotifications.getState().push(
+      'The Mudroot Inn — named for the thick-rooted tree that grows through its east wall. ' +
+      'Mira keeps the fire lit and the larder stocked for anyone passing through.',
+      'info',
+    ),
   })
 
   // 5. Guard Hut — north-west
@@ -172,7 +184,11 @@ export function buildHushwood(scene: THREE.Scene): HushwoodResult {
     mesh: hut,
     label: 'Guard Post',
     interactRadius: 2.5,
-    onInteract: () => useNotifications.getState().push('Checked Guard Post', 'info'),
+    onInteract: () => useNotifications.getState().push(
+      'Hushwood Guard Post — Dwyn runs a rotating watch from here. ' +
+      'The tally marks on the doorframe count nights without a Snarl breach: currently four.',
+      'info',
+    ),
   })
 
   // ── Shoreline / Pond ─────────────────────────────────────────────────────

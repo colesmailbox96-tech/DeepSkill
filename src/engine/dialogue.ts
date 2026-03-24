@@ -59,6 +59,11 @@ export interface DialogueNode {
 export interface DialogueTree {
   /** Display name shown in the dialogue panel header. */
   npcName: string
+  /**
+   * Optional one-line descriptor shown below the NPC name in the dialogue
+   * panel — role, affiliation, or mood cue (e.g. "Quarry Foreman · Redwake Union").
+   */
+  summary?: string
   /** Key of the node used the *first* time the player talks to this NPC. */
   rootNode: string
   /**

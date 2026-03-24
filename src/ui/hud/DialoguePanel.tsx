@@ -129,7 +129,12 @@ export function DialoguePanel() {
       <div className="dialogue-panel" ref={panelRef} tabIndex={-1}>
         {/* ── Header ─────────────────────────────────────────────────────────── */}
         <div className="dialogue-panel__header">
-          <span className="dialogue-panel__npc-name">{npcName}</span>
+          <div className="dialogue-panel__npc-identity">
+            <span className="dialogue-panel__npc-name">{npcName}</span>
+            {activeTree!.summary && (
+              <span className="dialogue-panel__npc-summary">{activeTree!.summary}</span>
+            )}
+          </div>
           <button
             className="dialogue-panel__close"
             onClick={closeDialogue}

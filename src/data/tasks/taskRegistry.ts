@@ -106,7 +106,7 @@ const warmRunoff: TaskDefinition = {
   id: 'warm_runoff',
   title: 'Warm Runoff',
   description:
-    'Sera the Herbalist has noticed an unusual warm current flowing from the marsh toward the settlement. She wants someone to investigate the source.',
+    "Sera (Herbalist) has noticed an unusual warm current bleeding from the marsh toward the settlement. Something in the Brackroot Grove is leaking heat — she wants someone to investigate before the herb beds are ruined.",
   giverName: 'Sera (Herbalist)',
   objectives: [
     {
@@ -139,7 +139,7 @@ const haulForTheHearth: TaskDefinition = {
   id: 'haul_for_the_hearth',
   title: 'Haul for the Hearth',
   description:
-    "Bron's forge fire is running low. He needs five ashwood logs cut and delivered before nightfall.",
+    "Bron's forge fire is running low. Cut five ashwood logs from the roadside trees south of Cinderglen and deliver them before the coals die.",
   giverName: 'Bron (Blacksmith)',
   objectives: [
     {
@@ -215,7 +215,7 @@ const stoneFromTheQuarry: TaskDefinition = {
   id: 'stone_from_the_quarry',
   title: 'Stone from the Quarry',
   description:
-    'Aldric needs copper ore from the quarry face for hearth-wall repairs. Mine four chunks from the exposed rock.',
+    'Aldric needs copper ore from the quarry face to patch the crumbling hearth-wall. Mine four chunks from the exposed rock at the settlement edge.',
   giverName: 'Aldric (Village Elder)',
   objectives: [
     {
@@ -627,7 +627,7 @@ const surveyReach: TaskDefinition = {
   id: 'survey_reach',
   title: 'Survey the Reach',
   description:
-    "Aldric the Village Elder wants a full survey of the frontier zones — quarry, chapel, and fen. Speak with him to accept the commission.",
+    "Aldric (Village Elder) has commissioned a frontier survey — Veil disturbances are being reported from all three directions. Speak with him at Cinderglen to accept the commission and learn what evidence he needs.",
   giverName: 'Aldric (Village Elder)',
   objectives: [
     {
@@ -736,7 +736,7 @@ const theVaultHeart: TaskDefinition = {
   id: 'vault_heart',
   title: 'The Vault-Heart',
   description:
-    'An ancient guardian — the Vault-Heart Warden — seals the innermost sanctum of the Belowglass Vaults. Destroy it.',
+    'An ancient guardian — the Vault-Heart Warden — has kept the innermost sanctum of the Belowglass Vaults sealed for centuries. The Sanctum Resonance Seal is broken. The Warden is awake. Destroy it.',
   giverName: 'Sanctum Resonance Seal',
   objectives: [
     {
