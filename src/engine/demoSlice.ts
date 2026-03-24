@@ -48,7 +48,7 @@ export const DEMO_REGIONS: DemoRegionEntry[] = [
     description: 'Coastal stretch east of Hushwood. Fishing spots and forage nodes.',
   },
   {
-    id: 'ashfen_copse',
+    id: 'ashfen',
     label: 'Ashfen Copse',
     description: 'Sparse woodland west of the village. Secondary foraging and amber resin.',
   },
@@ -67,8 +67,8 @@ export const DEMO_SKILLS: DemoSkillEntry[] = [
   { id: 'mining',      label: 'Mining',        tier: 'gathering'   },
   { id: 'fishing',     label: 'Fishing',       tier: 'gathering'   },
   { id: 'foraging',    label: 'Foraging',      tier: 'gathering'   },
-  { id: 'cooking',     label: 'Cooking',       tier: 'processing'  },
-  { id: 'smithing',    label: 'Smithing',      tier: 'processing'  },
+  { id: 'hearthcraft', label: 'Cooking',       tier: 'processing'  },
+  { id: 'forging',     label: 'Smithing',      tier: 'processing'  },
 ]
 
 // ─── Selected Questlines ──────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ export const DEMO_QUESTLINES: DemoQuestlineEntry[] = [
   {
     id: 'foremans_contract',
     label: "Foreman's Contract",
-    rootTaskId: 'word_from_foreman',
+    rootTaskId: 'quarry_word',
     summary:
       'Answer Gorven the Foreman at the Quarry; mine iron and duskiron ore to secure the supply cache.',
   },

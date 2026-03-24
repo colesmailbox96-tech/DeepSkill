@@ -5,8 +5,15 @@
  * public demo slice: available regions, included skills, active questlines,
  * and a brief note about content locked to the full release.
  *
- * Dismissed by the player clicking "Begin Adventure"; the flag is stored in
- * useDemoStore so it does not re-appear during the same session.
+ * Dismissed by the player clicking "Begin Adventure" or pressing Escape.
+ * The flag is stored in useDemoStore so it does not re-appear during the
+ * same session.
+ *
+ * Accessibility:
+ *   - Focus is trapped within the panel while visible so keyboard users cannot
+ *     inadvertently tab into interactive HUD elements sitting behind the overlay.
+ *   - Escape key dismisses the overlay.
+ *   - The dismiss button receives auto-focus on mount.
  */
 
 import { useRef, useEffect } from 'react'
@@ -22,14 +29,51 @@ export function DemoWelcomeOverlay() {
   const welcomeSeen = useDemoStore((s) => s.welcomeSeen)
   const setWelcomeSeen = useDemoStore((s) => s.setWelcomeSeen)
 
-  const btnRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
-  // Focus the dismiss button on mount so keyboard users can immediately proceed.
   useEffect(() => {
-    if (!welcomeSeen) {
-      btnRef.current?.focus()
+    if (welcomeSeen) return
+
+    const panel = panelRef.current
+    if (!panel) return
+
+    // Auto-focus the dismiss button on mount.
+    const firstFocusable = panel.querySelector<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    )
+    firstFocusable?.focus()
+
+    // Focus trap: keep Tab / Shift-Tab inside the panel.
+    const focusable = Array.from(
+      panel.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((el) => !el.hasAttribute('disabled'))
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setWelcomeSeen(true)
+        return
+      }
+      if (e.key !== 'Tab' || focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
     }
-  }, [welcomeSeen])
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [welcomeSeen, setWelcomeSeen])
 
   if (welcomeSeen) return null
 
@@ -40,7 +84,7 @@ export function DemoWelcomeOverlay() {
       aria-modal="true"
       aria-label="Public Demo — available content"
     >
-      <div className="demo-overlay__panel">
+      <div className="demo-overlay__panel" ref={panelRef}>
         <div className="demo-overlay__header">
           <span className="demo-overlay__badge">Public Demo</span>
           <h2 className="demo-overlay__title">Veilmarch</h2>
@@ -108,7 +152,6 @@ export function DemoWelcomeOverlay() {
         </div>
 
         <button
-          ref={btnRef}
           className="demo-overlay__btn"
           onClick={() => setWelcomeSeen(true)}
         >
