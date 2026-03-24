@@ -67,8 +67,8 @@ The game is designed to run in a mobile browser (PWA-ready). To test:
 | F | Smithing (Forging) |
 | V | Carving |
 | T | Tinkering |
-| G | Tailoring |
-| W2 | Warding |
+| H | Tailoring |
+| G | Warding |
 | Y | Surveying |
 | P | Save / Load panel |
 | KeyB | Accessibility settings |
