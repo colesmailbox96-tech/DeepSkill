@@ -1,14 +1,14 @@
 import * as THREE from 'three'
 
 // ─── Tuneable constants ───────────────────────────────────────────────────────
-// Tuned for a RuneScape-style overhead perspective: centred on the player,
-// higher default pitch, snappy orbit response, and smooth zoom.
+// Tuned for a third-person perspective: camera behind and slightly above the
+// player, with smooth orbit and zoom.
 
 /** Minimum pitch (radians) – allows near-overhead views for tactical clarity. */
 export const PHI_MIN = 0.15
-/** Maximum pitch (radians) – prevents low-angle combat framing that obscures
- *  gameplay.  Slightly restricted vs. the original to keep the view readable. */
-export const PHI_MAX = 1.05
+/** Maximum pitch (radians) – allows near-horizontal views while preventing the
+ *  camera from dipping below the player. */
+export const PHI_MAX = 1.35
 /** Closest the camera can get to the player (metres). */
 export const RADIUS_MIN = 5
 /** Furthest the camera can pull back (metres). */
@@ -38,9 +38,9 @@ const COLLISION_RADIUS_MIN = 0.75
 /** Follow smoothing factor – higher = tighter target tracking. */
 const FOLLOW_LERP_FACTOR = 14
 /** Seconds of orbit-idle before the camera begins drifting behind the player. */
-const SNAP_BACK_DELAY = 0.5
+const SNAP_BACK_DELAY = 2.0
 /** Rate at which the camera yaw drifts toward "behind the player" (rad/s). */
-const SNAP_BACK_SPEED = 2.5
+const SNAP_BACK_SPEED = 1.5
 
 // ─── Per-frame scratch objects (no per-frame heap allocations) ────────────────
 
@@ -75,15 +75,15 @@ export interface CameraState {
   orbitIdleTime: number
 }
 
-/** Create a default CameraState with a high-angle RuneScape-style framing. */
+/** Create a default CameraState with a behind-and-above third-person framing. */
 export function createCameraState(): CameraState {
   return {
     thetaTarget: 0,
-    phiTarget: 0.72,
-    radiusTarget: 12,
+    phiTarget: 1.2,
+    radiusTarget: 10,
     theta: 0,
-    phi: 0.72,
-    radius: 12,
+    phi: 1.2,
+    radius: 10,
     followTarget: new THREE.Vector3(),
     followInitialized: false,
     orbitIdleTime: 0,

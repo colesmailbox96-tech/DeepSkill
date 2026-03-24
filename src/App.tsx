@@ -6,6 +6,7 @@ import {
   updateOrbitCamera,
   applyOrbitDrag,
   applyZoom,
+  TOUCH_ORBIT_SENSITIVITY,
 } from './engine/followCamera'
 import type { Interactable } from './engine/interactable'
 import { createInteractionState } from './engine/interactable'
@@ -2007,22 +2008,23 @@ function App() {
     const onContextMenu = (e: Event) => e.preventDefault()
 
     // ── Touch controls (mobile) ──────────────────────────────────────────────
-    // Camera stabilisation pass: single-finger orbit is **disabled** on mobile
-    // to prevent accidental camera spinning while using the joystick or tapping.
-    // Single-finger touch is reserved for tap-targeting only.
-    // Two-finger pinch → zoom is preserved.
+    // Single-finger: short tap → target selection; drag beyond dead-zone → orbit.
+    // Two-finger pinch → zoom.
     // Desktop orbit (right-click pointer drag) is unaffected.
-    type TouchPhase = 'none' | 'tap' | 'pinch'
+    type TouchPhase = 'none' | 'tap' | 'orbit' | 'pinch'
     let touchPhase: TouchPhase = 'none'
     let pinchLastDist = 0
 
-    // Phase 52 — tap targeting state
+    // Tap targeting state
     const TAP_MAX_MOVE_PX = 12   // pixels – cancel tap if finger moves this far
     const TAP_MAX_MS      = 350  // milliseconds – cancel tap if held this long
     let tapStartX    = 0
     let tapStartY    = 0
     let tapStartTime = 0
     let tapCancelled = true
+    // Tracking for single-finger orbit drag
+    let touchLastX = 0
+    let touchLastY = 0
 
     const onTouchStart = (e: TouchEvent) => {
       // Phase 49 — init audio on first touch gesture.
@@ -2032,12 +2034,14 @@ function App() {
       // Prevent page scroll / zoom on the canvas.
       e.preventDefault()
       if (e.touches.length === 1) {
-        // Single-finger: tap detection only — no orbit.
+        // Single-finger: start as potential tap; promote to orbit if dragged.
         touchPhase = 'tap'
         tapStartX    = e.touches[0].clientX
         tapStartY    = e.touches[0].clientY
         tapStartTime = performance.now()
         tapCancelled = false
+        touchLastX   = e.touches[0].clientX
+        touchLastY   = e.touches[0].clientY
       } else if (e.touches.length >= 2) {
         touchPhase = 'pinch'
         tapCancelled = true   // multi-touch is never a tap
@@ -2051,17 +2055,27 @@ function App() {
 
     const onTouchMove = (e: TouchEvent) => {
       e.preventDefault()
-      if (touchPhase === 'tap' && e.touches.length === 1) {
-        // Cancel tap when the finger travels beyond the dead-zone.
-        if (!tapCancelled) {
-          const touch = e.touches[0]
+      if ((touchPhase === 'tap' || touchPhase === 'orbit') && e.touches.length === 1) {
+        const touch = e.touches[0]
+        // Promote tap → orbit once the finger moves beyond the dead-zone.
+        if (touchPhase === 'tap' && !tapCancelled) {
           const dx = touch.clientX - tapStartX
           const dy = touch.clientY - tapStartY
           if (Math.sqrt(dx * dx + dy * dy) > TAP_MAX_MOVE_PX) {
             tapCancelled = true
+            touchPhase = 'orbit'
+            touchLastX = touch.clientX
+            touchLastY = touch.clientY
           }
         }
-        // No orbit drag — single-finger drag is intentionally inert on mobile.
+        // Apply orbit drag while in orbit phase.
+        if (touchPhase === 'orbit') {
+          const dx = touch.clientX - touchLastX
+          const dy = touch.clientY - touchLastY
+          applyOrbitDrag(camState, dx, dy, TOUCH_ORBIT_SENSITIVITY)
+          touchLastX = touch.clientX
+          touchLastY = touch.clientY
+        }
       } else if (e.touches.length >= 2) {
         touchPhase = 'pinch'
         const t0 = e.touches[0]
@@ -2134,7 +2148,7 @@ function App() {
       if (e.touches.length === 0) {
         touchPhase = 'none'
       } else if (e.touches.length === 1) {
-        // After lifting one finger from a pinch, revert to tap phase (no orbit).
+        // After lifting one finger from a pinch, revert to tap phase.
         touchPhase = 'tap'
       }
     }
