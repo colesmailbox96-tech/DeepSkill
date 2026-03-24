@@ -2148,9 +2148,21 @@ function App() {
       if (e.touches.length === 0) {
         touchPhase = 'none'
       } else if (e.touches.length === 1) {
-        // After lifting one finger from a pinch, revert to tap phase.
-        touchPhase = 'tap'
+        // One finger remains after lifting from a pinch — switch directly to
+        // orbit so the remaining finger can continue orbiting without requiring
+        // the user to lift and re-touch.
+        touchPhase = 'orbit'
+        touchLastX = e.touches[0].clientX
+        touchLastY = e.touches[0].clientY
       }
+    }
+
+    // Dedicated touchcancel handler: a system gesture (phone call, swipe-home,
+    // etc.) cancelled the touch sequence.  Reset all touch state without
+    // triggering target selection — the touch was never intentional at this point.
+    const onTouchCancel = () => {
+      tapCancelled = true
+      touchPhase = 'none'
     }
 
     // ── Phase 31 — Left-click target selection ──────────────────────────────
@@ -2173,7 +2185,7 @@ function App() {
     canvas.addEventListener('touchstart', onTouchStart, { passive: false })
     canvas.addEventListener('touchmove', onTouchMove, { passive: false })
     canvas.addEventListener('touchend', onTouchEnd, { passive: false })
-    canvas.addEventListener('touchcancel', onTouchEnd, { passive: false })
+    canvas.addEventListener('touchcancel', onTouchCancel)
 
     window.addEventListener('resize', updateViewport)
 
@@ -3452,7 +3464,7 @@ function App() {
       canvas.removeEventListener('touchstart', onTouchStart)
       canvas.removeEventListener('touchmove', onTouchMove)
       canvas.removeEventListener('touchend', onTouchEnd)
-      canvas.removeEventListener('touchcancel', onTouchEnd)
+      canvas.removeEventListener('touchcancel', onTouchCancel)
       canvas.removeEventListener('click', onCanvasClick)
       scene.traverse((object) => {
         const renderObject = object as THREE.Object3D & {
