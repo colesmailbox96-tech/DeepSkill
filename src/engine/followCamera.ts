@@ -2,14 +2,14 @@ import * as THREE from 'three'
 
 // ─── Tuneable constants ───────────────────────────────────────────────────────
 
-/** Minimum pitch (radians) – keeps the horizon just visible. */
-export const PHI_MIN = 0.08
-/** Maximum pitch (radians) – avoids flipping over the top. */
-export const PHI_MAX = Math.PI / 2 - 0.05
+/** Minimum pitch (radians) – near top-down, but not fully vertical. */
+export const PHI_MIN = 0.2
+/** Maximum pitch (radians) – prevents dropping to low-angle combat framing. */
+export const PHI_MAX = 1.1
 /** Closest the camera can get to the player (metres). */
-export const RADIUS_MIN = 2
+export const RADIUS_MIN = 6
 /** Furthest the camera can pull back (metres). */
-export const RADIUS_MAX = 18
+export const RADIUS_MAX = 20
 /** Angle sensitivity for pointer-drag orbit (radians per pixel). */
 const ORBIT_SENSITIVITY = 0.005
 /** Angle sensitivity for touch-drag orbit on mobile (radians per pixel).
@@ -17,18 +17,26 @@ const ORBIT_SENSITIVITY = 0.005
  *  screen distance so the same pixel-delta formula feels too fast. */
 export const TOUCH_ORBIT_SENSITIVITY = 0.003
 /** Zoom speed (radius units per normalised scroll notch). */
-const ZOOM_SPEED = 1.0
+const ZOOM_SPEED = 0.7
 /** Smoothing factor – higher = snappier camera. */
 const LERP_FACTOR = 10
-/** Height above the player's base to use as the look-at point. */
-const LOOK_RAISE = 1.0
+/** Height above the player's base used as the follow target. */
+const FOLLOW_HEIGHT = 1.6
+/** Horizontal shoulder offset (metres), applied on camera-right axis. */
+const SHOULDER_OFFSET = 1.2
 /** Pull the camera in this many metres from a collision surface. */
 const COLLISION_MARGIN = 0.25
+/** Absolute minimum radius used when collision clipping is active. */
+const COLLISION_RADIUS_MIN = 0.75
+/** Follow smoothing factor – higher = tighter target tracking. */
+const FOLLOW_LERP_FACTOR = 8
 
 // ─── Per-frame scratch objects (no per-frame heap allocations) ────────────────
 
 const _offset = new THREE.Vector3()
 const _lookAt = new THREE.Vector3()
+const _desiredCameraPos = new THREE.Vector3()
+const _clampedCameraPos = new THREE.Vector3()
 const _rayDir = new THREE.Vector3()
 const _raycaster = new THREE.Raycaster()
 
@@ -47,17 +55,23 @@ export interface CameraState {
   phi: number
   /** Smoothed radius – updated each frame. */
   radius: number
+  /** Smoothed follow target to reduce jitter while moving. */
+  followTarget: THREE.Vector3
+  /** Whether followTarget has been initialized to the player's position. */
+  followInitialized: boolean
 }
 
-/** Create a default CameraState positioned behind the player at 45° pitch. */
+/** Create a default CameraState with a high-angle exploration framing. */
 export function createCameraState(): CameraState {
   return {
     thetaTarget: 0,
-    phiTarget: Math.PI / 4,
-    radiusTarget: 7,
+    phiTarget: 0.55,
+    radiusTarget: 11,
     theta: 0,
-    phi: Math.PI / 4,
-    radius: 7,
+    phi: 0.55,
+    radius: 11,
+    followTarget: new THREE.Vector3(),
+    followInitialized: false,
   }
 }
 
@@ -82,27 +96,44 @@ export function updateOrbitCamera(
   state.phi    += (state.phiTarget    - state.phi)    * t
   state.radius += (state.radiusTarget - state.radius) * t
 
-  // Look-at point: player position raised to eye height.
-  _lookAt.copy(target.position)
-  _lookAt.y += LOOK_RAISE
+  // Smooth follow target: player position raised to exploration framing height.
+  const followT = Math.min(1, FOLLOW_LERP_FACTOR * delta)
+  if (!state.followInitialized) {
+    state.followTarget.copy(target.position)
+    state.followTarget.y += FOLLOW_HEIGHT
+    state.followInitialized = true
+  } else {
+    _lookAt.copy(target.position)
+    _lookAt.y += FOLLOW_HEIGHT
+    state.followTarget.lerp(_lookAt, followT)
+  }
 
-  // Compute the spherical offset at the smoothed radius.
+  // Shoulder-offset look-at point, applied on yaw-relative right axis.
+  _lookAt.copy(state.followTarget)
+  _applyShoulderOffset(_lookAt, state.theta, SHOULDER_OFFSET)
+
+  // Compute the spherical offset at the smoothed radius and desired camera position.
   _sphereOffset(state.theta, state.phi, state.radius, _offset)
+  _desiredCameraPos.copy(_lookAt).add(_offset)
 
-  // Collision-aware radius: cast a ray from lookAt toward the camera.
-  let clippedRadius = state.radius
+  // Collision check from un-offset follow target to desired camera position.
+  _clampedCameraPos.copy(_desiredCameraPos)
   if (collidables.length > 0) {
-    _rayDir.copy(_offset).normalize()
-    _raycaster.set(_lookAt, _rayDir)
+    _rayDir.copy(_desiredCameraPos).sub(state.followTarget)
+    const rayLength = _rayDir.length()
+    if (rayLength > 0.0001) {
+      _rayDir.divideScalar(rayLength)
+      _raycaster.set(state.followTarget, _rayDir)
+      _raycaster.far = rayLength
     const hits = _raycaster.intersectObjects(collidables, true)
-    if (hits.length > 0 && hits[0].distance < state.radius) {
-      clippedRadius = Math.max(RADIUS_MIN, hits[0].distance - COLLISION_MARGIN)
-      // Recompute offset at the clipped radius.
-      _sphereOffset(state.theta, state.phi, clippedRadius, _offset)
+      if (hits.length > 0 && hits[0].distance < rayLength) {
+        const clampedDistance = Math.max(COLLISION_RADIUS_MIN, hits[0].distance - COLLISION_MARGIN)
+        _clampedCameraPos.copy(state.followTarget).addScaledVector(_rayDir, clampedDistance)
+      }
     }
   }
 
-  camera.position.copy(_lookAt).add(_offset)
+  camera.position.copy(_clampedCameraPos)
   camera.lookAt(_lookAt)
 }
 
@@ -153,4 +184,10 @@ function _sphereOffset(
     r * Math.cos(phi),
     r * Math.sin(phi) * Math.cos(theta),
   )
+}
+
+/** Apply a yaw-relative shoulder offset on the horizontal camera-right axis. */
+function _applyShoulderOffset(out: THREE.Vector3, theta: number, shoulder: number): void {
+  out.x += Math.cos(theta) * shoulder
+  out.z -= Math.sin(theta) * shoulder
 }
