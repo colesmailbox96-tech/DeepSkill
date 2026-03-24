@@ -10,6 +10,8 @@
  * from the restored stock and reset to their initial supply on every load.
  * Phase 86 — task state (active + completed records) is now also saved so
  * staged quest progression persists across sessions.
+ * Phase 90 — save schema versioning + step-by-step migration runner +
+ * corruption recovery with backup fallback + player notifications.
  * Large/transient state (NPC positions, combat, active sessions) is
  * intentionally excluded — it is rebuilt from defaults on each load.
  */
@@ -18,16 +20,27 @@ import { useGameStore } from './useGameStore'
 import { useShopStore } from './useShopStore'
 import { useFactionStore } from './useFactionStore'
 import { useTaskStore } from './useTaskStore'
+import { useNotifications } from './useNotifications'
 import type { TaskRecord } from './useTaskStore'
 import { getAllVendorDefs } from '../engine/shop'
 import { getTask } from '../engine/task'
 import type { PlayerStats, InventoryState, EquipmentState, Settings } from './useGameStore'
 import type { SkillsState } from './useGameStore'
 
+/** Current save schema version. Increment whenever the snapshot shape changes. */
+const SAVE_VERSION = 2
+
+/** Primary localStorage key — name kept from Phase 50 so existing saves survive. */
 const SAVE_KEY = 'veilmarch_save_v1'
 
+/**
+ * Secondary key — written on every successful save so a corrupt primary can
+ * be recovered from the last-known-good snapshot.
+ */
+const BACKUP_KEY = 'veilmarch_save_backup'
+
 interface SaveSnapshot {
-  version: 1
+  version: number
   playerStats: PlayerStats
   inventory: InventoryState
   skills: SkillsState
@@ -49,6 +62,70 @@ interface SaveSnapshot {
   }
 }
 
+// ── Save migrations ───────────────────────────────────────────────────────────
+
+type MigrateFn = (raw: Record<string, unknown>) => Record<string, unknown>
+
+/**
+ * V1 → V2: no structural changes to the snapshot; this migration exists to
+ * establish the migration infrastructure.  Future phases add transforms here.
+ */
+function migrateV1(raw: Record<string, unknown>): Record<string, unknown> {
+  return { ...raw, version: 2 }
+}
+
+/**
+ * Step-by-step migration table.
+ * Key = source version, value = function that upgrades it to key+1.
+ */
+const MIGRATION_TABLE: Record<number, MigrateFn> = {
+  1: migrateV1,
+}
+
+/**
+ * Given a raw parsed value (unknown version), repeatedly apply migration
+ * functions until the version matches SAVE_VERSION.
+ *
+ * Returns the migrated snapshot, or null when:
+ *  - the input is not a plain object
+ *  - the version field is missing / non-numeric
+ *  - no migration path exists from the detected version
+ */
+function applySaveMigrations(raw: unknown): SaveSnapshot | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+  let obj = raw as Record<string, unknown>
+
+  if (typeof obj.version !== 'number' || !Number.isFinite(obj.version)) return null
+
+  let version = obj.version as number
+
+  // A save written by a future build — accept without migration (fields we
+  // don't know about are silently ignored during hydration).
+  if (version > SAVE_VERSION) {
+    console.warn(`[Save] loading future-version save (v${version}); some features may behave unexpectedly.`)
+    return obj as unknown as SaveSnapshot
+  }
+
+  while (version < SAVE_VERSION) {
+    const migrate = MIGRATION_TABLE[version]
+    if (!migrate) {
+      console.warn(`[Save] no migration path from v${version} — save is too old to recover.`)
+      return null
+    }
+    obj = migrate(obj)
+    const nextVersion = obj.version
+    // Guard: every migration must advance the version; a bad implementation
+    // that leaves version unchanged would cause an infinite loop.
+    if (typeof nextVersion !== 'number' || !Number.isFinite(nextVersion) || nextVersion <= version) {
+      console.warn(`[Save] migration from v${version} did not advance version — aborting.`)
+      return null
+    }
+    version = nextVersion
+  }
+
+  return obj as unknown as SaveSnapshot
+}
+
 /** Runtime guard: verify that `v` is a finite, non-NaN number. */
 function isValidNumber(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v)
@@ -64,7 +141,7 @@ export function useSaveGame(): () => boolean {
       const { rep: factionRep } = useFactionStore.getState()
       const { active: taskActive, completed: taskCompleted } = useTaskStore.getState()
       const snapshot: SaveSnapshot = {
-        version: 1,
+        version: SAVE_VERSION,
         playerStats,
         inventory,
         skills,
@@ -74,7 +151,10 @@ export function useSaveGame(): () => boolean {
         factionRep,
         taskState: { active: taskActive, completed: taskCompleted },
       }
-      localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot))
+      const json = JSON.stringify(snapshot)
+      localStorage.setItem(SAVE_KEY, json)
+      // Keep a backup copy so corruption of the primary can be recovered.
+      try { localStorage.setItem(BACKUP_KEY, json) } catch { /* quota edge-case */ }
       return true
     } catch (err) {
       // localStorage can throw in private-browsing modes or when the quota is full.
@@ -86,18 +166,89 @@ export function useSaveGame(): () => boolean {
 
 /**
  * Read a saved snapshot from localStorage and hydrate the store.
- * Silently no-ops if no save exists or the data is malformed — the
- * game simply starts from its default state.
+ *
+ * Load order:
+ *  1. Try the primary save key; run migrations to bring it to SAVE_VERSION.
+ *  2. If the primary is absent, corrupt, or unmigrateable, try the backup key.
+ *  3. If both fail, start from defaults and notify the player.
+ *
+ * Corruption is always surfaced via a toast notification instead of a silent
+ * no-op so the player knows their save was affected.
  */
 export function useLoadGame(): () => void {
   return useCallback(() => {
+    /** Attempt to read, parse, and migrate a snapshot from `storageKey`.
+     *  Returns the migrated snapshot and a flag indicating if migrations ran,
+     *  or null on any failure. */
+    function tryRead(storageKey: string): { snapshot: SaveSnapshot; wasMigrated: boolean } | null {
+      try {
+        const raw = localStorage.getItem(storageKey)
+        if (!raw) return null
+        const parsed: unknown = JSON.parse(raw)
+        const originalVersion =
+          parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+            ? (parsed as Record<string, unknown>).version
+            : undefined
+        const snapshot = applySaveMigrations(parsed)
+        if (!snapshot) return null
+        const wasMigrated =
+          typeof originalVersion === 'number' &&
+          originalVersion < SAVE_VERSION &&
+          snapshot.version === SAVE_VERSION
+        return { snapshot, wasMigrated }
+      } catch {
+        return null
+      }
+    }
+
+    const notify = useNotifications.getState().push
+
+    let snapshot: SaveSnapshot | null = null
+    let usedBackup = false
+    let migrated = false
+
+    const primaryResult = tryRead(SAVE_KEY)
+    if (primaryResult !== null) {
+      snapshot = primaryResult.snapshot
+      migrated = primaryResult.wasMigrated
+    } else {
+      // Primary missing or unreadable — try backup.
+      const backupResult = tryRead(BACKUP_KEY)
+      if (backupResult !== null) {
+        snapshot = backupResult.snapshot
+        usedBackup = true
+        migrated = backupResult.wasMigrated
+      }
+    }
+
+    if (snapshot === null) {
+      // Both primary and backup are absent or corrupt; check whether data
+      // existed at all (vs. a genuine first-run with no save).
+      let hadData = false
+      try {
+        hadData =
+          localStorage.getItem(SAVE_KEY) !== null ||
+          localStorage.getItem(BACKUP_KEY) !== null
+      } catch {
+        hadData = false
+      }
+      if (hadData) {
+        notify('⚠ Save data could not be loaded — starting fresh.', 'warning')
+        console.warn('[Load] both primary and backup saves are unreadable.')
+      }
+      return
+    }
+
+    if (usedBackup) {
+      notify('⚠ Save was corrupted — restored from last backup.', 'warning')
+      console.warn('[Load] primary save corrupted; recovered from backup.')
+    } else if (migrated) {
+      notify('ℹ Save data updated to current format.', 'info')
+    }
+
+    // ── Hydrate store from validated snapshot ──────────────────────────────
+
     try {
-      const raw = localStorage.getItem(SAVE_KEY)
-      if (!raw) return
-
-      const snapshot = JSON.parse(raw) as Partial<SaveSnapshot>
-      if (snapshot.version !== 1) return
-
       const store = useGameStore.getState()
 
       // Restore full playerStats with field-level validation so a corrupt
@@ -272,24 +423,29 @@ export function useLoadGame(): () => void {
         }
       }
     } catch (err) {
-      console.warn('[Load] failed to restore game state:', err)
+      notify('⚠ An error occurred while loading — some progress may be lost.', 'warning')
+      console.warn('[Load] failed to hydrate game state:', err)
     }
   }, [])
 }
 
-/** Returns true if a save snapshot exists in localStorage. */
+/** Returns true if a save snapshot exists in localStorage (primary or backup). */
 export function hasSaveData(): boolean {
   try {
-    return localStorage.getItem(SAVE_KEY) !== null
+    return (
+      localStorage.getItem(SAVE_KEY) !== null ||
+      localStorage.getItem(BACKUP_KEY) !== null
+    )
   } catch {
     return false
   }
 }
 
-/** Erase the persisted save snapshot. */
+/** Erase the persisted save snapshot (both primary and backup). */
 export function clearSaveData(): void {
   try {
     localStorage.removeItem(SAVE_KEY)
+    localStorage.removeItem(BACKUP_KEY)
   } catch {
     /* no-op in restricted environments */
   }
