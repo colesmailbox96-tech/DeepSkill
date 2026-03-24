@@ -254,6 +254,16 @@ import {
 } from './engine/daynight'
 import { useDayNightStore } from './store/useDayNightStore'
 import { DayNightHud } from './ui/hud/DayNightHud'
+import {
+  tickWeather,
+  getCurrentWeather,
+  getWeatherTransitionMessage,
+  WEATHER_FOG_MULTIPLIER,
+  WEATHER_AMBIENT_MULTIPLIER,
+  WEATHER_DIRECTIONAL_MULTIPLIER,
+} from './engine/weather'
+import { useWeatherStore } from './store/useWeatherStore'
+import { WeatherHud } from './ui/hud/WeatherHud'
 import './App.css'
 
 // Register NPC dialogue trees once at module load time.
@@ -3033,20 +3043,35 @@ function App() {
       updateRegionLOD(player.mesh.position, regionLODEntries)
 
       // Phase 92 — Day/Night Cycle: advance time and update scene lighting.
+      // Phase 95 — Weather System: tick weather, apply multipliers on top.
       {
         dayNightTime = tickDayNight(dayNightTime, delta)
         const newPeriod = getPeriodName(dayNightTime)
 
+        // Phase 95 — advance weather simulation; capture transition if any.
+        const weatherTransition = tickWeather(delta)
+        if (weatherTransition !== null) {
+          useWeatherStore.getState().setWeather(weatherTransition)
+          useNotifications.getState().push(getWeatherTransitionMessage(weatherTransition), 'info')
+        }
+
+        // Retrieve current weather multipliers so lighting and fog reflect
+        // both the time-of-day and the weather condition simultaneously.
+        const weather = getCurrentWeather()
+        const fogMult  = WEATHER_FOG_MULTIPLIER[weather]
+        const ambMult  = WEATHER_AMBIENT_MULTIPLIER[weather]
+        const dirMult  = WEATHER_DIRECTIONAL_MULTIPLIER[weather]
+
         // Update Three.js lights and scene background/fog each frame, reusing
         // pre-allocated THREE.Color instances to avoid per-frame GC pressure.
         ambientLight.color.copy(getAmbientColor(dayNightTime, _ambientColorScratch))
-        ambientLight.intensity = getAmbientIntensity(dayNightTime)
+        ambientLight.intensity = getAmbientIntensity(dayNightTime) * ambMult
         directionalLight.color.copy(getDirectionalColor(dayNightTime, _directionalColorScratch))
-        directionalLight.intensity = getDirectionalIntensity(dayNightTime)
+        directionalLight.intensity = getDirectionalIntensity(dayNightTime) * dirMult
         ;(scene.background as THREE.Color).copy(getSkyColor(dayNightTime, _skyColorScratch))
         if (scene.fog instanceof THREE.FogExp2) {
           scene.fog.color.copy(getFogColor(dayNightTime, _fogColorScratch))
-          scene.fog.density = getFogDensity(dayNightTime)
+          scene.fog.density = getFogDensity(dayNightTime) * fogMult
         }
 
         // Push a notification when the period changes.
@@ -3522,6 +3547,8 @@ function App() {
           <MinimapHud />
           {/* Phase 92 — Day/Night clock */}
           <DayNightHud />
+          {/* Phase 95 — Weather condition widget */}
+          <WeatherHud />
           {/* Phase 76 — Faction standings panel */}
           <FactionPanel />
           {/* Mobile gesture controls (hidden on pointer:fine devices) */}
