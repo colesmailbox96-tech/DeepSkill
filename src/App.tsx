@@ -566,6 +566,13 @@ function App() {
     let dayNightTime = initHour
     // Track the last period so we can fire a notification on each transition.
     let prevDayPeriod = getPeriodName(initHour)
+    // Track the last store-synced minute to throttle Zustand updates.
+    let prevDayNightMinute = Math.floor(initHour * 60)
+    // Reusable THREE.Color instances to avoid per-frame heap allocations.
+    const _skyColorScratch         = new THREE.Color()
+    const _ambientColorScratch     = new THREE.Color()
+    const _directionalColorScratch = new THREE.Color()
+    const _fogColorScratch         = new THREE.Color()
 
     // Phase 07 — Hushwood settlement blockout; Phase 08 — NPC placement
     const { collidables, interactables, npcs } = buildHushwood(scene)
@@ -2975,14 +2982,15 @@ function App() {
         dayNightTime = tickDayNight(dayNightTime, delta)
         const newPeriod = getPeriodName(dayNightTime)
 
-        // Update Three.js lights and scene background/fog each frame.
-        ambientLight.color.copy(getAmbientColor(dayNightTime))
+        // Update Three.js lights and scene background/fog each frame, reusing
+        // pre-allocated THREE.Color instances to avoid per-frame GC pressure.
+        ambientLight.color.copy(getAmbientColor(dayNightTime, _ambientColorScratch))
         ambientLight.intensity = getAmbientIntensity(dayNightTime)
-        directionalLight.color.copy(getDirectionalColor(dayNightTime))
+        directionalLight.color.copy(getDirectionalColor(dayNightTime, _directionalColorScratch))
         directionalLight.intensity = getDirectionalIntensity(dayNightTime)
-        ;(scene.background as THREE.Color).copy(getSkyColor(dayNightTime))
+        ;(scene.background as THREE.Color).copy(getSkyColor(dayNightTime, _skyColorScratch))
         if (scene.fog instanceof THREE.FogExp2) {
-          scene.fog.color.copy(getFogColor(dayNightTime))
+          scene.fog.color.copy(getFogColor(dayNightTime, _fogColorScratch))
           scene.fog.density = getFogDensity(dayNightTime)
         }
 
@@ -2998,9 +3006,13 @@ function App() {
           prevDayPeriod = newPeriod
         }
 
-        // Keep the Zustand store in sync for the HUD (throttled: every ~1 s is
-        // fine for a clock display so we use a coarse integer-hour check).
-        useDayNightStore.getState().setTime(dayNightTime)
+        // Keep the Zustand store in sync for the HUD.  Only update when the
+        // displayed minute changes to avoid triggering React re-renders at 60 fps.
+        const currentMinute = Math.floor(dayNightTime * 60)
+        if (currentMinute !== prevDayNightMinute) {
+          useDayNightStore.getState().setTime(dayNightTime)
+          prevDayNightMinute = currentMinute
+        }
       }
 
       // Phase 54 — Update minimap store with current player position and facing.

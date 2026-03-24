@@ -20,7 +20,6 @@ export function DayNightHud() {
   return (
     <div
       className="hud-daynight"
-      role="status"
       aria-label={`Time of day: ${clock}, ${label}`}
     >
       <span className="hud-daynight__icon" aria-hidden="true">{icon}</span>

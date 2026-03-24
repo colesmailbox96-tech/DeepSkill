@@ -177,19 +177,31 @@ const KEYFRAMES: Keyframe[] = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Linear interpolation of two packed hex colours, returning a THREE.Color. */
-function lerpColor(hexA: number, hexB: number, t: number): THREE.Color {
+/**
+ * Linear interpolation of two packed hex colours.
+ * Writes into `target` when provided (avoids a heap allocation); otherwise
+ * allocates and returns a new THREE.Color.  Use the target-write form in
+ * hot paths such as per-frame render loops.
+ */
+function lerpColor(
+  hexA: number,
+  hexB: number,
+  t: number,
+  target?: THREE.Color,
+): THREE.Color {
   const r1 = (hexA >> 16) & 0xff
   const g1 = (hexA >> 8) & 0xff
   const b1 = hexA & 0xff
   const r2 = (hexB >> 16) & 0xff
   const g2 = (hexB >> 8) & 0xff
   const b2 = hexB & 0xff
-  return new THREE.Color(
-    ((r1 + (r2 - r1) * t) / 255),
-    ((g1 + (g2 - g1) * t) / 255),
-    ((b1 + (b2 - b1) * t) / 255),
+  const out = target ?? new THREE.Color()
+  out.setRGB(
+    (r1 + (r2 - r1) * t) / 255,
+    (g1 + (g2 - g1) * t) / 255,
+    (b1 + (b2 - b1) * t) / 255,
   )
+  return out
 }
 
 /**
@@ -235,16 +247,16 @@ export function getPeriodName(hour: number): DayPeriod {
   return 'night'
 }
 
-/** Interpolated sky (scene background) colour for `hour`. */
-export function getSkyColor(hour: number): THREE.Color {
+/** Interpolated sky (scene background) colour for `hour`. Writes into `target` if provided. */
+export function getSkyColor(hour: number, target?: THREE.Color): THREE.Color {
   const { a, b, t } = findBracket(hour)
-  return lerpColor(a.sky, b.sky, t)
+  return lerpColor(a.sky, b.sky, t, target)
 }
 
-/** Interpolated ambient light colour for `hour`. */
-export function getAmbientColor(hour: number): THREE.Color {
+/** Interpolated ambient light colour for `hour`. Writes into `target` if provided. */
+export function getAmbientColor(hour: number, target?: THREE.Color): THREE.Color {
   const { a, b, t } = findBracket(hour)
-  return lerpColor(a.ambientColor, b.ambientColor, t)
+  return lerpColor(a.ambientColor, b.ambientColor, t, target)
 }
 
 /** Interpolated ambient light intensity for `hour`. */
@@ -253,10 +265,10 @@ export function getAmbientIntensity(hour: number): number {
   return a.ambientIntensity + (b.ambientIntensity - a.ambientIntensity) * t
 }
 
-/** Interpolated directional (sun) light colour for `hour`. */
-export function getDirectionalColor(hour: number): THREE.Color {
+/** Interpolated directional (sun) light colour for `hour`. Writes into `target` if provided. */
+export function getDirectionalColor(hour: number, target?: THREE.Color): THREE.Color {
   const { a, b, t } = findBracket(hour)
-  return lerpColor(a.directionalColor, b.directionalColor, t)
+  return lerpColor(a.directionalColor, b.directionalColor, t, target)
 }
 
 /** Interpolated directional (sun) light intensity for `hour`. */
@@ -265,10 +277,10 @@ export function getDirectionalIntensity(hour: number): number {
   return a.directionalIntensity + (b.directionalIntensity - a.directionalIntensity) * t
 }
 
-/** Interpolated exponential fog colour for `hour`. */
-export function getFogColor(hour: number): THREE.Color {
+/** Interpolated exponential fog colour for `hour`. Writes into `target` if provided. */
+export function getFogColor(hour: number, target?: THREE.Color): THREE.Color {
   const { a, b, t } = findBracket(hour)
-  return lerpColor(a.fogColor, b.fogColor, t)
+  return lerpColor(a.fogColor, b.fogColor, t, target)
 }
 
 /** Interpolated exponential fog density for `hour`. */

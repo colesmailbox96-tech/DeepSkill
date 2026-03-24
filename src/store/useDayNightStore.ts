@@ -21,6 +21,8 @@ interface DayNightState {
 export const useDayNightStore = create<DayNightState>((set) => ({
   timeOfDay: START_HOUR,
   periodName: getPeriodName(START_HOUR),
-  setTime: (hour: number) =>
-    set({ timeOfDay: hour, periodName: getPeriodName(hour) }),
+  setTime: (hour: number) => {
+    const wrapped = ((hour % 24) + 24) % 24
+    set({ timeOfDay: wrapped, periodName: getPeriodName(wrapped) })
+  },
 }))
