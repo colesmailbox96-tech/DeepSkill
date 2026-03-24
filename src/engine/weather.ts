@@ -20,11 +20,10 @@
  * notification and sync the Zustand store.  Between transitions it returns
  * `null`.
  *
- * Light and fog multipliers are additive atop the day/night baseline: the
- * caller multiplies the day/night ambient intensity by
+ * Light and fog multipliers are multiplicative factors applied to the
+ * day/night baseline: the caller multiplies the day/night ambient intensity by
  * `WEATHER_AMBIENT_MULTIPLIER[state]` before applying it to the Three.js
  * AmbientLight, and similarly for directional intensity and fog density.
- * The sky tint is blended into the scene background colour.
  */
 
 // ─── Types ────────────────────────────────────────────────────────────────────
