@@ -5252,3 +5252,249 @@ p {
   color: #5a6070;
   text-align: right;
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Phase 89 — Accessibility / Readability Pass
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Font scale ──────────────────────────────────────────────────────────── */
+/**
+ * Three root font-size overrides applied by App.tsx when the player changes
+ * the text-size preference.  All rem-based measurements in the UI scale
+ * proportionally because they derive from the root font-size.
+ */
+html.font-scale--sm { font-size: 14px; }
+/* html.font-scale--md leaves the default browser value (16 px) intact. */
+html.font-scale--lg { font-size: 18px; }
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+/**
+ * Suppress every animation and transition when the OS `prefers-reduced-motion`
+ * media query is active *or* the player has enabled the in-game toggle
+ * (class `reduce-motion` added to <html> by App.tsx).
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1      !important;
+    transition-duration:       0.01ms !important;
+    scroll-behavior:           auto   !important;
+  }
+}
+
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration:        0.01ms !important;
+  animation-iteration-count: 1      !important;
+  transition-duration:       0.01ms !important;
+  scroll-behavior:           auto   !important;
+}
+
+/* ── Global focus indicators ─────────────────────────────────────────────── */
+/**
+ * Provide a clearly visible keyboard focus ring on every interactive element
+ * that does not already define its own :focus-visible style.
+ * Using :focus-visible keeps the ring out of the way for mouse users while
+ * still showing it for keyboard / switch-access navigation.
+ */
+:focus-visible {
+  outline: 2px solid rgba(130, 180, 255, 0.8);
+  outline-offset: 2px;
+}
+
+/* Buttons and anchors in panels already reset outline; re-apply for
+   keyboard navigation so the rule above isn't silently overridden. */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid rgba(130, 180, 255, 0.8);
+  outline-offset: 2px;
+}
+
+/* ── Hint-bar contrast lift and font-size floor ──────────────────────────── */
+/**
+ * Panel hint bars (keyboard shortcuts shown at the bottom of every panel)
+ * previously used very-low-alpha colors and sub-9 px font sizes.
+ * These overrides raise contrast to a readable level and set a 0.7 rem
+ * floor — still clearly subordinate but legible without magnification.
+ */
+.audio-panel__hint,
+.save-panel__hint,
+.equip-panel__hint,
+.journal-panel__hint,
+.smithing-panel__hint,
+.carving-panel__hint,
+.tinkering-panel__hint,
+.surveying-panel__hint,
+.warding-panel__hint,
+.cook-panel__hint,
+.tailoring-panel__hint,
+.faction-panel__hint,
+.main-menu__hint {
+  color: rgba(180, 165, 210, 0.7);
+  font-size: 0.7rem;
+}
+
+.minimap__hint {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.7rem;
+}
+
+/* ── Accessibility Settings Panel ────────────────────────────────────────── */
+/**
+ * Floating panel for reduced-motion and font-size controls.
+ * Positioned at the top-right alongside the audio panel. Toggled with the B key.
+ */
+.access-panel {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 256px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: rgba(10, 8, 18, 0.92);
+  border: 1px solid rgba(80, 130, 200, 0.35);
+  border-radius: 0.6rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
+  z-index: 10000;
+  overflow: hidden;
+  outline: none;
+}
+
+.access-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.7rem;
+  background: rgba(40, 70, 130, 0.25);
+  border-bottom: 1px solid rgba(80, 120, 200, 0.2);
+}
+
+.access-panel__title {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(160, 195, 255, 0.9);
+  letter-spacing: 0.03em;
+}
+
+.access-panel__close {
+  font-size: 0.8rem;
+  font-family: inherit;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  border: none;
+  background: transparent;
+  color: rgba(140, 165, 210, 0.6);
+  cursor: pointer;
+  transition: color 0.12s;
+  line-height: 1;
+}
+
+.access-panel__close:hover {
+  color: rgba(220, 80, 60, 0.9);
+}
+
+.access-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0.5rem 0.7rem 0.4rem;
+}
+
+.access-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0;
+}
+
+.access-panel__label {
+  font-size: 0.75rem;
+  color: rgba(160, 185, 230, 0.8);
+  flex: 1;
+  letter-spacing: 0.02em;
+}
+
+/* Reduced-motion on/off toggle */
+.access-panel__toggle {
+  font-size: 0.72rem;
+  font-family: inherit;
+  font-weight: 600;
+  padding: 0.18rem 0.6rem;
+  border-radius: 0.3rem;
+  border: 1px solid rgba(80, 120, 200, 0.4);
+  background: rgba(30, 50, 100, 0.5);
+  color: rgba(160, 190, 240, 0.85);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  min-width: 40px;
+  text-align: center;
+}
+
+.access-panel__toggle--on {
+  background: rgba(40, 130, 80, 0.5);
+  border-color: rgba(60, 180, 100, 0.5);
+  color: rgba(130, 230, 160, 0.95);
+}
+
+.access-panel__toggle:hover {
+  background: rgba(50, 80, 160, 0.65);
+  color: #a0c4ff;
+}
+
+/* Font scale button group */
+.access-panel__scale-btns {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.access-panel__scale-btn {
+  font-size: 0.7rem;
+  font-family: inherit;
+  font-weight: 600;
+  padding: 0.18rem 0.5rem;
+  border-radius: 0.3rem;
+  border: 1px solid rgba(80, 120, 200, 0.35);
+  background: rgba(30, 50, 100, 0.4);
+  color: rgba(140, 170, 220, 0.75);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.access-panel__scale-btn--active {
+  background: rgba(50, 90, 180, 0.55);
+  border-color: rgba(100, 150, 240, 0.6);
+  color: rgba(180, 210, 255, 0.95);
+}
+
+.access-panel__scale-btn:hover:not(.access-panel__scale-btn--active) {
+  background: rgba(50, 80, 160, 0.55);
+  color: #a8c8ff;
+}
+
+.access-panel__hint {
+  padding: 0.25rem 0.7rem;
+  font-size: 0.7rem;
+  color: rgba(100, 140, 210, 0.65);
+  border-top: 1px solid rgba(80, 120, 200, 0.12);
+  background: rgba(8, 6, 14, 0.5);
+  text-align: right;
+  letter-spacing: 0.02em;
+}
+
+@media (pointer: coarse) {
+  .access-panel {
+    top: auto;
+    bottom: 7.5rem;
+    right: 0.75rem;
+    width: 220px;
+  }
+}
