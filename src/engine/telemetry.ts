@@ -20,8 +20,9 @@
  *  Implementation notes
  *  ────────────────────
  *  • Ring-buffer capped at MAX_EVENTS (500) to prevent unbounded memory growth.
- *  • Timestamps are relative milliseconds from session start, not wall-clock,
- *    so they cannot be used to infer real-world timing of a tester's session.
+ *  • Timestamps use performance.now() (monotonic) relative to session start, so
+ *    they are unaffected by system-clock adjustments and cannot be used to infer
+ *    real-world wall-clock timing of a tester's session.
  *  • The module is intentionally free of React / Zustand dependencies so it
  *    can be imported anywhere without introducing framework coupling.
  */
@@ -38,7 +39,7 @@ export type TelemetryEventType =
   | 'demo_overlay_dismissed'
 
 export interface TelemetryEvent {
-  /** Monotonic milliseconds from session start. */
+  /** Monotonic milliseconds from session start (via performance.now()). */
   t: number
   /** Event category. */
   type: TelemetryEventType
@@ -50,16 +51,16 @@ export interface TelemetryEvent {
 
 const MAX_EVENTS = 500
 
-/** Absolute timestamp when telemetry was initialised (page load). */
-const SESSION_START = Date.now()
+/** Monotonic origin timestamp using performance.now() (set at module load). */
+const SESSION_START = performance.now()
 
 const _events: TelemetryEvent[] = []
 
 // ─── Core recording function ──────────────────────────────────────────────────
 
 /**
- * Record a telemetry event.  Safe to call at any time; no-ops gracefully if
- * the buffer is full (oldest entry is evicted to make room).
+ * Record a telemetry event.  Safe to call at any time; if the buffer is full,
+ * the oldest entry is evicted to make room for the new event.
  */
 export function recordEvent(
   type: TelemetryEventType,
@@ -68,7 +69,7 @@ export function recordEvent(
   if (_events.length >= MAX_EVENTS) {
     _events.shift()
   }
-  _events.push({ t: Date.now() - SESSION_START, type, data })
+  _events.push({ t: performance.now() - SESSION_START, type, data })
 }
 
 // ─── Typed convenience wrappers ───────────────────────────────────────────────
@@ -128,15 +129,15 @@ export function recordDemoOverlayDismissed(): void {
  *   console.log(exportTelemetry())
  */
 export function exportTelemetry(): string {
-  return JSON.stringify({ session_ms: Date.now() - SESSION_START, events: _events }, null, 2)
+  return JSON.stringify({ session_ms: performance.now() - SESSION_START, events: _events }, null, 2)
 }
 
 /**
- * Returns a read-only snapshot of the current event buffer.
+ * Returns a frozen shallow copy of the current event buffer.
  * Useful for in-game debug panels or unit tests.
  */
 export function getTelemetryEvents(): readonly TelemetryEvent[] {
-  return _events
+  return Object.freeze(_events.slice())
 }
 
 // ─── Initialise ───────────────────────────────────────────────────────────────
