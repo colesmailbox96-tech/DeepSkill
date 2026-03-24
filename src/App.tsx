@@ -1771,7 +1771,8 @@ function App() {
       // Panel-toggle actions whose open/close logic lives inside the component
       // (InventoryPanel / SkillsPanel / JournalPanel / LedgerPanel) — forward
       // via a synthetic key event so their built-in handlers fire as normal.
-      // Phase 93 — emit open/close UI sound for these forwarded toggles.
+      // Phase 93 — SFX is emitted inside each panel's key handler (where the
+      // next open state is known) so ui_open / ui_close plays correctly.
       if (
         action === 'toggle-inventory' ||
         action === 'toggle-skills'    ||
@@ -1779,7 +1780,6 @@ function App() {
         action === 'toggle-ledger'    ||
         action === 'toggle-faction'
       ) {
-        audioManager.playSfx('ui_open')
         dispatchPanelKey(action)
         return
       }
@@ -1871,18 +1871,21 @@ function App() {
       if (action === 'toggle-audio') {
         // Phase 89 — close accessibility panel when opening audio (mutual exclusion).
         useAccessibilityStore.getState().closePanel()
-        audioManager.playSfx('ui_open')
-        useAudioStore.getState().togglePanel()
+        const audio = useAudioStore.getState()
+        audioManager.playSfx(audio.isOpen ? 'ui_close' : 'ui_open')
+        audio.togglePanel()
         return
       }
       if (action === 'toggle-save') {
-        audioManager.playSfx('ui_open')
-        useSaveLoadStore.getState().togglePanel()
+        const saveLoad = useSaveLoadStore.getState()
+        audioManager.playSfx(saveLoad.isOpen ? 'ui_close' : 'ui_open')
+        saveLoad.togglePanel()
         return
       }
       if (action === 'toggle-map') {
-        audioManager.playSfx('ui_open')
-        useMinimapStore.getState().toggleExpanded()
+        const { isExpanded, toggleExpanded } = useMinimapStore.getState()
+        audioManager.playSfx(isExpanded ? 'ui_close' : 'ui_open')
+        toggleExpanded()
         return
       }
       if (action === 'toggle-accessibility') {

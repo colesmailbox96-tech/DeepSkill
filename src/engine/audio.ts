@@ -345,7 +345,7 @@ class AudioManager {
   private currentRegion: AudioRegion | null = null
   private currentMusicMode: MusicMode = 'peaceful'
 
-  // Phase 93 — stinger gain channel (sits in sfx chain)
+  // Phase 93 — stinger gain channel (routed via musicGain / governed by music volume)
   private stingerGain: GainNode | null = null
 
   // Music scheduler

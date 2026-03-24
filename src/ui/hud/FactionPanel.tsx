@@ -21,6 +21,7 @@ import { getAllFactions } from '../../data/factions/factionRegistry'
 import { tierFromRep, TIER_REP } from '../../store/useFactionStore'
 import type { FactionTier } from '../../store/useFactionStore'
 import { FACTION_TIER_ORDER } from '../../engine/shop'
+import { audioManager } from '../../engine/audio'
 
 // ─── Tier helpers ─────────────────────────────────────────────────────────────
 
@@ -148,9 +149,14 @@ export function FactionPanel() {
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return
       if (e.code === 'Escape' && isOpenRef.current) {
+        isOpenRef.current = false
         setIsOpen(false)
+        audioManager.playSfx('ui_close')
       } else if (e.code === 'KeyU') {
-        setIsOpen((v) => !v)
+        const next = !isOpenRef.current
+        isOpenRef.current = next
+        setIsOpen(next)
+        audioManager.playSfx(next ? 'ui_open' : 'ui_close')
       }
     }
     window.addEventListener('keydown', onKey)

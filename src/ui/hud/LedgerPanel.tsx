@@ -17,6 +17,7 @@ import { useLedgerStore } from '../../store/useLedgerStore'
 import { useNotifications } from '../../store/useNotifications'
 import { getItem } from '../../data/items/itemRegistry'
 import { LEDGER_HALL_CAPACITY, LEDGER_HALL_NAME } from '../../engine/storage'
+import { audioManager } from '../../engine/audio'
 
 type LedgerTab = 'deposit' | 'withdraw'
 
@@ -49,11 +50,14 @@ export function LedgerPanel() {
       if (e.repeat) return
       if (e.code === 'Escape' && isOpenRef.current) {
         handleClose()
+        audioManager.playSfx('ui_close')
       } else if (e.code === 'KeyL') {
         if (isOpenRef.current) {
           handleClose()
+          audioManager.playSfx('ui_close')
         } else {
           useLedgerStore.getState().openLedger()
+          audioManager.playSfx('ui_open')
         }
       }
     }
