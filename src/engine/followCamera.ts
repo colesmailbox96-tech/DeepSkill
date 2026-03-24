@@ -97,9 +97,9 @@ export function createCameraState(): CameraState {
  * and radius.  A separate damping factor is applied to zoom so scroll-wheel
  * input settles gently without affecting orbit snap.
  *
- * When the user has not orbited for `SNAP_BACK_DELAY` seconds and the player
- * is moving, the camera yaw gently drifts toward the "behind the player"
- * direction for gameplay readability.
+ * When the user has not orbited for `SNAP_BACK_DELAY` seconds, the camera yaw
+ * gently drifts toward the "behind the player" direction for gameplay
+ * readability.
  *
  * If `collidables` is non-empty a ray is cast from the look-at point to the
  * desired camera position; the radius is shortened to avoid clipping.
