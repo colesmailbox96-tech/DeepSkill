@@ -7,6 +7,7 @@ import { useNotifications } from '../../store/useNotifications'
 import { useFoodStore } from '../../store/useFoodStore'
 import { useCombatStore } from '../../store/useCombatStore'
 import { DEEP_RUIN_WARD_ITEM_ID } from '../../engine/warding'
+import { audioManager } from '../../engine/audio'
 
 interface TooltipState {
   item: InventoryItem
@@ -65,6 +66,7 @@ export function InventoryPanel({ onActivateAreaSeal }: InventoryPanelProps = {})
         const next = !isOpenRef.current
         isOpenRef.current = next
         setIsOpen(next)
+        audioManager.playSfx(next ? 'ui_open' : 'ui_close')
         // Closing via I — clear any stale tooltip immediately.
         if (!next) setTooltip(null)
       } else if (e.code === 'Escape' && isOpenRef.current) {

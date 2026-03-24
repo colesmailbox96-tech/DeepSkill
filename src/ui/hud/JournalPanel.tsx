@@ -40,6 +40,7 @@ import { getItem } from '../../data/items/itemRegistry'
 import { getFaction } from '../../data/factions/factionRegistry'
 import type { TaskRecord } from '../../store/useTaskStore'
 import { useTaskStore } from '../../store/useTaskStore'
+import { audioManager } from '../../engine/audio'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -185,6 +186,7 @@ export function JournalPanel() {
         const next = !isOpenRef.current
         isOpenRef.current = next
         setIsOpen(next)
+        audioManager.playSfx(next ? 'ui_open' : 'ui_close')
       } else if (e.code === 'Escape' && isOpenRef.current) {
         handleClose()
       }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGameStore, type Skill } from '../../store/useGameStore'
+import { audioManager } from '../../engine/audio'
 
 interface TooltipState {
   skill: Skill
@@ -43,6 +44,7 @@ export function SkillsPanel() {
         const next = !isOpenRef.current
         isOpenRef.current = next
         setIsOpen(next)
+        audioManager.playSfx(next ? 'ui_open' : 'ui_close')
         if (!next) setTooltip(null)
       } else if (e.code === 'Escape' && isOpenRef.current) {
         handleClose()

@@ -3,6 +3,7 @@ import { BV_MIN_Z, BV_MAX_Z } from './belowglass_vaults'
 /**
  * Phase 49 — Audio Foundation
  * Phase 69 — Region-Specific Music and Ambience Pass
+ * Phase 93 — Audio Polish Pass
  *
  * A procedural audio engine built on the Web Audio API.  No external asset
  * files are needed — all sounds are synthesised via oscillators and noise
@@ -17,7 +18,8 @@ import { BV_MIN_Z, BV_MAX_Z } from './belowglass_vaults'
  *    upper-frequency character (forest air, sea spray, quarry dust, …).
  *  • Per-region peaceful music motifs — distinct melodic phrases keyed to the
  *    current AudioRegion; combat sequence is shared.
- *  • One-shot SFX for gathering, crafting, and interaction events.
+ *  • One-shot SFX for gathering, crafting, interaction, combat, and UI events.
+ *  • Region-transition stingers that play once when crossing a region boundary.
  *  • Per-channel gain nodes (master / music / sfx / ambient) that sync
  *    with useAudioStore for live volume / mute adjustment.
  *
@@ -51,6 +53,19 @@ export type SfxType =
   | 'fish_cast'
   | 'interact'
   | 'collect'
+  // Phase 93 — creature SFX
+  | 'creature_aggro'
+  | 'creature_hit'
+  | 'creature_die'
+  // Phase 93 — craft station SFX
+  | 'craft_complete'
+  | 'smith'
+  | 'cook'
+  | 'carve'
+  // Phase 93 — UI / progression SFX
+  | 'level_up'
+  | 'ui_open'
+  | 'ui_close'
 
 /** Music routing mode. */
 export type MusicMode = 'peaceful' | 'combat'
@@ -209,6 +224,8 @@ const COMBAT_SEQ: [number, number][] = [
 
 /**
  * Phase 69 — Per-region peaceful music motifs.
+ * Phase 93 — Extended sequences for more variety; reduced repetition by
+ *             lengthening the shorter phrases.
  *
  * Each region has a distinct melodic phrase using the C-major pentatonic
  * scale (indices 0–4 → C4 D4 E4 G4 A4).  The global PEACEFUL_SEQ is kept
@@ -220,53 +237,78 @@ const REGION_PEACEFUL_SEQ: Record<AudioRegion, [number, number][]> = {
   hushwood: [
     [4, 0.6], [3, 0.5], [4, 0.7], [2, 0.45],
     [3, 0.55], [4, 0.5], [0, 0.9],
+    [4, 0.55], [2, 0.45], [3, 0.65], [1, 0.5], [0, 1.0],
   ],
   // Bog: slow and murky — low notes with heavy rests; things move reluctantly
   // here.
   bog: [
     [0, 0.8], [1, 0.6], [0, 1.0], [2, 0.5],
-    [1, 0.7], [0, 0.9],
+    [1, 0.7], [0, 0.9], [2, 0.65], [1, 0.55], [0, 1.2],
   ],
   // Chapel: solemn and reverberant — step-wise ascending and descending
   // phrases, like a simple chant echoing off stone walls.
   chapel: [
     [0, 1.0], [2, 0.75], [3, 0.85], [4, 0.65],
     [3, 0.85], [2, 0.7], [0, 1.2],
+    [1, 0.9], [3, 0.8], [2, 0.75], [0, 1.3],
   ],
   // Quarry: earthy and rhythmic — mid-range notes in a steady, work-song
   // pulse.
   quarry: [
     [2, 0.3], [0, 0.35], [1, 0.3], [2, 0.4],
-    [1, 0.3], [0, 0.45],
+    [1, 0.3], [0, 0.45], [2, 0.3], [3, 0.35],
+    [2, 0.3], [1, 0.3], [0, 0.5],
   ],
   // Shoreline: flowing and arpeggic — a rising-then-falling phrase that
   // mirrors the motion of waves.
   shoreline: [
     [0, 0.4], [2, 0.35], [4, 0.45], [3, 0.35],
     [2, 0.4], [1, 0.35], [0, 0.6],
+    [2, 0.35], [4, 0.4], [3, 0.35], [2, 0.45], [0, 0.7],
   ],
   // Ashfen: brooding and minor-tinged — lower notes with irregular pacing,
   // suggesting unseen movement in the deep forest.
   ashfen: [
     [1, 0.55], [0, 0.75], [2, 0.5], [1, 0.65],
-    [0, 0.85],
+    [0, 0.85], [2, 0.6], [1, 0.7], [0, 1.0],
   ],
   // Hollow Vault: ominous and sparse — only three very slow, low notes;
   // long silences between them heighten unease.
   hollow_vault: [
     [0, 1.1], [2, 0.9], [0, 1.3],
+    [1, 1.0], [0, 1.5],
   ],
   // Phase 74 — Marrowfen: dark and dissonant — low two-note motifs interrupted
   // by long rests; the silence feels as threatening as the notes.
   marrowfen: [
     [0, 0.9], [1, 0.7], [0, 1.2], [1, 0.85],
+    [0, 1.0], [2, 0.75], [0, 1.4],
   ],
   // Phase 78 — Belowglass Vaults: eerie and crystalline — single high notes
   // with very long gaps; the tonal quality should feel like glass resonating
   // deep underground.
   belowglass_vaults: [
     [4, 0.8], [0, 1.4], [4, 0.7],
+    [3, 0.9], [0, 1.6], [4, 0.75],
   ],
+}
+
+/**
+ * Phase 93 — Short region-entry stinger notes.
+ * Each entry is a tiny 1-2 note motif that plays once when the player first
+ * enters a new region, signalling the transition without drowning the music.
+ * Index 0 = freq index in C_PENTA, index 1 = duration in seconds.
+ */
+const REGION_STINGER: Record<AudioRegion, [number, number][]> = {
+  hushwood:         [[4, 0.25], [3, 0.2]],
+  bog:              [[0, 0.3]],
+  chapel:           [[0, 0.35], [2, 0.3]],
+  quarry:           [[2, 0.2], [1, 0.2]],
+  shoreline:        [[4, 0.2], [3, 0.2], [4, 0.25]],
+  ashfen:           [[1, 0.25], [0, 0.3]],
+  hollow_vault:     [[0, 0.4]],
+  marrowfen:        [[0, 0.35], [1, 0.28]],
+  belowglass_vaults:[[4, 0.3], [0, 0.35]],
 }
 
 // ─── AudioManager ─────────────────────────────────────────────────────────────
@@ -302,6 +344,9 @@ class AudioManager {
   // State
   private currentRegion: AudioRegion | null = null
   private currentMusicMode: MusicMode = 'peaceful'
+
+  // Phase 93 — stinger gain channel (routed via musicGain / governed by music volume)
+  private stingerGain: GainNode | null = null
 
   // Music scheduler
   private musicTimer: ReturnType<typeof setInterval> | null = null
@@ -392,6 +437,13 @@ class AudioManager {
     this.airGain.connect(this.ambientGain)
     this._startAirNoise()
 
+    // Phase 93 — Stinger gain: a dedicated sub-channel so region-entry
+    // stingers are governed by the music volume knob but are slightly
+    // quieter than the main motif.
+    this.stingerGain = this.ctx.createGain()
+    this.stingerGain.gain.value = 0.6
+    this.stingerGain.connect(this.musicGain)
+
     // Start noise loop
     this._startNoise()
 
@@ -481,6 +533,10 @@ class AudioManager {
     // Phase 69 — Secondary air-noise layer level.
     this.airGain.gain.setTargetAtTime(cfg.airLevel, now, crossfadeTau)
 
+    // Phase 93 — Play a short region-entry stinger so the transition is
+    // audibly acknowledged without interrupting the main music phrase.
+    this._playStinger(region)
+
     // Phase 69 — Reset peaceful music motif so the region's phrase starts fresh.
     if (this.currentMusicMode === 'peaceful') {
       this.noteIndex = 0
@@ -513,12 +569,25 @@ class AudioManager {
     if (this.ctx.state === 'suspended') void this.ctx.resume()
 
     switch (type) {
-      case 'chop':       this._sfxChop();      break
-      case 'mine':       this._sfxMine();      break
-      case 'forage':     this._sfxForage();    break
-      case 'fish_cast':  this._sfxFishCast();  break
-      case 'interact':   this._sfxInteract();  break
-      case 'collect':    this._sfxCollect();   break
+      case 'chop':            this._sfxChop();           break
+      case 'mine':            this._sfxMine();           break
+      case 'forage':          this._sfxForage();         break
+      case 'fish_cast':       this._sfxFishCast();       break
+      case 'interact':        this._sfxInteract();       break
+      case 'collect':         this._sfxCollect();        break
+      // Phase 93 — creature SFX
+      case 'creature_aggro':  this._sfxCreatureAggro();  break
+      case 'creature_hit':    this._sfxCreatureHit();    break
+      case 'creature_die':    this._sfxCreatureDie();    break
+      // Phase 93 — craft station SFX
+      case 'craft_complete':  this._sfxCraftComplete();  break
+      case 'smith':           this._sfxSmith();          break
+      case 'cook':            this._sfxCook();           break
+      case 'carve':           this._sfxCarve();          break
+      // Phase 93 — UI / progression SFX
+      case 'level_up':        this._sfxLevelUp();        break
+      case 'ui_open':         this._sfxUiOpen();         break
+      case 'ui_close':        this._sfxUiClose();        break
     }
   }
 
@@ -553,6 +622,7 @@ class AudioManager {
     this.airSource = null
     this.airFilter = null
     this.airGain = null
+    this.stingerGain = null
     this.currentRegion = null
   }
 
@@ -822,6 +892,363 @@ class AudioManager {
       osc.stop(start + 0.25)
       osc.addEventListener('ended', () => { osc.disconnect(); env.disconnect() })
     })
+  }
+
+  // ── Phase 93 — new SFX implementations ─────────────────────────────────────
+
+  /** Creature aggro: a short, low-pitched growl/roar built from filtered noise. */
+  private _sfxCreatureAggro(): void {
+    const ctx = this.ctx!
+    const out = this.sfxGain!
+    const t = ctx.currentTime
+
+    // Low-mid noise burst — like an angry growl
+    const noiseBuf = this._makeNoiseBuffer(0.2)
+    const src = ctx.createBufferSource()
+    src.buffer = noiseBuf
+
+    const filt = ctx.createBiquadFilter()
+    filt.type = 'bandpass'
+    filt.frequency.value = 280
+    filt.Q.value = 2.5
+
+    const env = ctx.createGain()
+    env.gain.setValueAtTime(0, t)
+    env.gain.linearRampToValueAtTime(0.4, t + 0.03)
+    env.gain.exponentialRampToValueAtTime(0.001, t + 0.2)
+
+    src.connect(filt)
+    filt.connect(env)
+    env.connect(out)
+    src.start(t)
+    src.stop(t + 0.22)
+    src.addEventListener('ended', () => { src.disconnect(); filt.disconnect(); env.disconnect() })
+  }
+
+  /** Creature hits the player: sharp, high-impact thud. */
+  private _sfxCreatureHit(): void {
+    const ctx = this.ctx!
+    const out = this.sfxGain!
+    const t = ctx.currentTime
+
+    // Body-hit thud: short low-frequency noise punch
+    const noiseBuf = this._makeNoiseBuffer(0.12)
+    const src = ctx.createBufferSource()
+    src.buffer = noiseBuf
+
+    const filt = ctx.createBiquadFilter()
+    filt.type = 'lowpass'
+    filt.frequency.value = 600
+    filt.Q.value = 1.5
+
+    const env = ctx.createGain()
+    env.gain.setValueAtTime(0.55, t)
+    env.gain.exponentialRampToValueAtTime(0.001, t + 0.11)
+
+    src.connect(filt)
+    filt.connect(env)
+    env.connect(out)
+    src.start(t)
+    src.stop(t + 0.13)
+    src.addEventListener('ended', () => { src.disconnect(); filt.disconnect(); env.disconnect() })
+  }
+
+  /** Creature dies: descending tone + noise fade-out. */
+  private _sfxCreatureDie(): void {
+    const ctx = this.ctx!
+    const out = this.sfxGain!
+    const t = ctx.currentTime
+
+    // Descending pitch glide (creature collapsing)
+    const osc = ctx.createOscillator()
+    osc.type = 'sawtooth'
+    osc.frequency.setValueAtTime(340, t)
+    osc.frequency.exponentialRampToValueAtTime(60, t + 0.35)
+
+    const env = ctx.createGain()
+    env.gain.setValueAtTime(0.35, t)
+    env.gain.exponentialRampToValueAtTime(0.001, t + 0.38)
+
+    osc.connect(env)
+    env.connect(out)
+    osc.start(t)
+    osc.stop(t + 0.4)
+    osc.addEventListener('ended', () => { osc.disconnect(); env.disconnect() })
+
+    // Thin noise tail — dust/impact settling
+    const noiseBuf = this._makeNoiseBuffer(0.25)
+    const src = ctx.createBufferSource()
+    src.buffer = noiseBuf
+    const nf = ctx.createBiquadFilter()
+    nf.type = 'highpass'
+    nf.frequency.value = 1200
+    const ng = ctx.createGain()
+    ng.gain.setValueAtTime(0.15, t + 0.05)
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.3)
+    src.connect(nf)
+    nf.connect(ng)
+    ng.connect(out)
+    src.start(t + 0.05)
+    src.stop(t + 0.32)
+    src.addEventListener('ended', () => { src.disconnect(); nf.disconnect(); ng.disconnect() })
+  }
+
+  /** Generic craft completion chime: three ascending tones, brighter than collect. */
+  private _sfxCraftComplete(): void {
+    const ctx = this.ctx!
+    const out = this.sfxGain!
+    const t = ctx.currentTime
+
+    const freqs = [523.25, 659.25, 783.99] // C5, E5, G5
+    freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator()
+      osc.type = 'triangle'
+      osc.frequency.value = freq
+
+      const start = t + i * 0.08
+      const env = ctx.createGain()
+      env.gain.setValueAtTime(0, start)
+      env.gain.linearRampToValueAtTime(0.2, start + 0.012)
+      env.gain.exponentialRampToValueAtTime(0.001, start + 0.28)
+
+      osc.connect(env)
+      env.connect(out)
+      osc.start(start)
+      osc.stop(start + 0.3)
+      osc.addEventListener('ended', () => { osc.disconnect(); env.disconnect() })
+    })
+  }
+
+  /**
+   * Smithing/forging sound: heavy metallic ring with a hammer-strike attack.
+   */
+  private _sfxSmith(): void {
+    const ctx = this.ctx!
+    const out = this.sfxGain!
+    const t = ctx.currentTime
+
+    // Clanging metal ring: sharp triangle at mid-high frequency with long tail
+    const osc = ctx.createOscillator()
+    osc.type = 'triangle'
+    osc.frequency.setValueAtTime(900, t)
+    osc.frequency.exponentialRampToValueAtTime(300, t + 0.25)
+
+    const env = ctx.createGain()
+    env.gain.setValueAtTime(0.5, t)
+    env.gain.exponentialRampToValueAtTime(0.001, t + 0.35)
+
+    osc.connect(env)
+    env.connect(out)
+    osc.start(t)
+    osc.stop(t + 0.38)
+    osc.addEventListener('ended', () => { osc.disconnect(); env.disconnect() })
+
+    // Quick noise transient — the physical hammer impact
+    const noiseBuf = this._makeNoiseBuffer(0.06)
+    const src = ctx.createBufferSource()
+    src.buffer = noiseBuf
+    const filt = ctx.createBiquadFilter()
+    filt.type = 'highpass'
+    filt.frequency.value = 2000
+    const ng = ctx.createGain()
+    ng.gain.setValueAtTime(0.3, t)
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.06)
+    src.connect(filt)
+    filt.connect(ng)
+    ng.connect(out)
+    src.start(t)
+    src.stop(t + 0.07)
+    src.addEventListener('ended', () => { src.disconnect(); filt.disconnect(); ng.disconnect() })
+  }
+
+  /**
+   * Cooking/hearthcraft sound: bubbling sizzle, mid-frequency noise burst.
+   */
+  private _sfxCook(): void {
+    const ctx = this.ctx!
+    const out = this.sfxGain!
+    const t = ctx.currentTime
+
+    // Sizzle: bandpass noise at a cooking-pan frequency range
+    const noiseBuf = this._makeNoiseBuffer(0.22)
+    const src = ctx.createBufferSource()
+    src.buffer = noiseBuf
+
+    const filt = ctx.createBiquadFilter()
+    filt.type = 'bandpass'
+    filt.frequency.value = 3200
+    filt.Q.value = 0.8
+
+    const env = ctx.createGain()
+    env.gain.setValueAtTime(0, t)
+    env.gain.linearRampToValueAtTime(0.3, t + 0.04)
+    env.gain.setTargetAtTime(0.15, t + 0.1, 0.05)
+    env.gain.exponentialRampToValueAtTime(0.001, t + 0.22)
+
+    src.connect(filt)
+    filt.connect(env)
+    env.connect(out)
+    src.start(t)
+    src.stop(t + 0.25)
+    src.addEventListener('ended', () => { src.disconnect(); filt.disconnect(); env.disconnect() })
+  }
+
+  /**
+   * Carving sound: a scraping wooden rasp.
+   */
+  private _sfxCarve(): void {
+    const ctx = this.ctx!
+    const out = this.sfxGain!
+    const t = ctx.currentTime
+
+    // Woody scrape: short bandpass noise at mid frequency
+    const noiseBuf = this._makeNoiseBuffer(0.14)
+    const src = ctx.createBufferSource()
+    src.buffer = noiseBuf
+
+    const filt = ctx.createBiquadFilter()
+    filt.type = 'bandpass'
+    filt.frequency.value = 1400
+    filt.Q.value = 1.8
+
+    const env = ctx.createGain()
+    env.gain.setValueAtTime(0.28, t)
+    env.gain.exponentialRampToValueAtTime(0.001, t + 0.13)
+
+    src.connect(filt)
+    filt.connect(env)
+    env.connect(out)
+    src.start(t)
+    src.stop(t + 0.15)
+    src.addEventListener('ended', () => { src.disconnect(); filt.disconnect(); env.disconnect() })
+  }
+
+  /**
+   * Level-up fanfare: four ascending tones with a bright shimmer at the end.
+   */
+  private _sfxLevelUp(): void {
+    const ctx = this.ctx!
+    const out = this.sfxGain!
+    const t = ctx.currentTime
+
+    // Ascending pentatonic phrase: C5, E5, G5, C6
+    const fanfareFreqs = [523.25, 659.25, 783.99, 1046.5]
+    fanfareFreqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator()
+      osc.type = 'triangle'
+      osc.frequency.value = freq
+
+      const start = t + i * 0.1
+      const env = ctx.createGain()
+      env.gain.setValueAtTime(0, start)
+      env.gain.linearRampToValueAtTime(0.25, start + 0.012)
+      env.gain.exponentialRampToValueAtTime(0.001, start + (i === 3 ? 0.5 : 0.22))
+
+      osc.connect(env)
+      env.connect(out)
+      osc.start(start)
+      osc.stop(start + 0.55)
+      osc.addEventListener('ended', () => { osc.disconnect(); env.disconnect() })
+    })
+
+    // Shimmer: brief high-frequency noise burst on the final note
+    const shimmerBuf = this._makeNoiseBuffer(0.12)
+    const shimSrc = ctx.createBufferSource()
+    shimSrc.buffer = shimmerBuf
+    const shimFilt = ctx.createBiquadFilter()
+    shimFilt.type = 'highpass'
+    shimFilt.frequency.value = 6000
+    const shimEnv = ctx.createGain()
+    shimEnv.gain.setValueAtTime(0, t + 0.28)
+    shimEnv.gain.linearRampToValueAtTime(0.18, t + 0.31)
+    shimEnv.gain.exponentialRampToValueAtTime(0.001, t + 0.44)
+    shimSrc.connect(shimFilt)
+    shimFilt.connect(shimEnv)
+    shimEnv.connect(out)
+    shimSrc.start(t + 0.28)
+    shimSrc.stop(t + 0.45)
+    shimSrc.addEventListener('ended', () => { shimSrc.disconnect(); shimFilt.disconnect(); shimEnv.disconnect() })
+  }
+
+  /**
+   * UI panel open: a quick, soft upward pitch flick.
+   */
+  private _sfxUiOpen(): void {
+    const ctx = this.ctx!
+    const out = this.sfxGain!
+    const t = ctx.currentTime
+
+    const osc = ctx.createOscillator()
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(440, t)
+    osc.frequency.linearRampToValueAtTime(660, t + 0.06)
+
+    const env = ctx.createGain()
+    env.gain.setValueAtTime(0, t)
+    env.gain.linearRampToValueAtTime(0.18, t + 0.01)
+    env.gain.exponentialRampToValueAtTime(0.001, t + 0.1)
+
+    osc.connect(env)
+    env.connect(out)
+    osc.start(t)
+    osc.stop(t + 0.12)
+    osc.addEventListener('ended', () => { osc.disconnect(); env.disconnect() })
+  }
+
+  /**
+   * UI panel close: a quick, soft downward pitch flick.
+   */
+  private _sfxUiClose(): void {
+    const ctx = this.ctx!
+    const out = this.sfxGain!
+    const t = ctx.currentTime
+
+    const osc = ctx.createOscillator()
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(660, t)
+    osc.frequency.linearRampToValueAtTime(400, t + 0.06)
+
+    const env = ctx.createGain()
+    env.gain.setValueAtTime(0, t)
+    env.gain.linearRampToValueAtTime(0.15, t + 0.01)
+    env.gain.exponentialRampToValueAtTime(0.001, t + 0.1)
+
+    osc.connect(env)
+    env.connect(out)
+    osc.start(t)
+    osc.stop(t + 0.12)
+    osc.addEventListener('ended', () => { osc.disconnect(); env.disconnect() })
+  }
+
+  /**
+   * Phase 93 — Play the per-region entry stinger immediately (not through the
+   * music scheduler).  The stingerGain is attenuated so it doesn't overpower
+   * the main music.
+   */
+  private _playStinger(region: AudioRegion): void {
+    if (!this.ctx || !this.stingerGain) return
+    const notes = REGION_STINGER[region]
+    let offset = 0.05 // small lead-in after the transition
+    for (const [freqIdx, dur] of notes) {
+      const freq = C_PENTA[freqIdx]
+      const t = this.ctx.currentTime + offset
+
+      const osc = this.ctx.createOscillator()
+      osc.type = 'sine'
+      osc.frequency.value = freq
+
+      const env = this.ctx.createGain()
+      env.gain.setValueAtTime(0, t)
+      env.gain.linearRampToValueAtTime(0.15, t + 0.015)
+      env.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.8)
+
+      osc.connect(env)
+      env.connect(this.stingerGain)
+      osc.start(t)
+      osc.stop(t + dur + 0.05)
+      osc.addEventListener('ended', () => { osc.disconnect(); env.disconnect() })
+      offset += dur + 0.02
+    }
   }
 }
 
