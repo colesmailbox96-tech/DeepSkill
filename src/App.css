@@ -5565,3 +5565,44 @@ a:focus-visible,
     right: 0.75rem;
   }
 }
+
+/* ── Phase 95 — Weather HUD ─────────────────────────────────────────────── */
+
+.hud-weather {
+  position: absolute;
+  top: 300px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.28rem 0.55rem 0.32rem;
+  background: rgba(6, 8, 18, 0.72);
+  border: 1px solid rgba(120, 150, 210, 0.25);
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+  user-select: none;
+  z-index: 60;
+  min-width: 72px;
+}
+
+.hud-weather__icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.hud-weather__name {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: rgba(140, 165, 220, 0.72);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+@media (pointer: coarse) {
+  .hud-weather {
+    top: 300px;
+    right: 0.75rem;
+  }
+}
