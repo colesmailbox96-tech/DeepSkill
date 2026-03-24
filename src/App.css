@@ -5315,38 +5315,12 @@ a:focus-visible,
   outline-offset: 2px;
 }
 
-/* ── Hint-bar contrast lift ──────────────────────────────────────────────── */
+/* ── Hint-bar contrast lift and font-size floor ──────────────────────────── */
 /**
  * Panel hint bars (keyboard shortcuts shown at the bottom of every panel)
- * previously used very-low-alpha colors that failed basic contrast checks.
- * These overrides lift them to a readable level while keeping them visually
- * subordinate to the panel content above.
- */
-.audio-panel__hint,
-.save-panel__hint,
-.equip-panel__hint,
-.journal-panel__hint,
-.smithing-panel__hint,
-.carving-panel__hint,
-.tinkering-panel__hint,
-.surveying-panel__hint,
-.warding-panel__hint,
-.cook-panel__hint,
-.tailoring-panel__hint,
-.faction-panel__hint {
-  color: rgba(180, 165, 210, 0.7);
-}
-
-.minimap__hint {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-/* ── Minimum font-size floor ─────────────────────────────────────────────── */
-/**
- * Hint bars and secondary labels used 0.58–0.62 rem (≈ 9–10 px at 16 px root)
- * which is below the WCAG recommended minimum for supplementary text.
- * Override them to 0.7 rem (≈ 11 px) — still clearly subordinate to body text
- * but large enough to be legible without magnification.
+ * previously used very-low-alpha colors and sub-9 px font sizes.
+ * These overrides raise contrast to a readable level and set a 0.7 rem
+ * floor — still clearly subordinate but legible without magnification.
  */
 .audio-panel__hint,
 .save-panel__hint,
@@ -5361,14 +5335,19 @@ a:focus-visible,
 .tailoring-panel__hint,
 .faction-panel__hint,
 .main-menu__hint {
+  color: rgba(180, 165, 210, 0.7);
+  font-size: 0.7rem;
+}
+
+.minimap__hint {
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.7rem;
 }
 
 /* ── Accessibility Settings Panel ────────────────────────────────────────── */
 /**
  * Floating panel for reduced-motion and font-size controls.
- * Positioned at the top-right alongside the audio panel (they do not
- * overlap because only one is open at a time).  Toggled with the B key.
+ * Positioned at the top-right alongside the audio panel. Toggled with the B key.
  */
 .access-panel {
   position: absolute;

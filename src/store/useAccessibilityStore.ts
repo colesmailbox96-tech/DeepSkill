@@ -9,9 +9,9 @@
  *   Mirrors `prefers-reduced-motion: reduce` for users who cannot set the
  *   OS-level media query.
  *
- * - fontScale: applies a `font-scale--sm/md/lg` class to <html> that
- *   overrides the root font-size (14 / 16 / 18 px), scaling every rem-based
- *   measurement in the game UI proportionally.
+ * - fontScale: controls the root font-size (14 / 16 / 18 px) used for rems.
+ *   For `sm` / `lg`, a `font-scale--sm` / `font-scale--lg` class is applied
+ *   to <html>; `md` uses the default root font-size with no extra class.
  */
 import { create } from 'zustand'
 

@@ -198,6 +198,7 @@ import { DarknessHud } from './ui/hud/DarknessHud'
 import { AudioSettingsPanel } from './ui/hud/AudioSettingsPanel'
 import { AccessibilityPanel } from './ui/hud/AccessibilityPanel'
 import { useAccessibilityStore } from './store/useAccessibilityStore'
+import type { FontScale } from './store/useAccessibilityStore'
 import { audioManager, getAudioRegion } from './engine/audio'
 import type { AudioRegion } from './engine/audio'
 import { useAudioStore } from './store/useAudioStore'
@@ -1804,6 +1805,8 @@ function App() {
         return
       }
       if (action === 'toggle-audio') {
+        // Phase 89 — close accessibility panel when opening audio (mutual exclusion).
+        useAccessibilityStore.getState().closePanel()
         useAudioStore.getState().togglePanel()
         return
       }
@@ -1816,6 +1819,8 @@ function App() {
         return
       }
       if (action === 'toggle-accessibility') {
+        // Close audio panel when opening accessibility (mutual exclusion).
+        useAudioStore.getState().closePanel()
         useAccessibilityStore.getState().togglePanel()
         return
       }
@@ -1833,8 +1838,14 @@ function App() {
       // still permitted so the Settings button in the menu can open the audio
       // panel via keyboard as well.
       if (isMenuVisible) {
-        if (e.code === 'KeyM') useAudioStore.getState().togglePanel()
-        if (e.code === 'KeyB') useAccessibilityStore.getState().togglePanel()
+        if (e.code === 'KeyM') {
+          useAccessibilityStore.getState().closePanel()
+          useAudioStore.getState().togglePanel()
+        }
+        if (e.code === 'KeyB') {
+          useAudioStore.getState().closePanel()
+          useAccessibilityStore.getState().togglePanel()
+        }
         return
       }
       keys.add(e.code)
@@ -2118,7 +2129,7 @@ function App() {
     })
 
     // Phase 89 — apply accessibility preferences to <html> whenever they change.
-    const applyAccessibility = (reducedMotion: boolean, fontScale: string) => {
+    const applyAccessibility = (reducedMotion: boolean, fontScale: FontScale) => {
       const html = document.documentElement
       html.classList.toggle('reduce-motion', reducedMotion)
       html.classList.remove('font-scale--sm', 'font-scale--md', 'font-scale--lg')
