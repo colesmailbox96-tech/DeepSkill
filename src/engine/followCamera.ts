@@ -171,7 +171,7 @@ export function updateOrbitCamera(
       _rayDir.divideScalar(rayLength)
       _raycaster.set(state.followTarget, _rayDir)
       _raycaster.far = rayLength
-    const hits = _raycaster.intersectObjects(collidables, true)
+      const hits = _raycaster.intersectObjects(collidables, true)
       if (hits.length > 0 && hits[0].distance < rayLength) {
         const clampedDistance = Math.max(COLLISION_RADIUS_MIN, hits[0].distance - COLLISION_MARGIN)
         _clampedCameraPos.copy(state.followTarget).addScaledVector(_rayDir, clampedDistance)
