@@ -450,9 +450,10 @@ function App() {
     useDemoStore.getState().setWelcomeSeen(false)
     hideMenu()
     // Phase 86 — brief welcome hint pointing the player toward their first step.
+    // Phase 97 — improved intro message to better set the demo scene.
     useNotifications
       .getState()
-      .push('Find Aldric the Village Elder — he wants a word before you head south.', 'info')
+      .push('You arrive in Hushwood. Find Aldric the Village Elder — he has your first task.', 'info')
   }
 
   // Auto-save every 60 seconds, but only after the player has entered the world.
