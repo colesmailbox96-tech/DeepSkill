@@ -5606,3 +5606,216 @@ a:focus-visible,
     right: 0.75rem;
   }
 }
+
+/* ─── Phase 96 — Demo Welcome Overlay ───────────────────────────────────────
+ *
+ * Full-screen modal shown once per new game. Presents the public demo slice:
+ * available regions, included skills, active questlines, and the content lock
+ * list. Dismissed by "Begin Adventure" button.
+ */
+.demo-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 14, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.demo-overlay__panel {
+  background: rgba(10, 14, 28, 0.97);
+  border: 1px solid rgba(120, 150, 210, 0.3);
+  border-radius: 10px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.75);
+  padding: 2rem 2.25rem 1.75rem;
+  max-width: 780px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.demo-overlay__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.demo-overlay__badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(160, 200, 255, 0.55);
+  border: 1px solid rgba(120, 150, 210, 0.3);
+  border-radius: 3px;
+  padding: 0.15rem 0.55rem;
+}
+
+.demo-overlay__title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: rgba(210, 230, 255, 0.95);
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.demo-overlay__subtitle {
+  font-size: 0.85rem;
+  color: rgba(150, 175, 220, 0.7);
+  max-width: 540px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.demo-overlay__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.demo-overlay__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.demo-overlay__section--lock {
+  grid-column: 1 / -1;
+}
+
+.demo-overlay__section-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(140, 190, 255, 0.65);
+  margin: 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(100, 130, 200, 0.2);
+}
+
+.demo-overlay__section-title--lock {
+  color: rgba(200, 140, 120, 0.6);
+  border-bottom-color: rgba(200, 140, 120, 0.2);
+}
+
+.demo-overlay__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.demo-overlay__list--skills {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.demo-overlay__list-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.demo-overlay__item-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(200, 220, 255, 0.88);
+}
+
+.demo-overlay__item-desc {
+  font-size: 0.72rem;
+  color: rgba(140, 165, 215, 0.6);
+  line-height: 1.4;
+}
+
+.demo-overlay__skill-chip {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+
+.demo-overlay__skill-chip--gathering {
+  background: rgba(40, 80, 50, 0.55);
+  border-color: rgba(80, 160, 100, 0.3);
+  color: rgba(140, 210, 150, 0.9);
+}
+
+.demo-overlay__skill-chip--processing {
+  background: rgba(60, 50, 20, 0.55);
+  border-color: rgba(160, 130, 60, 0.3);
+  color: rgba(210, 185, 110, 0.9);
+}
+
+.demo-overlay__lock-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+}
+
+.demo-overlay__lock-item {
+  font-size: 0.72rem;
+  color: rgba(180, 140, 130, 0.65);
+  padding: 0.15rem 0.45rem;
+  background: rgba(80, 30, 20, 0.25);
+  border: 1px solid rgba(160, 80, 60, 0.2);
+  border-radius: 3px;
+}
+
+.demo-overlay__btn {
+  align-self: center;
+  padding: 0.65rem 2.2rem;
+  background: rgba(60, 100, 180, 0.7);
+  border: 1px solid rgba(100, 150, 240, 0.45);
+  border-radius: 6px;
+  color: rgba(210, 230, 255, 0.95);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.demo-overlay__btn:hover {
+  background: rgba(80, 120, 210, 0.8);
+  border-color: rgba(130, 170, 255, 0.6);
+}
+
+.demo-overlay__btn:focus-visible {
+  outline: 2px solid rgba(130, 170, 255, 0.8);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .demo-overlay__columns {
+    grid-template-columns: 1fr;
+  }
+
+  .demo-overlay__section--lock {
+    grid-column: 1;
+  }
+
+  .demo-overlay__panel {
+    padding: 1.25rem 1rem 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-overlay__btn {
+    transition: none;
+  }
+}
