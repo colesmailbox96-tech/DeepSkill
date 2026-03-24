@@ -264,6 +264,8 @@ import {
 } from './engine/weather'
 import { useWeatherStore } from './store/useWeatherStore'
 import { WeatherHud } from './ui/hud/WeatherHud'
+import { useDemoStore } from './store/useDemoStore'
+import { DemoWelcomeOverlay } from './ui/hud/DemoWelcomeOverlay'
 import './App.css'
 
 // Register NPC dialogue trees once at module load time.
@@ -319,6 +321,8 @@ function App() {
   // The check guards against re-accepting the intro task when continuing a
   // saved game where task state has already been restored from the snapshot.
   const menuVisible = useMainMenuStore((s) => s.isVisible)
+  // Phase 96 — subscribe to demo welcome state so the overlay renders reactively.
+  const demoWelcomeSeen = useDemoStore((s) => s.welcomeSeen)
   useEffect(() => {
     if (menuVisible) return
     const { active, completed } = useTaskStore.getState()
@@ -442,6 +446,8 @@ function App() {
     useFactionStore.getState().resetToDefaults()
     // Phase 86 — reset task state so the player starts with a clean journal.
     useTaskStore.setState({ active: [], completed: [] })
+    // Phase 96 — reset demo welcome so the overlay appears for each new game.
+    useDemoStore.getState().setWelcomeSeen(false)
     hideMenu()
     // Phase 86 — brief welcome hint pointing the player toward their first step.
     useNotifications
@@ -3567,6 +3573,8 @@ function App() {
             onNewGame={handleNewGame}
           />
         )}
+        {/* Phase 96 — Demo welcome overlay (shown once per new game when menu is gone) */}
+        {!menuVisible && !demoWelcomeSeen && <DemoWelcomeOverlay />}
       </div>
     </main>
   )
