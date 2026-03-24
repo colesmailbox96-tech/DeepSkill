@@ -212,6 +212,12 @@ import { useTaskStore } from './store/useTaskStore'
 import { getTask } from './engine/task'
 import { useMinimapStore } from './store/useMinimapStore'
 import { getRegionLabel } from './engine/minimap'
+import {
+  captureIntoGroup,
+  updateRegionLOD,
+  REGION_CHUNK_MAP,
+} from './engine/lod'
+import type { RegionLODEntry } from './engine/lod'
 import { MinimapHud } from './ui/hud/MinimapHud'
 import { FactionPanel } from './ui/hud/FactionPanel'
 import { useFactionStore } from './store/useFactionStore'
@@ -589,7 +595,11 @@ function App() {
 
     // Phase 18 — Quarry Region Slice
     // Build Redwake Quarry zone and merge its results into the shared collections.
-    const quarry = buildQuarry(scene, interactables, onMineStart)
+    // Phase 88 — wrapped in a LOD group for distance-based visibility control.
+    let quarry!: ReturnType<typeof buildQuarry>
+    const quarryGroup = captureIntoGroup(scene, () => {
+      quarry = buildQuarry(scene, interactables, onMineStart)
+    })
     collidables.push(...quarry.collidables)
     const allRockNodes = [...rockNodes, ...quarry.rockNodes]
     // Phase 75 — track supply cache sealed state for per-frame poll
@@ -684,7 +694,11 @@ function App() {
 
     // Phase 20 — Shoreline Region Slice
     // Build Gloamwater Bank zone and merge its results into the shared collections.
-    const shoreline = buildShoreline(scene, interactables, onCastStart, onForageStart)
+    // Phase 88 — wrapped in a LOD group.
+    let shoreline!: ReturnType<typeof buildShoreline>
+    const shorelineGroup = captureIntoGroup(scene, () => {
+      shoreline = buildShoreline(scene, interactables, onCastStart, onForageStart)
+    })
     collidables.push(...shoreline.collidables)
     const allFishingNodes = [...fishingNodes, ...shoreline.fishingNodes]
     const allNpcs         = [...npcs, ...quarry.npcs, ...shoreline.npcs]
@@ -692,26 +706,26 @@ function App() {
 
     // Phase 35 — Brackroot Trail Zone
     // Build the southern combat-adjacent route and merge its results.
-    const brackroot = buildBrackroot(scene, interactables, onChopStart)
+    // Phase 88 — wrapped in a LOD group.
+    let brackroot!: ReturnType<typeof buildBrackroot>
+    const brackrootGroup = captureIntoGroup(scene, () => {
+      brackroot = buildBrackroot(scene, interactables, onChopStart)
+    })
     collidables.push(...brackroot.collidables)
     const allTreeNodes = [...treeNodes, ...brackroot.treeNodes]
 
     // Phase 47 — Tidemark Chapel Zone
     // Build the western mist-hazard shrine zone and merge its results.
-    const chapel = buildTidemarkChapel(scene, interactables)
+    // Phase 88 — wrapped in a LOD group.
+    let chapel!: ReturnType<typeof buildTidemarkChapel>
+    const chapelGroup = captureIntoGroup(scene, () => {
+      chapel = buildTidemarkChapel(scene, interactables)
+    })
     collidables.push(...chapel.collidables)
     allNpcs.push(...chapel.npcs)
 
-    // Phase 65 — Hollow Vault Steps Zone
-    // Build the ruin-adjacent descending vault west of the chapel.
-    // The gate slab is a collidable until the player unseals it with a ward.
-    const hollowVault = buildHollowVault(scene, interactables)
-    collidables.push(...hollowVault.collidables)
-    let vaultGateSealed = true
-
-    // Phase 66 — Salvage System
-    // Salvage nodes placed inside the Hollow Vault.  Uses the 'salvaging' skill;
-    // the callback pattern mirrors onForageStart.
+    // Phase 66 — Salvage System callback.
+    // Defined here so it can be referenced inside both region captures below.
     const onSalvageStart = (node: SalvageNode) => {
       const cfg = SALVAGE_VARIANT_CONFIG[node.variant]
       if (getSalvagingLevel() < cfg.levelReq) {
@@ -743,12 +757,30 @@ function App() {
       depleteSalvageNode(node)
     }
 
-    const allSalvageNodes = buildSalvageNodes(scene, interactables, onSalvageStart)
+    // Phase 65 — Hollow Vault Steps Zone
+    // Build the ruin-adjacent descending vault west of the chapel.
+    // The gate slab is a collidable until the player unseals it with a ward.
+    // Phase 66 — Salvage nodes are included in the same capture so they hide
+    //             correctly with the rest of the Hollow Vault geometry.
+    // Phase 88 — wrapped in a LOD group.
+    let hollowVault!: ReturnType<typeof buildHollowVault>
+    let hvSalvageNodes!: ReturnType<typeof buildSalvageNodes>
+    const hollowVaultGroup = captureIntoGroup(scene, () => {
+      hollowVault = buildHollowVault(scene, interactables)
+      hvSalvageNodes = buildSalvageNodes(scene, interactables, onSalvageStart)
+    })
+    collidables.push(...hollowVault.collidables)
+    let vaultGateSealed = true
+    const allSalvageNodes = [...hvSalvageNodes]
 
     // Phase 57 — Ashfen Copse Zone
     // Phase 58 — adds Duskiron Seam rock nodes; onMineStart callback needed.
     // Build the northeast advanced gathering-and-combat zone and merge results.
-    const ashfenCopse = buildAshfenCopse(scene, interactables, onChopStart, onForageStart, onMineStart)
+    // Phase 88 — wrapped in a LOD group.
+    let ashfenCopse!: ReturnType<typeof buildAshfenCopse>
+    const ashfenGroup = captureIntoGroup(scene, () => {
+      ashfenCopse = buildAshfenCopse(scene, interactables, onChopStart, onForageStart, onMineStart)
+    })
     collidables.push(...ashfenCopse.collidables)
     allTreeNodes.push(...ashfenCopse.treeNodes)
     allForageNodes.push(...ashfenCopse.forageNodes)
@@ -756,7 +788,11 @@ function App() {
 
     // Phase 74 — Marrowfen Blockout
     // Build the dangerous mid-late fen zone south of the Brackroot Bog.
-    const marrowfen: MarrowfenResult = buildMarrowfen(scene, interactables, onForageStart)
+    // Phase 88 — wrapped in a LOD group.
+    let marrowfen!: MarrowfenResult
+    const marrowfenGroup = captureIntoGroup(scene, () => {
+      marrowfen = buildMarrowfen(scene, interactables, onForageStart)
+    })
     collidables.push(...marrowfen.collidables)
     allForageNodes.push(...marrowfen.forageNodes)
 
@@ -765,14 +801,35 @@ function App() {
     // The access gate slab is collidable until the player has completed the
     // "Echoes of the Sealed Shaft" task; pollOpened() checks each frame.
     // Phase 84 — sanctumDoor is the inner boss chamber gate; pollOpened() for that too.
-    const belowglassVaults: BelowglassVaultsResult = buildBelowglassVaults(scene, interactables)
+    // Phase 88 — wrapped in a LOD group; vault salvage nodes included in same capture
+    //             so they hide/show consistently with the rest of the zone.
+    let belowglassVaults!: BelowglassVaultsResult
+    let bvSalvageNodes!: ReturnType<typeof buildVaultSalvageNodes>
+    const belowglassGroup = captureIntoGroup(scene, () => {
+      belowglassVaults = buildBelowglassVaults(scene, interactables)
+      bvSalvageNodes = buildVaultSalvageNodes(scene, interactables, onSalvageStart)
+    })
     collidables.push(...belowglassVaults.collidables)
     let bvGateSealed = true
     let bvSanctumSealed = true
 
-    // Higher-tier salvage nodes inside the Belowglass Vaults.
-    const bvSalvageNodes = buildVaultSalvageNodes(scene, interactables, onSalvageStart)
+    // Merge belowglass salvage nodes into the shared salvage collection.
     allSalvageNodes.push(...bvSalvageNodes)
+
+    // Phase 88 — LOD / Streaming Pass: register all LOD-controlled region groups.
+    // Each entry pairs a RegionChunkDef (centre + show/hide distances) with the
+    // THREE.Group that wraps the region's scene objects.  updateRegionLOD() is
+    // called every frame to toggle group visibility based on player distance.
+    const regionLODEntries: RegionLODEntry[] = [
+      { def: REGION_CHUNK_MAP.get('quarry')!,       group: quarryGroup },
+      { def: REGION_CHUNK_MAP.get('shoreline')!,    group: shorelineGroup },
+      { def: REGION_CHUNK_MAP.get('bog')!,          group: brackrootGroup },
+      { def: REGION_CHUNK_MAP.get('marrowfen')!,    group: marrowfenGroup },
+      { def: REGION_CHUNK_MAP.get('ashfen')!,       group: ashfenGroup },
+      { def: REGION_CHUNK_MAP.get('chapel')!,       group: chapelGroup },
+      { def: REGION_CHUNK_MAP.get('hollow_vault')!, group: hollowVaultGroup },
+      { def: REGION_CHUNK_MAP.get('belowglass_vaults')!, group: belowglassGroup },
+    ]
 
     // Phase 22 — Cooking System Foundation
     // Phase 59 — Panel-based recipe selection replaces auto-cook.
@@ -2846,6 +2903,9 @@ function App() {
         const inCombat = combatRef.current.target !== null
         audioManager.setMusicMode(inCombat ? 'combat' : 'peaceful')
       }
+
+      // Phase 88 — LOD / Streaming Pass: update region group visibility.
+      updateRegionLOD(player.mesh.position, regionLODEntries)
 
       // Phase 54 — Update minimap store with current player position and facing.
       {
