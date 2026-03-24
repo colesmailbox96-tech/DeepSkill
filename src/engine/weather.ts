@@ -167,7 +167,7 @@ function pickNextWeather(from: WeatherState): WeatherState {
   let roll = Math.random() * total
   for (const [state, weight] of Object.entries(weights) as [WeatherState, number][]) {
     roll -= weight
-    if (roll <= 0) return state
+    if (roll < 0) return state
   }
   return from
 }
