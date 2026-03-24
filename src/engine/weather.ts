@@ -184,12 +184,24 @@ function randomDuration(state: WeatherState): number {
  *          or `null` if the weather is unchanged.
  */
 export function tickWeather(delta: number): WeatherState | null {
-  _timeRemaining -= delta
-  if (_timeRemaining <= 0) {
+  let transitionedState: WeatherState | null = null
+
+  // Consume the entire delta, allowing for multiple transitions if needed.
+  while (delta > 0) {
+    if (delta < _timeRemaining) {
+      // Not enough time to reach the next transition; just decrement and exit.
+      _timeRemaining -= delta
+      delta = 0
+      break
+    }
+
+    // We reach (or pass) the end of the current state's duration.
+    delta -= _timeRemaining
     const next = pickNextWeather(_current)
     _current = next
     _timeRemaining = randomDuration(next)
-    return next
+    transitionedState = next
   }
-  return null
+
+  return transitionedState
 }
