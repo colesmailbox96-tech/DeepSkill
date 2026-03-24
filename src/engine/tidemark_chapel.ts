@@ -37,6 +37,7 @@ import * as THREE from 'three'
 import type { Interactable } from './interactable'
 import type { Npc } from './npc'
 import { useDialogueStore } from '../store/useDialogueStore'
+import { useNotifications } from '../store/useNotifications'
 
 // ─── Hazard constants (exported for App.tsx) ──────────────────────────────────
 
@@ -115,6 +116,53 @@ export function buildTidemarkChapel(
   // Corridor side walls (prevent walking off the path)
   collidables.push(_addWall(scene, 13, 4, 0.4, -25.5, 2, -3,  matBound))
   collidables.push(_addWall(scene, 13, 4, 0.4, -25.5, 2,  3,  matBound))
+
+  // ── Phase 91 — Corridor landmarks ────────────────────────────────────────
+
+  // Crumbled waystone at x = −23, z = 0.6 — a mossy stone with faint carved
+  // marks; provides narrative flavour and breaks the 13-unit dead corridor.
+  const waystoneGroup = new THREE.Group()
+  waystoneGroup.position.set(-23, 0, 0.6)
+  const waystoneBase = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.8, 0.45), matDarkStone)
+  waystoneBase.position.y = 0.4
+  waystoneGroup.add(waystoneBase)
+  const waystoneTop = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.38, 0.38), matDarkStone)
+  waystoneTop.position.set(0.04, 0.99, 0)
+  waystoneTop.rotation.y = 0.3
+  waystoneGroup.add(waystoneTop)
+  // Glyph inset — a subtle emissive face on the stone
+  const waystoneGlyph = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.28), matGlyph)
+  waystoneGlyph.position.set(0, 0.4, 0.23)
+  waystoneGroup.add(waystoneGlyph)
+  scene.add(waystoneGroup)
+
+  const waystoneInteractable: Interactable = {
+    mesh: waystoneGroup,
+    label: 'Crumbled Waystone',
+    interactRadius: 1.8,
+    onInteract: () => {
+      useNotifications
+        .getState()
+        .push(
+          'A weathered waystone. A carved arrow points west, toward the sound of slow water.',
+          'info',
+        )
+    },
+  }
+  interactables.push(waystoneInteractable)
+
+  // Corridor entrance stone pillars at x = −31, z = ±5 — low crumbled posts
+  // marking the threshold into the chapel grounds.
+  const pillarMat = matRuin
+  for (const pz of [-5, 5]) {
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 1.4, 7), pillarMat)
+    pillar.position.set(-31, 0.7, pz)
+    scene.add(pillar)
+    collidables.push(pillar)
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.18, 0.52), matDarkStone)
+    cap.position.set(-31, 1.49, pz)
+    scene.add(cap)
+  }
 
   // ── Chapel grounds floor (x = −32 → −60, z = −18 → +18) ─────────────────
   // Floor plane only — not collidable.

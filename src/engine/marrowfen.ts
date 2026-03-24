@@ -51,6 +51,7 @@ import * as THREE from 'three'
 import type { Interactable } from './interactable'
 import { buildForageNodesAt } from './foraging'
 import type { ForageNode } from './foraging'
+import { useNotifications } from '../store/useNotifications'
 
 // ─── Zone bounds (exported for App.tsx region checks) ─────────────────────────
 
@@ -95,9 +96,9 @@ export interface MarrowfenResult {
 // ─── Forage node placements ───────────────────────────────────────────────────
 
 /**
- * Three Marrowfen Spore Cluster nodes scattered through the fen.
- * Placed away from the dangerous gas vent zone so low-level players can
- * harvest at least one node before encountering the worst hazards.
+ * Five Marrowfen Spore Cluster nodes scattered through the fen.
+ * Phase 91 adds two extra nodes deeper in the zone (z = +85 and z = +103)
+ * to reduce the dead stretch in the northern half of the fen.
  */
 const MF_SPORE_PLACEMENTS: ReadonlyArray<{
   pos: [number, number]
@@ -106,6 +107,9 @@ const MF_SPORE_PLACEMENTS: ReadonlyArray<{
   { pos: [ -18, 66], variant: 'marrowfen_spore' },   // near west entrance margin
   { pos: [  14, 75], variant: 'marrowfen_spore' },   // mid-fen east bank
   { pos: [  -8, 96], variant: 'marrowfen_spore' },   // deep north near a mangrove
+  // Phase 91 — additional nodes to fill sparse stretches
+  { pos: [  20, 85], variant: 'marrowfen_spore' },   // deep east, past the wide channel
+  { pos: [ -22, 102], variant: 'marrowfen_spore' },  // far north-west corner
 ]
 
 // ─── Main builder ─────────────────────────────────────────────────────────────
@@ -182,6 +186,74 @@ export function buildMarrowfen(
   _addVentCrack(scene, -6, 80)
   _addVentCrack(scene,  8, 86)
   _addVentCrack(scene, -4, 90)
+
+  // ── Phase 91 — Ambient props and interaction points ───────────────────────
+
+  // Connector corridor dead trees — two bare trunks flanking the narrow
+  // passage (z = +50 → +60) to break the empty approach to the fen.
+  const matDeadWood = new THREE.MeshStandardMaterial({ color: 0x2e2820, roughness: 0.96 })
+  const corrTree1 = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 4.5, 6), matDeadWood)
+  corrTree1.position.set(-7.5, 2.25, 54)
+  corrTree1.rotation.z = 0.08
+  scene.add(corrTree1)
+  const corrTree2 = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 3.8, 6), matDeadWood)
+  corrTree2.position.set(7.5, 1.9, 57)
+  corrTree2.rotation.z = -0.06
+  scene.add(corrTree2)
+
+  // Bone debris cluster at x = −10, z = +88 — pale bones half-sunken in fen mud.
+  // Visual only; no collision.
+  const matBone = new THREE.MeshStandardMaterial({ color: 0xd8d0b8, roughness: 0.88 })
+  const bonePositions: [number, number, number, number, number][] = [
+    [-10.0, 0.05, 88.0, 0.7, 0.1],
+    [-10.8, 0.04, 88.6, 0.5, 0.08],
+    [ -9.2, 0.04, 87.5, 0.6, 0.09],
+    [-11.2, 0.03, 89.1, 0.4, 0.07],
+  ]
+  for (const [bx, by, bz, blen, brad] of bonePositions) {
+    const bone = new THREE.Mesh(new THREE.CylinderGeometry(brad, brad * 1.2, blen, 5), matBone)
+    bone.position.set(bx, by, bz)
+    bone.rotation.z = (Math.random() - 0.5) * Math.PI
+    bone.rotation.y = Math.random() * Math.PI
+    scene.add(bone)
+  }
+
+  // Drowned marker — a rotting timber stake driven into the fen floor at
+  // x = 0, z = +70.  Carries a carved warning; readable interaction.
+  const markerStake = new THREE.Group()
+  markerStake.position.set(0, 0, 70)
+  const mStakePost = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, 1.6, 6), matDeadWood)
+  mStakePost.position.y = 0.8
+  markerStake.add(mStakePost)
+  const mStakeBoard = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.22, 0.08), matDeadWood)
+  mStakeBoard.position.set(0, 1.62, 0)
+  mStakeBoard.rotation.z = 0.07
+  markerStake.add(mStakeBoard)
+  scene.add(markerStake)
+
+  const stakeInteractable: Interactable = {
+    mesh: markerStake,
+    label: 'Drowned Marker',
+    interactRadius: 1.8,
+    onInteract: () => {
+      useNotifications
+        .getState()
+        .push(
+          'An old timber stake. Carved symbols, worn smooth by fen-damp, warn of "the breath below".',
+          'info',
+        )
+    },
+  }
+  interactables.push(stakeInteractable)
+
+  // Extra spore glow for the two new deeper nodes (Phase 91).
+  const sporeGlow2 = new THREE.PointLight(0x5030a0, 1.2, 18)
+  sporeGlow2.position.set(20, 0.8, 85)
+  scene.add(sporeGlow2)
+
+  const sporeGlow3 = new THREE.PointLight(0x6040a0, 1.0, 16)
+  sporeGlow3.position.set(-22, 0.8, 102)
+  scene.add(sporeGlow3)
 
   // ── Atmosphere lighting ───────────────────────────────────────────────────
   // A sickly, dim green-yellow fill unique to the fen interior.

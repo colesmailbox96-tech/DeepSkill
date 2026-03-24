@@ -1,5 +1,6 @@
 /**
  * Phase 35 — Brackroot Trail Zone
+ * Phase 91 — Content Density Pass (ambient props, trail landmarks, interaction points)
  *
  * Builds the first combat-adjacent route leading south out of Hushwood:
  *   - a connecting dirt trail from the Hushwood south gate to the trail clearing,
@@ -8,6 +9,13 @@
  *   - 5 woodcutting nodes (2 saplings, 2 ashwood, 1 ironbark deeper in),
  *   - 2 hostile creature spawn zones (Snarl Whelp and Brackroot Crawler),
  *   - one hidden cache interactable tucked off the main path.
+ *
+ * Phase 91 additions:
+ *   - Trail marker post (z = +22) — readable interaction giving directional info
+ *   - Stone cairn landmark (x = +2, z = +30) — mid-trail visual anchor
+ *   - Fallen mossy log (x = −5, z = +41) — trail edge ambient prop
+ *   - Gnarled root cluster (x = +9, z = +55) — clearing ambient prop
+ *   - Deadwood stakes (x = −15, z = +69) — deep-clearing atmosphere marker
  *
  * The Hushwood south boundary wall was split in hushwood.ts to create a 6-unit
  * gap at x = 0 so the player can walk south along the road toward this zone.
@@ -156,6 +164,79 @@ export function buildBrackroot(
   collidables.push(wallSW, wallSE, wallW, wallE)
 
   // ── Set pieces ────────────────────────────────────────────────────────────
+
+  // ── Phase 91 — Trail corridor landmarks ──────────────────────────────────
+
+  // Trail marker post at z = +22 — a short weathered wooden post driven into
+  // the verge with a rough-carved arrow pointing south.  Readable interaction.
+  const markerPost = new THREE.Group()
+  markerPost.position.set(-3.6, 0, 22)
+  // Post shaft
+  const markerShaft = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.8, 0.14), matLog)
+  markerShaft.position.y = 0.9
+  markerPost.add(markerShaft)
+  // Horizontal sign board
+  const markerBoard = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.28, 0.1), matCache)
+  markerBoard.position.set(0.36, 1.72, 0)
+  markerPost.add(markerBoard)
+  scene.add(markerPost)
+
+  const markerInteractable: Interactable = {
+    mesh: markerPost,
+    label: 'Trail Marker',
+    interactRadius: 1.8,
+    onInteract: () => {
+      useNotifications
+        .getState()
+        .push('A weathered post reads: "Brackroot Trail — South. Mind the dark."', 'info')
+    },
+  }
+  interactables.push(markerInteractable)
+
+  // Stone cairn at mid-corridor (x = +2, z = +30) — stacked rock landmark.
+  const cairnBase = new THREE.Mesh(new THREE.DodecahedronGeometry(0.36, 0), matStone)
+  cairnBase.scale.y = 0.58
+  cairnBase.position.set(2, 0.21, 30)
+  scene.add(cairnBase)
+  const cairnMid = new THREE.Mesh(new THREE.DodecahedronGeometry(0.26, 0), matStone)
+  cairnMid.scale.y = 0.62
+  cairnMid.position.set(2.04, 0.58, 30.05)
+  scene.add(cairnMid)
+  const cairnTop = new THREE.Mesh(new THREE.DodecahedronGeometry(0.18, 0), matStone)
+  cairnTop.position.set(1.98, 0.88, 29.96)
+  scene.add(cairnTop)
+
+  // Fallen mossy log across the west verge at z = +41 — ambient border prop.
+  const mossyLog = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 4.0, 7), matLog)
+  mossyLog.position.set(-5, 0.24, 41)
+  mossyLog.rotation.z = Math.PI / 2 // lay flat
+  mossyLog.rotation.y = 0.2
+  scene.add(mossyLog)
+
+  // ── Phase 91 — Clearing ambient props ────────────────────────────────────
+
+  // Gnarled root cluster on the east verge of the clearing (x = +9, z = +55).
+  // Three interlocked root arcs — visual texture, no collision.
+  for (let i = 0; i < 3; i++) {
+    const rootArc = new THREE.Mesh(
+      new THREE.TorusGeometry(0.4 + i * 0.15, 0.06 + i * 0.02, 5, 10, Math.PI * 0.7),
+      matLog,
+    )
+    rootArc.position.set(9 + i * 0.3, 0.1, 55 + i * 0.4)
+    rootArc.rotation.x = Math.PI / 2
+    rootArc.rotation.z = (i / 3) * Math.PI
+    scene.add(rootArc)
+  }
+
+  // Deadwood stakes at deep-clearing edge (x = −15, z = +69) — three short
+  // blackened stakes, as if driven by an old boundary marker.
+  const stakePositions: [number, number][] = [[-15, 69], [-14.3, 70.2], [-15.6, 70.8]]
+  for (const [sx, sz] of stakePositions) {
+    const stake = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.9, 5), matLog)
+    stake.position.set(sx, 0.45, sz)
+    stake.rotation.z = (Math.random() - 0.5) * 0.25
+    scene.add(stake)
+  }
 
   // Trail entrance marker — a weathered wooden post with a dim lantern.
   _addBox(scene, 0.15, 2.2, 0.15, 4, 1.1, 47.5, matLog)
