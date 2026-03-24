@@ -166,7 +166,7 @@ export function buildShoreline(
   const sShaft = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.9, 0.14), matWood)
   sShaft.position.y = 0.95
   sSignGroup.add(sShaft)
-  const sBoard = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.28, 0.1), matVerge.clone())
+  const sBoard = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.28, 0.1), matVerge)
   sBoard.position.set(0.44, 1.76, 0)
   sBoard.rotation.y = Math.PI / 10
   sSignGroup.add(sBoard)

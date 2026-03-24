@@ -151,16 +151,16 @@ export function buildTidemarkChapel(
   }
   interactables.push(waystoneInteractable)
 
-  // Corridor entrance stone pillars at x = −31, z = ±5 — low crumbled posts
-  // marking the threshold into the chapel grounds.
+  // Corridor entrance stone pillars at x = −33, z = ±2.5 — low crumbled posts
+  // marking the threshold just inside the chapel grounds (east boundary at x = −32).
   const pillarMat = matRuin
-  for (const pz of [-5, 5]) {
+  for (const pz of [-2.5, 2.5]) {
     const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 1.4, 7), pillarMat)
-    pillar.position.set(-31, 0.7, pz)
+    pillar.position.set(-33, 0.7, pz)
     scene.add(pillar)
     collidables.push(pillar)
     const cap = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.18, 0.52), matDarkStone)
-    cap.position.set(-31, 1.49, pz)
+    cap.position.set(-33, 1.49, pz)
     scene.add(cap)
   }
 

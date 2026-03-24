@@ -170,7 +170,7 @@ export function buildAshfenCopse(
     matBoulder,
   )
   markerStone.scale.set(1.0, 1.5, 0.9)
-  markerStone.position.set(29.2, 0.48, -73)
+  markerStone.position.set(27, 0.48, -73)
   markerStone.rotation.y = 0.6
   scene.add(markerStone)
 
