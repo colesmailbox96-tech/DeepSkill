@@ -23,6 +23,8 @@ import {
   DEMO_SKILLS,
   DEMO_QUESTLINES,
   DEMO_CONTENT_LOCK,
+  DEMO_SUBTITLE,
+  DEMO_ESTIMATED_PLAYTIME,
 } from '../../engine/demoSlice'
 
 export function DemoWelcomeOverlay() {
@@ -86,11 +88,15 @@ export function DemoWelcomeOverlay() {
     >
       <div className="demo-overlay__panel" ref={panelRef}>
         <div className="demo-overlay__header">
-          <span className="demo-overlay__badge">Public Demo</span>
+          <div className="demo-overlay__badges">
+            <span className="demo-overlay__badge">Public Demo</span>
+            <span className="demo-overlay__badge demo-overlay__badge--playtime">
+              ⏱ {DEMO_ESTIMATED_PLAYTIME}
+            </span>
+          </div>
           <h2 className="demo-overlay__title">Veilmarch</h2>
           <p className="demo-overlay__subtitle">
-            Welcome to the demo slice. Explore the regions and skills listed below.
-            The full release extends far beyond what is available here.
+            {DEMO_SUBTITLE}
           </p>
         </div>
 

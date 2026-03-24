@@ -1,5 +1,6 @@
 /**
  * Phase 96 — Public Demo Slice Selection
+ * Phase 97 — Demo Polish Pass (intro text constants)
  *
  * Defines the authoritative content set for the public demo vertical slice.
  * This file acts as the single source of truth for what is included in the
@@ -22,6 +23,21 @@
  *              Hollow Vault; Tinkering, Tailoring, Carving, Warding,
  *              Surveying; Warden's Legacy chain; Boss encounter
  */
+
+// ─── Intro Messaging ─────────────────────────────────────────────────────────
+
+/**
+ * Subtitle shown in the DemoWelcomeOverlay header.
+ * Describes the world and sets expectations for the demo experience.
+ */
+export const DEMO_SUBTITLE =
+  'An original low-poly frontier fantasy RPG set across drowned roads, ashwood ridges, and lantern marshes. ' +
+  'Grow from a camphand into a skilled gatherer and craftsperson in this opening act of the Veilmarch Territories.'
+
+/**
+ * Estimated playtime for the demo slice, shown alongside the "Public Demo" badge.
+ */
+export const DEMO_ESTIMATED_PLAYTIME = '15–30 min'
 
 // ─── Selected Regions ────────────────────────────────────────────────────────
 
