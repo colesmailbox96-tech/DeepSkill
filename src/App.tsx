@@ -584,6 +584,14 @@ function App() {
     // Chopping session: tracks which tree is being cut and elapsed chop time.
     const choppingRef = { current: null as ChoppingSession | null }
 
+    // Phase 93 — Shared level-up callback: play the fanfare SFX then spawn
+    // the gold ring VFX.  Passed as the onLevelUp argument for all
+    // grantSkillXp calls throughout this effect.
+    const onLevelUp = () => {
+      audioManager.playSfx('level_up')
+      spawnLevelUpRing()
+    }
+
     const onChopStart = (node: TreeNode) => {
       if (!hasHatchet()) {
         useNotifications.getState().push('You need a hatchet to chop trees.', 'info')
@@ -718,7 +726,7 @@ function App() {
         )
         return
       }
-      grantSkillXp('foraging', cfg.xp, spawnLevelUpRing)
+      grantSkillXp('foraging', cfg.xp, onLevelUp)
       advanceGatherObjectives(cfg.itemId)
       spawnGatherSparks(node.clusterMesh.position)
       audioManager.playSfx('forage')
@@ -786,7 +794,7 @@ function App() {
         )
         return
       }
-      grantSkillXp('salvaging', cfg.xp, spawnLevelUpRing)
+      grantSkillXp('salvaging', cfg.xp, onLevelUp)
       advanceGatherObjectives(cfg.itemId)
       spawnGatherSparks(node.clusterMesh.position)
       audioManager.playSfx('forage')
@@ -1316,7 +1324,7 @@ function App() {
         return
       }
       addItem({ id: reward.itemId, name: rewardName, quantity: reward.qty })
-      grantSkillXp('surveying', cache.config.xp, spawnLevelUpRing)
+      grantSkillXp('surveying', cache.config.xp, onLevelUp)
       cache.revealed = false
       cache.markerMesh.visible = false
       cache.interactable.interactRadius = 0
@@ -1550,6 +1558,8 @@ function App() {
       const mitigated = Math.max(1, rawDamage - equipStats.totalDefence)
       const newHp = Math.max(0, playerStats.health - mitigated)
       setHealth(newHp)
+      // Phase 93 — audio feedback when the player takes a hit.
+      audioManager.playSfx('creature_hit')
       useNotifications.getState().push(
         `The ${creature.def.name} strikes you for ${mitigated} damage!`,
         'warning',
@@ -1635,6 +1645,8 @@ function App() {
     // Phase 31 / 32 — player-attack kill: notify, roll loot, award items + currency.
     const onPlayerKill = (target: Creature) => {
       useCombatStore.getState().clearTarget()
+      // Phase 93 — creature death sound.
+      audioManager.playSfx('creature_die')
       useNotifications.getState().push(
         `You defeat the ${target.def.name}!`,
         'success',
@@ -1759,6 +1771,7 @@ function App() {
       // Panel-toggle actions whose open/close logic lives inside the component
       // (InventoryPanel / SkillsPanel / JournalPanel / LedgerPanel) — forward
       // via a synthetic key event so their built-in handlers fire as normal.
+      // Phase 93 — emit open/close UI sound for these forwarded toggles.
       if (
         action === 'toggle-inventory' ||
         action === 'toggle-skills'    ||
@@ -1766,6 +1779,7 @@ function App() {
         action === 'toggle-ledger'    ||
         action === 'toggle-faction'
       ) {
+        audioManager.playSfx('ui_open')
         dispatchPanelKey(action)
         return
       }
@@ -1774,11 +1788,13 @@ function App() {
         const smithing = useSmithingStore.getState()
         if (smithing.isOpen) {
           smithing.closePanel()
+          audioManager.playSfx('ui_close')
         } else if (
           furnaceStation &&
           player.mesh.position.distanceTo(furnaceStation.mesh.position) <= FURNACE_INTERACT_RADIUS
         ) {
           smithing.openPanel()
+          audioManager.playSfx('ui_open')
         }
         return
       }
@@ -1786,11 +1802,13 @@ function App() {
         const carving = useCarvingStore.getState()
         if (carving.isOpen) {
           carving.closePanel()
+          audioManager.playSfx('ui_close')
         } else if (
           workbenchStation &&
           player.mesh.position.distanceTo(workbenchStation.mesh.position) <= WORKBENCH_INTERACT_RADIUS
         ) {
           carving.openPanel()
+          audioManager.playSfx('ui_open')
         }
         return
       }
@@ -1798,11 +1816,13 @@ function App() {
         const tinkering = useTinkeringStore.getState()
         if (tinkering.isOpen) {
           tinkering.closePanel()
+          audioManager.playSfx('ui_close')
         } else if (
           tinkererBenchStation &&
           player.mesh.position.distanceTo(tinkererBenchStation.mesh.position) <= TINKERER_BENCH_INTERACT_RADIUS
         ) {
           tinkering.openPanel()
+          audioManager.playSfx('ui_open')
         }
         return
       }
@@ -1810,11 +1830,13 @@ function App() {
         const tailoring = useTailoringStore.getState()
         if (tailoring.isOpen) {
           tailoring.closePanel()
+          audioManager.playSfx('ui_close')
         } else if (
           sewingTableStation &&
           player.mesh.position.distanceTo(sewingTableStation.mesh.position) <= SEWING_TABLE_INTERACT_RADIUS
         ) {
           tailoring.openPanel()
+          audioManager.playSfx('ui_open')
         }
         return
       }
@@ -1822,11 +1844,13 @@ function App() {
         const surveying = useSurveyingStore.getState()
         if (surveying.isOpen) {
           surveying.closePanel()
+          audioManager.playSfx('ui_close')
         } else if (
           surveyStoneStation &&
           player.mesh.position.distanceTo(surveyStoneStation.mesh.position) <= SURVEY_STONE_INTERACT_RADIUS
         ) {
           surveying.openPanel()
+          audioManager.playSfx('ui_open')
         }
         return
       }
@@ -1834,25 +1858,30 @@ function App() {
         const warding = useWardingStore.getState()
         if (warding.isOpen) {
           warding.closePanel()
+          audioManager.playSfx('ui_close')
         } else if (
           wardingAltarStation &&
           player.mesh.position.distanceTo(wardingAltarStation.mesh.position) <= WARDING_ALTAR_INTERACT_RADIUS
         ) {
           warding.openPanel()
+          audioManager.playSfx('ui_open')
         }
         return
       }
       if (action === 'toggle-audio') {
         // Phase 89 — close accessibility panel when opening audio (mutual exclusion).
         useAccessibilityStore.getState().closePanel()
+        audioManager.playSfx('ui_open')
         useAudioStore.getState().togglePanel()
         return
       }
       if (action === 'toggle-save') {
+        audioManager.playSfx('ui_open')
         useSaveLoadStore.getState().togglePanel()
         return
       }
       if (action === 'toggle-map') {
+        audioManager.playSfx('ui_open')
         useMinimapStore.getState().toggleExpanded()
         return
       }
@@ -2060,6 +2089,8 @@ function App() {
             matched.hp,
             matched.def.maxHp ?? matched.hp,
           )
+          // Phase 93 — creature aggro stab when the player engages.
+          audioManager.playSfx('creature_aggro')
           useNotifications.getState().push(
             `You target the ${matched.def.name}.`,
             'info',
@@ -2219,7 +2250,7 @@ function App() {
             const logName = getItem(cfg.logId)?.name ?? cfg.logId
             const added = addItem({ id: cfg.logId, name: logName, quantity: 1 })
             if (added) {
-              grantSkillXp('woodcutting', cfg.xp, spawnLevelUpRing)
+              grantSkillXp('woodcutting', cfg.xp, onLevelUp)
               advanceGatherObjectives(cfg.logId)
               const sparkPos = new THREE.Vector3()
               sess.node.trunk.getWorldPosition(sparkPos)
@@ -2256,7 +2287,7 @@ function App() {
             const oreName = getItem(cfg.oreId)?.name ?? cfg.oreId
             const added = addItem({ id: cfg.oreId, name: oreName, quantity: 1 })
             if (added) {
-              grantSkillXp('mining', cfg.xp, spawnLevelUpRing)
+              grantSkillXp('mining', cfg.xp, onLevelUp)
               advanceGatherObjectives(cfg.oreId)
               const sparkPos = new THREE.Vector3()
               sess.node.rockMesh.getWorldPosition(sparkPos)
@@ -2293,7 +2324,7 @@ function App() {
             const fishName = getItem(cfg.fishId)?.name ?? cfg.fishId
             const added = addItem({ id: cfg.fishId, name: fishName, quantity: 1 })
             if (added) {
-              grantSkillXp('fishing', cfg.xp, spawnLevelUpRing)
+              grantSkillXp('fishing', cfg.xp, onLevelUp)
               advanceGatherObjectives(cfg.fishId)
               const sparkPos = new THREE.Vector3()
               sess.node.floatMesh.getWorldPosition(sparkPos)
@@ -2346,7 +2377,10 @@ function App() {
             }
             removeItem(sess.recipe.rawId, 1)
             addItem({ id: sess.recipe.cookedId, name: cookedName, quantity: 1 })
-            grantSkillXp('hearthcraft', sess.recipe.xp, spawnLevelUpRing)
+            grantSkillXp('hearthcraft', sess.recipe.xp, onLevelUp)
+            // Phase 93 — cooking completion sound.
+            audioManager.playSfx('cook')
+            audioManager.playSfx('craft_complete')
             useNotifications.getState().push(
               `You cook the ${sess.recipe.label.toLowerCase()}. ${cookedName} ready!`,
               'success',
@@ -2394,7 +2428,10 @@ function App() {
             }
             removeItem(sess.recipe.oreId, sess.recipe.oreQty)
             addItem({ id: sess.recipe.barId, name: barName, quantity: 1 })
-            grantSkillXp('forging', sess.recipe.xp, spawnLevelUpRing)
+            grantSkillXp('forging', sess.recipe.xp, onLevelUp)
+            // Phase 93 — smelting completion sound.
+            audioManager.playSfx('smith')
+            audioManager.playSfx('craft_complete')
             useNotifications.getState().push(
               `You smelt the ${sess.recipe.label.toLowerCase()}. ${barName} ready!`,
               'success',
@@ -2444,7 +2481,10 @@ function App() {
               removeItem(ing.id, ing.qty)
             }
             addItem({ id: sess.recipe.toolId, name: toolName, quantity: 1 })
-            grantSkillXp('forging', sess.recipe.xp, spawnLevelUpRing)
+            grantSkillXp('forging', sess.recipe.xp, onLevelUp)
+            // Phase 93 — forging completion sound.
+            audioManager.playSfx('smith')
+            audioManager.playSfx('craft_complete')
             useNotifications.getState().push(
               `You forge a ${toolName}!`,
               'success',
@@ -2491,7 +2531,10 @@ function App() {
               removeItem(ing.id, ing.qty)
             }
             addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
-            grantSkillXp('forging', sess.recipe.xp, spawnLevelUpRing)
+            grantSkillXp('forging', sess.recipe.xp, onLevelUp)
+            // Phase 93 — alloying completion sound.
+            audioManager.playSfx('smith')
+            audioManager.playSfx('craft_complete')
             useNotifications.getState().push(
               `You alloy ${outputName}!`,
               'success',
@@ -2537,7 +2580,10 @@ function App() {
             }
             removeItem(sess.recipe.materialId, sess.recipe.materialQty)
             addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
-            grantSkillXp('carving', sess.recipe.xp, spawnLevelUpRing)
+            grantSkillXp('carving', sess.recipe.xp, onLevelUp)
+            // Phase 93 — carving completion sound.
+            audioManager.playSfx('carve')
+            audioManager.playSfx('craft_complete')
             useNotifications.getState().push(
               `You carve a ${outputName}!`,
               'success',
@@ -2598,8 +2644,10 @@ function App() {
               removeItem(sec.id, sec.qty)
             }
             addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
-            grantSkillXp('tinkering', sess.recipe.xp, spawnLevelUpRing)
+            grantSkillXp('tinkering', sess.recipe.xp, onLevelUp)
             advanceGatherObjectives(sess.recipe.outputId)
+            // Phase 93 — tinkering completion sound.
+            audioManager.playSfx('craft_complete')
             useNotifications.getState().push(
               `You assemble ${outputName}!`,
               'success',
@@ -2659,8 +2707,10 @@ function App() {
             removeItem(sess.recipe.materialId, sess.recipe.materialQty)
             removeItem(sec.id, sec.qty)
             addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
-            grantSkillXp('tailoring', sess.recipe.xp, spawnLevelUpRing)
+            grantSkillXp('tailoring', sess.recipe.xp, onLevelUp)
             advanceGatherObjectives(sess.recipe.outputId)
+            // Phase 93 — tailoring completion sound.
+            audioManager.playSfx('craft_complete')
             useNotifications.getState().push(
               `You stitch together ${outputName}!`,
               'success',
@@ -2725,8 +2775,10 @@ function App() {
               } else {
                 removeItem(sess.recipe.materialId, sess.recipe.materialQty)
                 addItem({ id: sess.recipe.outputId, name: outputName, quantity: 1 })
-                grantSkillXp('warding', sess.recipe.xp, spawnLevelUpRing)
+                grantSkillXp('warding', sess.recipe.xp, onLevelUp)
                 advanceGatherObjectives(sess.recipe.outputId)
+                // Phase 93 — warding inscription completion sound.
+                audioManager.playSfx('craft_complete')
                 // Phase 72 — Ward activation VFX at the altar position.
                 if (wardingAltarStation) {
                   spawnWardActivation(wardingAltarStation.mesh.position)
