@@ -1757,8 +1757,8 @@ function App() {
     camState.thetaTarget = initialBehindYaw
     camState.theta = initialBehindYaw
 
-    // Ensure player spawns at ground level (y=0).
-    player.mesh.position.set(0, 0, 0)
+    // Ensure player spawns at the configured respawn point.
+    player.mesh.position.set(RESPAWN_X, RESPAWN_Y, RESPAWN_Z)
 
     const interactionState = createInteractionState()
 
