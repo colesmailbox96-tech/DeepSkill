@@ -58,10 +58,10 @@ export const MIST_WARD_ITEM_ID = 'ashwillow_ward'
 
 // ─── Shared materials ─────────────────────────────────────────────────────────
 
-const matChapelGround = new THREE.MeshStandardMaterial({ color: 0x4a4a50, roughness: 0.97 })
-const matCorridor     = new THREE.MeshStandardMaterial({ color: 0x5c5040, roughness: 0.92 })
-const matRuin         = new THREE.MeshStandardMaterial({ color: 0x6a6060, roughness: 0.90 })
-const matDarkStone    = new THREE.MeshStandardMaterial({ color: 0x3a3538, roughness: 0.95 })
+const matChapelGround = new THREE.MeshLambertMaterial({ color: 0x4a4a50 })
+const matCorridor     = new THREE.MeshLambertMaterial({ color: 0x5c5040 })
+const matRuin         = new THREE.MeshLambertMaterial({ color: 0x6a6060 })
+const matDarkStone    = new THREE.MeshLambertMaterial({ color: 0x3a3538 })
 const matWater        = new THREE.MeshStandardMaterial({
   color: 0x2a4060,
   roughness: 0.05,
@@ -75,14 +75,14 @@ const matMist         = new THREE.MeshStandardMaterial({
   roughness: 1.0,
   depthWrite: false,
 })
-const matShaft        = new THREE.MeshStandardMaterial({ color: 0x1a1520, roughness: 0.95 })
+const matShaft        = new THREE.MeshLambertMaterial({ color: 0x1a1520 })
 const matGlyph        = new THREE.MeshStandardMaterial({
   color: 0x7ab0d8,
   roughness: 0.4,
   emissive: new THREE.Color(0x203858),
   emissiveIntensity: 0.7,
 })
-const matBound        = new THREE.MeshStandardMaterial({ visible: false })
+const matBound        = new THREE.MeshLambertMaterial({ visible: false })
 
 // ─── Public result type ───────────────────────────────────────────────────────
 
@@ -381,7 +381,7 @@ function _addBox(
   x: number,
   y: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
   mesh.position.set(x, y, z)
@@ -397,7 +397,7 @@ function _addWall(
   x: number,
   y: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   return _addBox(scene, w, h, d, x, y, z, mat)
 }

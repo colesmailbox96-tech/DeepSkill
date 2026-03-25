@@ -63,17 +63,15 @@ export const MF_MAX_Z = 105
 // ─── Shared materials ─────────────────────────────────────────────────────────
 
 /** Waterlogged, dark fen ground — almost black mud. */
-const matFenGround = new THREE.MeshStandardMaterial({ color: 0x1a1e18, roughness: 0.99 })
+const matFenGround = new THREE.MeshLambertMaterial({ color: 0x1a1e18 })
 /** Connecting corridor — slightly lighter mud path from the bog. */
-const matCorridor  = new THREE.MeshStandardMaterial({ color: 0x2a2c22, roughness: 0.97 })
+const matCorridor  = new THREE.MeshLambertMaterial({ color: 0x2a2c22 })
 /** Murky water channel surface — dark olive-brown with slight sheen. */
-const matChannel   = new THREE.MeshStandardMaterial({
+const matChannel   = new THREE.MeshLambertMaterial({
   color: 0x1e2a18,
-  roughness: 0.40,
-  metalness: 0.10,
 })
 /** Gnarled mangrove pillar bark — dark, twisted, organic. */
-const matMangrove  = new THREE.MeshStandardMaterial({ color: 0x2a2218, roughness: 0.95 })
+const matMangrove  = new THREE.MeshLambertMaterial({ color: 0x2a2218 })
 /** Gas vent crack — pale sulphur-tinted stone. */
 const matVentCrack = new THREE.MeshStandardMaterial({
   color: 0x6a6a2a,
@@ -82,7 +80,7 @@ const matVentCrack = new THREE.MeshStandardMaterial({
   roughness: 0.80,
 })
 /** Invisible collision boundary. */
-const matBound = new THREE.MeshStandardMaterial({ visible: false })
+const matBound = new THREE.MeshLambertMaterial({ visible: false })
 
 // ─── Public result type ───────────────────────────────────────────────────────
 
@@ -191,7 +189,7 @@ export function buildMarrowfen(
 
   // Connector corridor dead trees — two bare trunks flanking the narrow
   // passage (z = +50 → +60) to break the empty approach to the fen.
-  const matDeadWood = new THREE.MeshStandardMaterial({ color: 0x2e2820, roughness: 0.96 })
+  const matDeadWood = new THREE.MeshLambertMaterial({ color: 0x2e2820 })
   const corrTree1 = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 4.5, 6), matDeadWood)
   corrTree1.position.set(-7.5, 2.25, 54)
   corrTree1.rotation.z = 0.08
@@ -203,7 +201,7 @@ export function buildMarrowfen(
 
   // Bone debris cluster at x = −10, z = +88 — pale bones half-sunken in fen mud.
   // Visual only; no collision.
-  const matBone = new THREE.MeshStandardMaterial({ color: 0xd8d0b8, roughness: 0.88 })
+  const matBone = new THREE.MeshLambertMaterial({ color: 0xd8d0b8 })
   const bonePositions: [number, number, number, number, number][] = [
     [-10.0, 0.05, 88.0, 0.7, 0.1],
     [-10.8, 0.04, 88.6, 0.5, 0.08],
@@ -354,7 +352,7 @@ function _addWall(
   x: number,
   y: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
   mesh.position.set(x, y, z)

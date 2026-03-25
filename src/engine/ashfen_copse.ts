@@ -48,16 +48,14 @@ import { useNotifications } from '../store/useNotifications'
 // ─── Shared materials ─────────────────────────────────────────────────────────
 
 /** Dark, mineral-dusted loam ground of the copse. */
-const matCopseGround = new THREE.MeshStandardMaterial({ color: 0x28231e, roughness: 0.98 })
+const matCopseGround = new THREE.MeshLambertMaterial({ color: 0x28231e })
 /** Connecting corridor ground — slightly lighter mineral dirt. */
-const matCorridor    = new THREE.MeshStandardMaterial({ color: 0x3a3228, roughness: 0.95 })
+const matCorridor    = new THREE.MeshLambertMaterial({ color: 0x3a3228 })
 /** Dark stone boulders scattered through the copse. */
-const matBoulder     = new THREE.MeshStandardMaterial({ color: 0x3a3540, roughness: 0.90 })
+const matBoulder     = new THREE.MeshLambertMaterial({ color: 0x3a3540 })
 /** Fallen mineral-wood log: dark bark with a slight metallic sheen. */
-const matDeadLog     = new THREE.MeshStandardMaterial({
+const matDeadLog     = new THREE.MeshLambertMaterial({
   color: 0x1e1e24,
-  roughness: 0.82,
-  metalness: 0.08,
 })
 /** Mineral-trace root glow (emissive, subtle). */
 const matRootGlow    = new THREE.MeshStandardMaterial({
@@ -67,7 +65,7 @@ const matRootGlow    = new THREE.MeshStandardMaterial({
   roughness: 0.60,
 })
 /** Invisible collision boundary. */
-const matBound = new THREE.MeshStandardMaterial({ visible: false })
+const matBound = new THREE.MeshLambertMaterial({ visible: false })
 
 // ─── Public result type ───────────────────────────────────────────────────────
 
@@ -319,7 +317,7 @@ function _addWall(
   x: number,
   y: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
   mesh.position.set(x, y, z)

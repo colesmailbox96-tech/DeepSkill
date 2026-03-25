@@ -105,7 +105,7 @@ export const ROCK_VARIANT_CONFIG: Readonly<Record<RockVariant, RockVariantConfig
 
 // ── Materials ─────────────────────────────────────────────────────────────────
 
-const matRubble = new THREE.MeshStandardMaterial({ color: 0x888880, roughness: 0.95 })
+const matRubble = new THREE.MeshLambertMaterial({ color: 0x888880 })
 
 /**
  * Vertical flatten factor applied to every rock mesh.
@@ -178,7 +178,7 @@ function buildOneRock(
   // Main rock body — DodecahedronGeometry gives a natural, irregular shape.
   const rockMesh = new THREE.Mesh(
     new THREE.DodecahedronGeometry(cfg.rockRadius, 0),
-    new THREE.MeshStandardMaterial({ color: cfg.rockColor, roughness: 0.90 }),
+    new THREE.MeshLambertMaterial({ color: cfg.rockColor }),
   )
   // Scale vertically to flatten slightly so the rock looks grounded.
   rockMesh.scale.y = ROCK_Y_FLATTEN
@@ -188,7 +188,7 @@ function buildOneRock(
   // Ore-vein indicator — a small flat box on the front face of the rock.
   const oreMesh = new THREE.Mesh(
     new THREE.BoxGeometry(cfg.rockRadius * 0.55, cfg.rockRadius * 0.12, cfg.rockRadius * 0.30),
-    new THREE.MeshStandardMaterial({ color: cfg.oreColor, roughness: 0.65 }),
+    new THREE.MeshLambertMaterial({ color: cfg.oreColor }),
   )
   oreMesh.position.set(0, cfg.rockRadius * 0.60, cfg.rockRadius * 0.88)
   oreMesh.visible = cfg.showOreVein

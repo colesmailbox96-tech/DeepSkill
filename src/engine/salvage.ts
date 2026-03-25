@@ -188,8 +188,8 @@ const SALVAGE_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: Salvag
 /** Masonry rubble: a low mound of stone block fragments. */
 function _buildMasonryRubbleMesh(primary: number, secondary: number): THREE.Group {
   const group   = new THREE.Group()
-  const matStone = new THREE.MeshStandardMaterial({ color: primary,   roughness: 0.94 })
-  const matDark  = new THREE.MeshStandardMaterial({ color: secondary, roughness: 0.96 })
+  const matStone = new THREE.MeshLambertMaterial({ color: primary })
+  const matDark  = new THREE.MeshLambertMaterial({ color: secondary })
 
   // Base scatter of irregular stone blocks
   const blockSpecs: Array<[number, number, number, number, number, number, boolean]> = [
@@ -217,8 +217,8 @@ function _buildMasonryRubbleMesh(primary: number, secondary: number): THREE.Grou
 /** Relic cache: corroded iron fragments wedged into a stone crevice. */
 function _buildRelicCacheMesh(primary: number, secondary: number): THREE.Group {
   const group    = new THREE.Group()
-  const matRust  = new THREE.MeshStandardMaterial({ color: primary,   roughness: 0.88, metalness: 0.30 })
-  const matStone = new THREE.MeshStandardMaterial({ color: secondary, roughness: 0.92 })
+  const matRust  = new THREE.MeshLambertMaterial({ color: primary })
+  const matStone = new THREE.MeshLambertMaterial({ color: secondary })
 
   // Stone base crevice
   const base = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.18, 0.44), matStone)
@@ -252,7 +252,7 @@ function _buildWaxSealMesh(primary: number, secondary: number): THREE.Group {
     emissive: new THREE.Color(secondary).multiplyScalar(0.18),
     emissiveIntensity: 0.5,
   })
-  const matRim  = new THREE.MeshStandardMaterial({ color: 0x383030, roughness: 0.90 })
+  const matRim  = new THREE.MeshLambertMaterial({ color: 0x383030 })
 
   // Stone rim (sunken disc)
   const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.06, 16), matRim)
@@ -284,7 +284,7 @@ function _buildVaultGlassMesh(primary: number, secondary: number): THREE.Group {
     emissive: new THREE.Color(secondary).multiplyScalar(0.12),
     emissiveIntensity: 0.6,
   })
-  const matBase  = new THREE.MeshStandardMaterial({ color: 0x2a3038, roughness: 0.90 })
+  const matBase  = new THREE.MeshLambertMaterial({ color: 0x2a3038 })
 
   // Floor scatter of angular glass shard fragments
   const shardSpecs: Array<[number, number, number, number, number, number, number]> = [
@@ -319,10 +319,8 @@ function _buildVaultGlassMesh(primary: number, secondary: number): THREE.Group {
 /** Construct core: a deactivated mechanical core half-embedded in the floor. */
 function _buildConstructCoreMesh(primary: number, secondary: number): THREE.Group {
   const group    = new THREE.Group()
-  const matPlate = new THREE.MeshStandardMaterial({
+  const matPlate = new THREE.MeshLambertMaterial({
     color: primary,
-    roughness: 0.55,
-    metalness: 0.60,
   })
   const matCore  = new THREE.MeshStandardMaterial({
     color: secondary,
@@ -331,7 +329,7 @@ function _buildConstructCoreMesh(primary: number, secondary: number): THREE.Grou
     emissive: new THREE.Color(secondary).multiplyScalar(0.22),
     emissiveIntensity: 0.8,
   })
-  const matRim   = new THREE.MeshStandardMaterial({ color: 0x1a2028, roughness: 0.92 })
+  const matRim   = new THREE.MeshLambertMaterial({ color: 0x1a2028 })
 
   // Stone floor socket
   const socket = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.32, 0.08, 10), matRim)

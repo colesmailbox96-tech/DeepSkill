@@ -41,20 +41,20 @@ import { getItem } from '../data/items/itemRegistry'
 
 // ─── Shared materials ─────────────────────────────────────────────────────────
 
-const matTrail      = new THREE.MeshStandardMaterial({ color: 0x5c4a32, roughness: 0.92 })
-const matUndergrowth = new THREE.MeshStandardMaterial({ color: 0x4a5c38, roughness: 0.95 })
-const matVerge      = new THREE.MeshStandardMaterial({ color: 0x3d4f2e, roughness: 0.97 })
-const matDarkMoss   = new THREE.MeshStandardMaterial({ color: 0x2e3d22, roughness: 0.98 })
-const matLog        = new THREE.MeshStandardMaterial({ color: 0x6b4c28, roughness: 0.88 })
-const matStone      = new THREE.MeshStandardMaterial({ color: 0x7a7268, roughness: 0.90 })
-const matCache      = new THREE.MeshStandardMaterial({ color: 0x8a7248, roughness: 0.85 })
+const matTrail      = new THREE.MeshLambertMaterial({ color: 0x5c4a32 })
+const matUndergrowth = new THREE.MeshLambertMaterial({ color: 0x4a5c38 })
+const matVerge      = new THREE.MeshLambertMaterial({ color: 0x3d4f2e })
+const matDarkMoss   = new THREE.MeshLambertMaterial({ color: 0x2e3d22 })
+const matLog        = new THREE.MeshLambertMaterial({ color: 0x6b4c28 })
+const matStone      = new THREE.MeshLambertMaterial({ color: 0x7a7268 })
+const matCache      = new THREE.MeshLambertMaterial({ color: 0x8a7248 })
 const matLantern    = new THREE.MeshStandardMaterial({
   color: 0xffcc44,
   emissive: new THREE.Color(0xff8800),
   emissiveIntensity: 0.75,
   roughness: 0.5,
 })
-const matBound = new THREE.MeshStandardMaterial({ visible: false })
+const matBound = new THREE.MeshLambertMaterial({ visible: false })
 
 // ─── Public result type ───────────────────────────────────────────────────────
 
@@ -337,7 +337,7 @@ export function buildBrackroot(
       // Visually open the chest: tilt lid and swap colour
       chestLid.rotation.x = -Math.PI / 3
       chestLid.position.z = -0.15
-      ;(chestBase.material as THREE.MeshStandardMaterial).color.set(0xa0895c)
+      ;(chestBase.material as THREE.MeshLambertMaterial).color.set(0xa0895c)
 
       useNotifications
         .getState()
@@ -369,7 +369,7 @@ function _addBox(
   x: number,
   y: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
   mesh.position.set(x, y, z)
@@ -386,7 +386,7 @@ function _addWall(
   x: number,
   y: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   return _addBox(scene, w, h, d, x, y, z, mat)
 }
