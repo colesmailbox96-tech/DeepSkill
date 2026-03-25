@@ -176,8 +176,8 @@ export interface CookStation {
 function _buildCampfireMesh(): THREE.Group {
   const group = new THREE.Group()
 
-  const matStone = new THREE.MeshStandardMaterial({ color: 0x8e8680, roughness: 0.85 })
-  const matLog   = new THREE.MeshStandardMaterial({ color: 0x6a4a28, roughness: 0.90 })
+  const matStone = new THREE.MeshLambertMaterial({ color: 0x8e8680 })
+  const matLog   = new THREE.MeshLambertMaterial({ color: 0x6a4a28 })
   // Use MeshBasicMaterial for ember and flame so the interaction highlight
   // system (which overwrites MeshStandardMaterial.emissive) cannot dim them.
   const matEmber = new THREE.MeshBasicMaterial({ color: 0xff5500 })

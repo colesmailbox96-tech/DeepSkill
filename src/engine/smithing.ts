@@ -102,10 +102,10 @@ export interface FurnaceStation {
 function _buildFurnaceMesh(): THREE.Group {
   const group = new THREE.Group()
 
-  const matStone = new THREE.MeshStandardMaterial({ color: 0x706860, roughness: 0.9 })
-  const matBrick = new THREE.MeshStandardMaterial({ color: 0x8b4513, roughness: 0.85 })
+  const matStone = new THREE.MeshLambertMaterial({ color: 0x706860 })
+  const matBrick = new THREE.MeshLambertMaterial({ color: 0x8b4513 })
   const matGlow  = new THREE.MeshBasicMaterial({ color: 0xff6600 })
-  const matChimney = new THREE.MeshStandardMaterial({ color: 0x5a5050, roughness: 0.9 })
+  const matChimney = new THREE.MeshLambertMaterial({ color: 0x5a5050 })
 
   // Main body — rectangular stone block
   const body = new THREE.Mesh(
