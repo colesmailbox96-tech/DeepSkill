@@ -249,6 +249,10 @@ function _applyShoulderOffset(out: THREE.Vector3, theta: number, shoulder: numbe
 /** Base vertical FOV used when the viewport is landscape (aspect ≥ 1). */
 const BASE_FOV = 55
 
+/** Reference landscape aspect ratio used to derive the horizontal extent that
+ *  should be preserved when switching to portrait orientation. */
+const REFERENCE_LANDSCAPE_ASPECT = 16 / 9
+
 /**
  * Return an appropriate vertical FOV for the given aspect ratio.
  *
@@ -266,7 +270,7 @@ export function getResponsiveFov(aspect: number): number {
   // Convert base FOV to horizontal FOV, then derive the vertical FOV that
   // would produce the same horizontal extent at the new (narrower) aspect.
   const baseRad = THREE.MathUtils.degToRad(BASE_FOV)
-  const hFov = 2 * Math.atan(Math.tan(baseRad / 2) * (16 / 9))
+  const hFov = 2 * Math.atan(Math.tan(baseRad / 2) * REFERENCE_LANDSCAPE_ASPECT)
   const vRad = 2 * Math.atan(Math.tan(hFov / 2) / aspect)
   return THREE.MathUtils.clamp(THREE.MathUtils.radToDeg(vRad), BASE_FOV, 90)
 }

@@ -2217,6 +2217,10 @@ function App() {
 
     // Register orientationchange after touch state variables exist so the
     // handler can safely reset them.
+    /** Delay (ms) for the deferred viewport update after an orientation change.
+     *  Compensates for iOS Safari's address-bar animation which can report stale
+     *  dimensions immediately after the orientationchange event fires. */
+    const ORIENTATION_SETTLE_DELAY_MS = 200
     const onOrientationChange = () => {
       // Reset any in-progress touch gesture — the screen geometry just
       // changed drastically so continuing an orbit or pinch would cause a
@@ -2227,7 +2231,7 @@ function App() {
       updateViewport()
       // Deferred pass for iOS layout settling after the animation.
       clearTimeout(orientationTimer)
-      orientationTimer = window.setTimeout(updateViewport, 200)
+      orientationTimer = window.setTimeout(updateViewport, ORIENTATION_SETTLE_DELAY_MS)
     }
     window.addEventListener('orientationchange', onOrientationChange)
 
