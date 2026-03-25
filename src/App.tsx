@@ -565,11 +565,15 @@ function App() {
       // overly zoomed-in on phones held upright (vert- technique).
       camera.fov = getResponsiveFov(camera.aspect)
       camera.updateProjectionMatrix()
-      renderer.setSize(width, height, false)
       // Re-apply pixel ratio in case the device reports a different value
       // after an orientation change (rare, but possible on some Android
-      // devices with display-cutout scaling).
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+      // devices with display-cutout scaling).  Done before setSize so we
+      // avoid a redundant internal resize.
+      const targetPixelRatio = Math.min(window.devicePixelRatio || 1, 2)
+      if (renderer.getPixelRatio() !== targetPixelRatio) {
+        renderer.setPixelRatio(targetPixelRatio)
+      }
+      renderer.setSize(width, height, false)
     }
 
     // ResizeObserver fires once CSS layout has settled (including on first paint
@@ -2227,6 +2231,11 @@ function App() {
       // jarring camera jump.
       tapCancelled = true
       touchPhase = 'none'
+      // Also reset pinch/orbit tracking state so stale deltas are not applied
+      // on the first move event after an orientation change.
+      pinchLastDist = 0
+      touchLastX = 0
+      touchLastY = 0
       // Immediate viewport pass.
       updateViewport()
       // Deferred pass for iOS layout settling after the animation.
