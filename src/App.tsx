@@ -2282,9 +2282,11 @@ function App() {
         rd.x = THREE.MathUtils.radToDeg(rd.x)
         rd.y = THREE.MathUtils.radToDeg(rd.y)
         rd.z = THREE.MathUtils.radToDeg(rd.z)
-        console.log('[Camera spawn] global_position:', camera.position.toArray().map(v => +v.toFixed(2)))
-        console.log('[Camera spawn] rotation_degrees (x=pitch, y=yaw, z=roll):', rd.x.toFixed(2), rd.y.toFixed(2), rd.z.toFixed(2))
-        console.log('[Player spawn] global_position:', player.mesh.position.toArray().map(v => +v.toFixed(2)))
+        if (import.meta.env && import.meta.env.DEV) {
+          console.log('[Camera spawn] global_position:', camera.position.toArray().map(v => +v.toFixed(2)))
+          console.log('[Camera spawn] rotation_degrees (x=pitch, y=yaw, z=roll):', rd.x.toFixed(2), rd.y.toFixed(2), rd.z.toFixed(2))
+          console.log('[Player spawn] global_position:', player.mesh.position.toArray().map(v => +v.toFixed(2)))
+        }
       }
 
       // Phase 08 — advance NPC ambient idle sway
