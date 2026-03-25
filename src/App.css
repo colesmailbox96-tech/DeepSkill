@@ -1395,6 +1395,7 @@ p {
 
   .scene-container canvas {
     width: 100%;
+    height: auto;
     flex: 1;
     min-height: 0;
     border-radius: 0;

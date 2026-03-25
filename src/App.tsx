@@ -530,8 +530,8 @@ function App() {
       0.1,
       100,
     )
-    camera.position.set(0, 3.8, 7)
-    camera.lookAt(0, 0, 0)
+    camera.position.set(RESPAWN_X, 3.8, RESPAWN_Z + 7)
+    camera.lookAt(RESPAWN_X, 0, RESPAWN_Z)
 
     // Detect coarse-pointer (touch) devices once for renderer / prompt tuning.
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
@@ -564,6 +564,14 @@ function App() {
     // updateViewport() call or a window 'resize' listener alone.
     const resizeObserver = new ResizeObserver(updateViewport)
     resizeObserver.observe(renderer.domElement)
+
+    // iOS Safari may not fire ResizeObserver reliably on every orientation flip.
+    // A dedicated handler with a short delay ensures the CSS layout has settled
+    // before we re-read the canvas dimensions.
+    const onOrientationChange = () => {
+      setTimeout(updateViewport, 100)
+    }
+    window.addEventListener('orientationchange', onOrientationChange)
 
     // Phase 92 — Day/Night Cycle: initialise lights from the starting hour so
     // the scene already has the correct colours on first render.
@@ -1634,7 +1642,7 @@ function App() {
         resetBossArena(entry.arenaState, entry.boss)
       }
       useBossStore.getState().clearBoss()
-      // Teleport to settlement hearth (world origin).
+      // Teleport to settlement hearth (town square).
       player.mesh.position.set(RESPAWN_X, RESPAWN_Y, RESPAWN_Z)
       // Clear any held movement inputs so the player doesn't slide after waking.
       keys.clear()
@@ -3476,6 +3484,7 @@ function App() {
       unsubscribeMenu()
       audioManager.dispose()
       window.removeEventListener('resize', updateViewport)
+      window.removeEventListener('orientationchange', onOrientationChange)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
       canvas.removeEventListener('pointerdown', onPointerDown)

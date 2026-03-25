@@ -5,7 +5,7 @@
  *
  * Design:
  *   - On defeat the player retains all items and currency (no punishing loss).
- *   - The player is teleported to the Settlement Hearth (world origin).
+ *   - The player is teleported to the Settlement Hearth (town square).
  *   - Full health is restored.
  *   - A blocking overlay informs the player what happened and where they wake.
  *   - The overlay must be dismissed before play resumes (anti-softlock).
@@ -16,8 +16,8 @@
 /** World-space X coordinate of the settlement respawn point. */
 export const RESPAWN_X = 0
 
-/** World-space Z coordinate of the settlement respawn point. */
-export const RESPAWN_Z = 0
+/** World-space Z coordinate of the settlement respawn point (commons centre). */
+export const RESPAWN_Z = 3
 
 /** Y position used when teleporting the player mesh (matches createPlayer). */
 export const RESPAWN_Y = 0
