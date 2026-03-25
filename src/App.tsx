@@ -7,6 +7,7 @@ import {
   applyOrbitDrag,
   applyZoom,
   TOUCH_ORBIT_SENSITIVITY,
+  getResponsiveFov,
 } from './engine/followCamera'
 import type { Interactable } from './engine/interactable'
 import { createInteractionState } from './engine/interactable'
@@ -524,12 +525,17 @@ function App() {
     const scene = new THREE.Scene()
     scene.background = getSkyColor(START_HOUR)
 
+    const initialAspect = (container.clientWidth || 1) / (container.clientHeight || 1)
     const camera = new THREE.PerspectiveCamera(
-      55,
-      container.clientWidth / container.clientHeight,
+      getResponsiveFov(initialAspect),
+      initialAspect,
       0.1,
       100,
     )
+    // Temporary position — will be overwritten by updateOrbitCamera on the
+    // first animation frame.  We set something reasonable here so the very
+    // first render (before the orbit system runs) doesn't flash from an
+    // obviously wrong angle.
     camera.position.set(0, 3.8, 7)
     camera.lookAt(0, 0, 0)
 
@@ -555,8 +561,15 @@ function App() {
         return
       }
       camera.aspect = width / height
+      // Adjust FOV for portrait orientation so the scene doesn't appear
+      // overly zoomed-in on phones held upright (vert- technique).
+      camera.fov = getResponsiveFov(camera.aspect)
       camera.updateProjectionMatrix()
       renderer.setSize(width, height, false)
+      // Re-apply pixel ratio in case the device reports a different value
+      // after an orientation change (rare, but possible on some Android
+      // devices with display-cutout scaling).
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     }
 
     // ResizeObserver fires once CSS layout has settled (including on first paint
@@ -564,6 +577,13 @@ function App() {
     // updateViewport() call or a window 'resize' listener alone.
     const resizeObserver = new ResizeObserver(updateViewport)
     resizeObserver.observe(renderer.domElement)
+
+    // On iOS Safari the address-bar collapse / orientation-change animation can
+    // momentarily report stale dimensions.  A small delayed second pass ensures
+    // the viewport is correct once the geometry settles.  Touch gesture state is
+    // also reset so an in-progress orbit/pinch doesn't produce a jarring jump
+    // after the screen dimensions change.
+    let orientationTimer = 0
 
     // Phase 92 — Day/Night Cycle: initialise lights from the starting hour so
     // the scene already has the correct colours on first render.
@@ -2195,6 +2215,22 @@ function App() {
     canvas.addEventListener('touchend', onTouchEnd, { passive: false })
     canvas.addEventListener('touchcancel', onTouchCancel)
 
+    // Register orientationchange after touch state variables exist so the
+    // handler can safely reset them.
+    const onOrientationChange = () => {
+      // Reset any in-progress touch gesture — the screen geometry just
+      // changed drastically so continuing an orbit or pinch would cause a
+      // jarring camera jump.
+      tapCancelled = true
+      touchPhase = 'none'
+      // Immediate viewport pass.
+      updateViewport()
+      // Deferred pass for iOS layout settling after the animation.
+      clearTimeout(orientationTimer)
+      orientationTimer = window.setTimeout(updateViewport, 200)
+    }
+    window.addEventListener('orientationchange', onOrientationChange)
+
     window.addEventListener('resize', updateViewport)
 
     const clock = new THREE.Clock()
@@ -3470,11 +3506,13 @@ function App() {
     return () => {
       cancelAnimationFrame(animationFrame)
       resizeObserver.disconnect()
+      clearTimeout(orientationTimer)
       unsubscribeRespawn()
       unsubscribeAudio()
       unsubscribeAccessibility()
       unsubscribeMenu()
       audioManager.dispose()
+      window.removeEventListener('orientationchange', onOrientationChange)
       window.removeEventListener('resize', updateViewport)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)

@@ -243,3 +243,30 @@ function _applyShoulderOffset(out: THREE.Vector3, theta: number, shoulder: numbe
   out.x += Math.cos(theta) * shoulder
   out.z -= Math.sin(theta) * shoulder
 }
+
+// ─── Portrait-mode FOV helper ─────────────────────────────────────────────────
+
+/** Base vertical FOV used when the viewport is landscape (aspect ≥ 1). */
+const BASE_FOV = 55
+
+/**
+ * Return an appropriate vertical FOV for the given aspect ratio.
+ *
+ * In landscape the base FOV is returned unchanged.  In portrait (aspect < 1)
+ * the FOV is widened so the horizontal extent of the scene remains roughly the
+ * same as in landscape — this prevents the world from appearing "zoomed in"
+ * when the phone is held upright and keeps gameplay readable.  The adjustment
+ * mirrors the "vert-" technique commonly used in GTA and similar third-person
+ * titles.
+ *
+ * The result is clamped to [BASE_FOV, 90] to avoid extreme fisheye distortion.
+ */
+export function getResponsiveFov(aspect: number): number {
+  if (aspect >= 1) return BASE_FOV
+  // Convert base FOV to horizontal FOV, then derive the vertical FOV that
+  // would produce the same horizontal extent at the new (narrower) aspect.
+  const baseRad = THREE.MathUtils.degToRad(BASE_FOV)
+  const hFov = 2 * Math.atan(Math.tan(baseRad / 2) * (16 / 9))
+  const vRad = 2 * Math.atan(Math.tan(hFov / 2) / aspect)
+  return THREE.MathUtils.clamp(THREE.MathUtils.radToDeg(vRad), BASE_FOV, 90)
+}
