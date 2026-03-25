@@ -568,8 +568,12 @@ function App() {
     // iOS Safari may not fire ResizeObserver reliably on every orientation flip.
     // A dedicated handler with a short delay ensures the CSS layout has settled
     // before we re-read the canvas dimensions.
+    let orientationTimeoutId: number | null = null
     const onOrientationChange = () => {
-      setTimeout(updateViewport, 100)
+      if (orientationTimeoutId !== null) {
+        clearTimeout(orientationTimeoutId)
+      }
+      orientationTimeoutId = window.setTimeout(updateViewport, 100)
     }
     window.addEventListener('orientationchange', onOrientationChange)
 
