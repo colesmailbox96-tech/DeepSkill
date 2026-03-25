@@ -531,7 +531,7 @@ function App() {
       100,
     )
     camera.position.set(RESPAWN_X, 3.8, RESPAWN_Z + 7)
-    camera.lookAt(RESPAWN_X, 0, RESPAWN_Z)
+    camera.lookAt(RESPAWN_X, RESPAWN_Y, RESPAWN_Z)
 
     // Detect coarse-pointer (touch) devices once for renderer / prompt tuning.
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
