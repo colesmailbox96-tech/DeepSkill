@@ -20,7 +20,7 @@ export const RC_BUILD_LABEL = 'RC-1' as const
  * Canonical phase number at which this release candidate was cut.
  * Increment when a hotfix phase branches from this RC.
  */
-export const RC_PHASE = 100 as const
+export const RC_PHASE = 101 as const
 
 // ── Completed phase summary ───────────────────────────────────────────────────
 
@@ -96,6 +96,7 @@ export const RC_PHASE_LOG: readonly PhaseEntry[] = [
   { phase: 98,  title: 'Telemetry Hooks',               summary: 'Local-only 500-event ring-buffer; 7 event types wired to key systems.' },
   { phase: 99,  title: 'Expansion Backlog Authoring',   summary: '18 backlog items P0–P3, 6 feature buckets, 10 cut/keep entries, 7 risk notes.' },
   { phase: 100, title: 'Release Candidate Stabilization', summary: 'Lint clean, chunk splitting, RC manifest wired to main menu, README refresh.' },
+  { phase: 101, title: 'Comprehensive Pass — High-Impact Feature Identification', summary: '24 PassFeatures across 4 sprint groups; ImpactMatrix, SprintGroup manifest, and helper functions for sprint planning.' },
 ] as const
 
 // ── Known limitations (open issues entering RC-1) ────────────────────────────
