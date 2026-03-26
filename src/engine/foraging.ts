@@ -170,8 +170,8 @@ const FORAGE_PLACEMENTS: ReadonlyArray<{ pos: [number, number]; variant: ForageV
 /** Build the Three.js geometry for a reed-clump node. */
 function _buildReedClusterMesh(primaryColor: number, secondaryColor: number): THREE.Group {
   const group   = new THREE.Group()
-  const matStalk = new THREE.MeshStandardMaterial({ color: primaryColor,   roughness: 0.90 })
-  const matHead  = new THREE.MeshStandardMaterial({ color: secondaryColor, roughness: 0.85 })
+  const matStalk = new THREE.MeshLambertMaterial({ color: primaryColor })
+  const matHead  = new THREE.MeshLambertMaterial({ color: secondaryColor })
 
   const offsets: Array<[number, number]> = [
     [ 0.00,  0.00],
@@ -203,8 +203,8 @@ function _buildReedClusterMesh(primaryColor: number, secondaryColor: number): TH
 /** Build the Three.js geometry for a marsh-herb node. */
 function _buildMarshHerbMesh(primaryColor: number, secondaryColor: number): THREE.Group {
   const group   = new THREE.Group()
-  const matLeaf = new THREE.MeshStandardMaterial({ color: primaryColor,   roughness: 0.85 })
-  const matStem = new THREE.MeshStandardMaterial({ color: secondaryColor, roughness: 0.90 })
+  const matLeaf = new THREE.MeshLambertMaterial({ color: primaryColor })
+  const matStem = new THREE.MeshLambertMaterial({ color: secondaryColor })
 
   // Three leafy sprigs arranged in a loose cluster
   const sprigs: Array<[number, number]> = [
@@ -243,7 +243,7 @@ function _buildResinGlobMesh(primaryColor: number, secondaryColor: number): THRE
     emissive: new THREE.Color(primaryColor).multiplyScalar(0.18),
     roughness: 0.45,
   })
-  const matBark = new THREE.MeshStandardMaterial({ color: secondaryColor, roughness: 0.92 })
+  const matBark = new THREE.MeshLambertMaterial({ color: secondaryColor })
 
   // Small bark-stub base
   const base = new THREE.Mesh(
@@ -324,9 +324,8 @@ function _buildMarrowfenSporeMesh(primaryColor: number, secondaryColor: number):
     emissiveIntensity: 0.8,
     roughness: 0.55,
   })
-  const matStalk = new THREE.MeshStandardMaterial({
+  const matStalk = new THREE.MeshLambertMaterial({
     color: secondaryColor,
-    roughness: 0.75,
   })
 
   // Central cap — hemisphere

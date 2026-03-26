@@ -86,7 +86,7 @@ export const FISH_SPOT_CONFIG: Readonly<Record<FishVariant, FishSpotConfig>> = {
 
 // ── Materials ─────────────────────────────────────────────────────────────────
 
-const matPole    = new THREE.MeshStandardMaterial({ color: 0x8c6030, roughness: 0.88 })
+const matPole    = new THREE.MeshLambertMaterial({ color: 0x8c6030 })
 const matRipple  = new THREE.MeshStandardMaterial({
   color: 0x6ab0d8,
   roughness: 0.30,
@@ -164,7 +164,7 @@ function buildOneFishSpot(
   // coloured per variant so spots are visually distinct.
   const floatMesh = new THREE.Mesh(
     new THREE.SphereGeometry(0.14, 8, 6),
-    new THREE.MeshStandardMaterial({ color: cfg.floatColor, roughness: 0.40 }),
+    new THREE.MeshLambertMaterial({ color: cfg.floatColor }),
   )
   floatMesh.position.set(0, 1.5, 0)
   group.add(floatMesh)

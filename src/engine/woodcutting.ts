@@ -123,7 +123,7 @@ export const VARIANT_CONFIG: Readonly<Record<TreeVariant, VariantConfig>> = {
 
 // ── Materials ─────────────────────────────────────────────────────────────────
 
-const matStump = new THREE.MeshStandardMaterial({ color: 0x8a6040, roughness: 0.90 })
+const matStump = new THREE.MeshLambertMaterial({ color: 0x8a6040 })
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -188,7 +188,7 @@ function buildOneTree(
   // Trunk
   const trunk = new THREE.Mesh(
     new THREE.CylinderGeometry(...cfg.trunkGeo),
-    new THREE.MeshStandardMaterial({ color: cfg.trunkColor, roughness: 0.85 }),
+    new THREE.MeshLambertMaterial({ color: cfg.trunkColor }),
   )
   trunk.position.set(0, cfg.trunkY, 0)
   group.add(trunk)
@@ -196,7 +196,7 @@ function buildOneTree(
   // Canopy
   const canopy = new THREE.Mesh(
     new THREE.ConeGeometry(...cfg.canopyGeo),
-    new THREE.MeshStandardMaterial({ color: cfg.canopyColor, roughness: 0.80 }),
+    new THREE.MeshLambertMaterial({ color: cfg.canopyColor }),
   )
   canopy.position.set(0, cfg.canopyY, 0)
   group.add(canopy)

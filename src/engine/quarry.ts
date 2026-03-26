@@ -41,20 +41,20 @@ import { useNotifications } from '../store/useNotifications'
 
 // ─── Shared materials ────────────────────────────────────────────────────────
 
-const matRockyGround = new THREE.MeshStandardMaterial({ color: 0x6b6256, roughness: 0.97 })
-const matTrailGround = new THREE.MeshStandardMaterial({ color: 0x5c4a32, roughness: 0.92 })
-const matCliff       = new THREE.MeshStandardMaterial({ color: 0x736860, roughness: 0.92 })
-const matCliffDark   = new THREE.MeshStandardMaterial({ color: 0x5a4e44, roughness: 0.95 })
-const matWood        = new THREE.MeshStandardMaterial({ color: 0x9a6c3a, roughness: 0.80 })
-const matMetal       = new THREE.MeshStandardMaterial({ color: 0x606878, roughness: 0.60 })
-const matCrate       = new THREE.MeshStandardMaterial({ color: 0xa07840, roughness: 0.85 })
+const matRockyGround = new THREE.MeshLambertMaterial({ color: 0x6b6256 })
+const matTrailGround = new THREE.MeshLambertMaterial({ color: 0x5c4a32 })
+const matCliff       = new THREE.MeshLambertMaterial({ color: 0x736860 })
+const matCliffDark   = new THREE.MeshLambertMaterial({ color: 0x5a4e44 })
+const matWood        = new THREE.MeshLambertMaterial({ color: 0x9a6c3a })
+const matMetal       = new THREE.MeshLambertMaterial({ color: 0x606878 })
+const matCrate       = new THREE.MeshLambertMaterial({ color: 0xa07840 })
 const matLantern     = new THREE.MeshStandardMaterial({
   color: 0xffcc44,
   emissive: new THREE.Color(0xff8800),
   emissiveIntensity: 0.8,
   roughness: 0.5,
 })
-const matBound = new THREE.MeshStandardMaterial({ visible: false })
+const matBound = new THREE.MeshLambertMaterial({ visible: false })
 
 // ─── Public result type ───────────────────────────────────────────────────────
 
@@ -416,7 +416,7 @@ function _addBox(
   x: number,
   y: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
   mesh.position.set(x, y, z)
@@ -433,7 +433,7 @@ function _addWall(
   x: number,
   y: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   return _addBox(scene, w, h, d, x, y, z, mat)
 }

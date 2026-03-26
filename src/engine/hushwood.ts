@@ -22,19 +22,19 @@ import { useLedgerStore } from '../store/useLedgerStore'
 
 // ─── Shared materials ────────────────────────────────────────────────────────
 
-const matTerrain = new THREE.MeshStandardMaterial({ color: 0x7a6248, roughness: 0.95 })
-const matRoad    = new THREE.MeshStandardMaterial({ color: 0x5c4a32, roughness: 0.90 })
-const matStone   = new THREE.MeshStandardMaterial({ color: 0x8e8680, roughness: 0.85 })
-const matWood    = new THREE.MeshStandardMaterial({ color: 0x9a6c3a, roughness: 0.80 })
-const matDark    = new THREE.MeshStandardMaterial({ color: 0x4a3a2a, roughness: 0.90 })
-const matCommons = new THREE.MeshStandardMaterial({ color: 0x9a9080, roughness: 0.90 })
+const matTerrain = new THREE.MeshLambertMaterial({ color: 0x7a6248 })
+const matRoad    = new THREE.MeshLambertMaterial({ color: 0x5c4a32 })
+const matStone   = new THREE.MeshLambertMaterial({ color: 0x8e8680 })
+const matWood    = new THREE.MeshLambertMaterial({ color: 0x9a6c3a })
+const matDark    = new THREE.MeshLambertMaterial({ color: 0x4a3a2a })
+const matCommons = new THREE.MeshLambertMaterial({ color: 0x9a9080 })
 const matWater   = new THREE.MeshStandardMaterial({
   color: 0x2a5080,
   roughness: 0.10,
   transparent: true,
   opacity: 0.80,
 })
-const matShore   = new THREE.MeshStandardMaterial({ color: 0xb0a07a, roughness: 0.95 })
+const matShore   = new THREE.MeshLambertMaterial({ color: 0xb0a07a })
 const matEmber   = new THREE.MeshStandardMaterial({
   color: 0xff6600,
   emissive: new THREE.Color(0xff3300),
@@ -42,7 +42,7 @@ const matEmber   = new THREE.MeshStandardMaterial({
   roughness: 0.5,
 })
 // Boundary walls are invisible collision volumes
-const matBound = new THREE.MeshStandardMaterial({ visible: false })
+const matBound = new THREE.MeshLambertMaterial({ visible: false })
 
 // ─── Public result type ───────────────────────────────────────────────────────
 
@@ -257,7 +257,7 @@ function _addStructure(
   d: number,
   x: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
   mesh.position.set(x, h / 2, z)
@@ -274,7 +274,7 @@ function _addWall(
   x: number,
   y: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
   mesh.position.set(x, y, z)

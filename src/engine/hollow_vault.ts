@@ -92,22 +92,22 @@ const STEP_COUNT = 4
 
 // ─── Shared materials ─────────────────────────────────────────────────────────
 
-const matVaultFloor  = new THREE.MeshStandardMaterial({ color: 0x383030, roughness: 0.96 })
-const matVaultStep0  = new THREE.MeshStandardMaterial({ color: 0x322a2a, roughness: 0.97 })
-const matVaultStep1  = new THREE.MeshStandardMaterial({ color: 0x2c2424, roughness: 0.97 })
-const matVaultStep2  = new THREE.MeshStandardMaterial({ color: 0x262020, roughness: 0.97 })
-const matVaultStep3  = new THREE.MeshStandardMaterial({ color: 0x201c1c, roughness: 0.97 })
+const matVaultFloor  = new THREE.MeshLambertMaterial({ color: 0x383030 })
+const matVaultStep0  = new THREE.MeshLambertMaterial({ color: 0x322a2a })
+const matVaultStep1  = new THREE.MeshLambertMaterial({ color: 0x2c2424 })
+const matVaultStep2  = new THREE.MeshLambertMaterial({ color: 0x262020 })
+const matVaultStep3  = new THREE.MeshLambertMaterial({ color: 0x201c1c })
 const STEP_MATS      = [matVaultStep0, matVaultStep1, matVaultStep2, matVaultStep3]
-const matRuinStone   = new THREE.MeshStandardMaterial({ color: 0x585050, roughness: 0.90 })
-const matRuinDark    = new THREE.MeshStandardMaterial({ color: 0x302828, roughness: 0.95 })
+const matRuinStone   = new THREE.MeshLambertMaterial({ color: 0x585050 })
+const matRuinDark    = new THREE.MeshLambertMaterial({ color: 0x302828 })
 const matGlyphFaint  = new THREE.MeshStandardMaterial({
   color: 0x4a7090,
   roughness: 0.5,
   emissive: new THREE.Color(0x182838),
   emissiveIntensity: 0.5,
 })
-const matGateSeal    = new THREE.MeshStandardMaterial({ color: 0x201e1e, roughness: 0.98 })
-const matBound       = new THREE.MeshStandardMaterial({ visible: false })
+const matGateSeal    = new THREE.MeshLambertMaterial({ color: 0x201e1e })
+const matBound       = new THREE.MeshLambertMaterial({ visible: false })
 
 // ─── Public result type ───────────────────────────────────────────────────────
 
@@ -253,7 +253,7 @@ export function buildHollowVault(
   _addBox(scene, 0.3, 3.0, 2, -97.9, 1.5,  7, matRuinDark)
 
   // Low overhead ceiling fragments (visual atmosphere — low clearance feel)
-  const ceilMat = new THREE.MeshStandardMaterial({ color: 0x1a1818, roughness: 0.98 })
+  const ceilMat = new THREE.MeshLambertMaterial({ color: 0x1a1818 })
   _addBox(scene, 8, 0.3, 12, lowerFloorCentreX, 3.5, 0, ceilMat)
 
   // Ceiling stalactites (visual detail)
@@ -389,7 +389,7 @@ export function buildHollowVault(
   })
   // Decorative iron banding strips parented to the door mesh so they
   // hide and remove with it when the door opens.
-  const bandMat = new THREE.MeshStandardMaterial({ color: 0x2a2020, roughness: 0.85 })
+  const bandMat = new THREE.MeshLambertMaterial({ color: 0x2a2020 })
   for (const bz of [-2.5, 0, 2.5]) {
     const band = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.18, 0.9), bandMat)
     band.position.set(0, 0, bz)
@@ -501,7 +501,7 @@ function _addBox(
   x: number,
   y: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
   mesh.position.set(x, y, z)
@@ -517,7 +517,7 @@ function _addWall(
   x: number,
   y: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   return _addBox(scene, w, h, d, x, y, z, mat)
 }

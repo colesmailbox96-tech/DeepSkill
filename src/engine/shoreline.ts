@@ -38,25 +38,25 @@ import { useDialogueStore } from '../store/useDialogueStore'
 import { useNotifications } from '../store/useNotifications'
 
 // ─── Shared materials ────────────────────────────────────────────────────────
-const matSand    = new THREE.MeshStandardMaterial({ color: 0xc8b882, roughness: 0.95 })
-const matShore   = new THREE.MeshStandardMaterial({ color: 0xd4c89a, roughness: 0.97 })
-const matTrail   = new THREE.MeshStandardMaterial({ color: 0x5c4a32, roughness: 0.92 })
-const matVerge   = new THREE.MeshStandardMaterial({ color: 0x8a7a60, roughness: 0.93 })
+const matSand    = new THREE.MeshLambertMaterial({ color: 0xc8b882 })
+const matShore   = new THREE.MeshLambertMaterial({ color: 0xd4c89a })
+const matTrail   = new THREE.MeshLambertMaterial({ color: 0x5c4a32 })
+const matVerge   = new THREE.MeshLambertMaterial({ color: 0x8a7a60 })
 const matWater   = new THREE.MeshStandardMaterial({
   color: 0x2a6080,
   roughness: 0.08,
   transparent: true,
   opacity: 0.82,
 })
-const matWood    = new THREE.MeshStandardMaterial({ color: 0x9a6c3a, roughness: 0.82 })
-const matDarkWood = new THREE.MeshStandardMaterial({ color: 0x6a4c28, roughness: 0.88 })
+const matWood    = new THREE.MeshLambertMaterial({ color: 0x9a6c3a })
+const matDarkWood = new THREE.MeshLambertMaterial({ color: 0x6a4c28 })
 const matEmber   = new THREE.MeshStandardMaterial({
   color: 0xff5500,
   emissive: new THREE.Color(0xff3300),
   emissiveIntensity: 0.9,
   roughness: 0.5,
 })
-const matBound   = new THREE.MeshStandardMaterial({ visible: false })
+const matBound   = new THREE.MeshLambertMaterial({ visible: false })
 
 // ─── Public result type ───────────────────────────────────────────────────────
 
@@ -198,7 +198,7 @@ export function buildShoreline(
   const stonePositions: [number, number, number][] = [
     [35.6, 0.08, 2.4], [36.8, 0.06, 3.2], [38.2, 0.07, 2.9],
   ]
-  const matSmooth = new THREE.MeshStandardMaterial({ color: 0xa09888, roughness: 0.75 })
+  const matSmooth = new THREE.MeshLambertMaterial({ color: 0xa09888 })
   for (const [sx, sy, sz] of stonePositions) {
     const s = new THREE.Mesh(new THREE.DodecahedronGeometry(0.14, 0), matSmooth)
     s.scale.y = 0.55
@@ -227,7 +227,7 @@ export function buildShoreline(
 
   // Sea floor beneath the water — gives the water a visible bed instead of
   // showing the dark scene background through the semi-transparent surface.
-  const matSeaFloor = new THREE.MeshStandardMaterial({ color: 0x486060, roughness: 0.99 })
+  const matSeaFloor = new THREE.MeshLambertMaterial({ color: 0x486060 })
   const seaFloor = new THREE.Mesh(new THREE.PlaneGeometry(22, 40), matSeaFloor)
   seaFloor.rotation.x = -Math.PI / 2
   seaFloor.position.set(71, -0.4, 0)
@@ -263,13 +263,13 @@ export function buildShoreline(
 
   // ── Cookfire near the bank (x = +47, z = −6) ─────────────────────────────
   // Stone ring base
-  const matFireRing = new THREE.MeshStandardMaterial({ color: 0x8e8680, roughness: 0.88 })
+  const matFireRing = new THREE.MeshLambertMaterial({ color: 0x8e8680 })
   const fireRing = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.12, 6, 12), matFireRing)
   fireRing.rotation.x = -Math.PI / 2
   fireRing.position.set(47, 0.12, -6)
   scene.add(fireRing)
   // Fire stones (four rough dodecahedra around the ring)
-  const matFireStone = new THREE.MeshStandardMaterial({ color: 0x8e8680, roughness: 0.88 })
+  const matFireStone = new THREE.MeshLambertMaterial({ color: 0x8e8680 })
   for (let i = 0; i < 4; i++) {
     const angle = (i / 4) * Math.PI * 2
     const stone = new THREE.Mesh(new THREE.DodecahedronGeometry(0.16, 0), matFireStone)
@@ -368,7 +368,7 @@ function _addBox(
   x: number,
   y: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
   mesh.position.set(x, y, z)
@@ -385,7 +385,7 @@ function _addWall(
   x: number,
   y: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   return _addBox(scene, w, h, d, x, y, z, mat)
 }

@@ -52,12 +52,11 @@ export const BV_MAX_Z =  14
 // ─── Shared materials ─────────────────────────────────────────────────────────
 
 /** Pale grey-blue angular stone floor. */
-const matThresholdFloor = new THREE.MeshStandardMaterial({
+const matThresholdFloor = new THREE.MeshLambertMaterial({
   color: 0x2a3240,
-  roughness: 0.85,
 })
 /** Dark rubble-fill sections behind the glass cladding. */
-const matRubbleFill = new THREE.MeshStandardMaterial({ color: 0x1e1e28, roughness: 0.97 })
+const matRubbleFill = new THREE.MeshLambertMaterial({ color: 0x1e1e28 })
 /** Fractured vaultglass pillar — pale cyan-blue with faint self-illumination. */
 const matVaultGlass = new THREE.MeshStandardMaterial({
   color: 0x7ab8d0,
@@ -67,9 +66,9 @@ const matVaultGlass = new THREE.MeshStandardMaterial({
   emissiveIntensity: 0.45,
 })
 /** Pillar base socket — dark polished stone. */
-const matPillarBase = new THREE.MeshStandardMaterial({ color: 0x1e2830, roughness: 0.88 })
+const matPillarBase = new THREE.MeshLambertMaterial({ color: 0x1e2830 })
 /** Invisible collision boundary. */
-const matBound = new THREE.MeshStandardMaterial({ visible: false })
+const matBound = new THREE.MeshLambertMaterial({ visible: false })
 
 // ─── Public result type ───────────────────────────────────────────────────────
 
@@ -134,7 +133,7 @@ export function buildBelowglassVaults(
   // ── Lore inscription tablet ────────────────────────────────────────────────
   // A stone slab propped against the north wall near the entrance,
   // carrying a worn Deep Heart maintenance inscription.
-  const matTablet = new THREE.MeshStandardMaterial({ color: 0x1a2030, roughness: 0.92 })
+  const matTablet = new THREE.MeshLambertMaterial({ color: 0x1a2030 })
   const tablet = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.08), matTablet)
   tablet.position.set(-103.5, 0.7, -9.76)
   scene.add(tablet)
@@ -322,7 +321,7 @@ function _addWall(
   x: number,
   y: number,
   z: number,
-  mat: THREE.MeshStandardMaterial,
+  mat: THREE.Material,
 ): THREE.Mesh {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
   mesh.position.set(x, y, z)

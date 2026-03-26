@@ -333,9 +333,9 @@ export interface SurveyStoneStation {
 function _buildSurveyStoneMesh(): THREE.Group {
   const group = new THREE.Group()
 
-  const matStone = new THREE.MeshStandardMaterial({ color: 0x7a7060, roughness: 0.9 })
+  const matStone = new THREE.MeshLambertMaterial({ color: 0x7a7060 })
   const matGlyph = new THREE.MeshStandardMaterial({ color: 0xd4c87a, roughness: 0.5, emissive: new THREE.Color(0x887a20), emissiveIntensity: 0.6 })
-  const matBase  = new THREE.MeshStandardMaterial({ color: 0x5a5040, roughness: 0.95 })
+  const matBase  = new THREE.MeshLambertMaterial({ color: 0x5a5040 })
 
   // Base slab
   const base = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, 0.5), matBase)

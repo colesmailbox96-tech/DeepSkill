@@ -1332,6 +1332,32 @@ function _resetToSpawn(c: Creature): void {
   c.idleTimer = c.def.idleBase * (0.5 + Math.random())
 }
 
+// ── Shared geometry caches (avoid per-creature geometry duplication) ─────────
+// Keyed by a string derived from the geometry dimensions so creatures with
+// identical scale factors share a single GPU-side buffer.
+const _capsuleGeoCache = new Map<string, THREE.CapsuleGeometry>()
+const _sphereGeoCache  = new Map<string, THREE.SphereGeometry>()
+
+function _getCapsuleGeo(r: number, h: number): THREE.CapsuleGeometry {
+  const key = `${r.toFixed(4)}_${h.toFixed(4)}`
+  let geo = _capsuleGeoCache.get(key)
+  if (!geo) {
+    geo = new THREE.CapsuleGeometry(r, h, 4, 8)
+    _capsuleGeoCache.set(key, geo)
+  }
+  return geo
+}
+
+function _getSphereGeo(r: number): THREE.SphereGeometry {
+  const key = r.toFixed(4)
+  let geo = _sphereGeoCache.get(key)
+  if (!geo) {
+    geo = new THREE.SphereGeometry(r, 6, 6)
+    _sphereGeoCache.set(key, geo)
+  }
+  return geo
+}
+
 /**
  * Build the visual mesh for a creature.
  * Uses a capsule body scaled by `def.scale` — consistent with the NPC visual
@@ -1348,7 +1374,7 @@ function _buildMesh(def: CreatureDef): { mesh: THREE.Group; bodyMat: THREE.MeshS
   const r  = 0.25 * def.scale   // capsule radius
   const h  = 0.9  * def.scale   // cylinder height (capsule segment)
   const bodyMat = new THREE.MeshStandardMaterial({ color: def.color, roughness: 0.75 })
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(r, h, 4, 8), bodyMat)
+  const body = new THREE.Mesh(_getCapsuleGeo(r, h), bodyMat)
   // Centre of capsule is at r + h/2 above ground.
   body.position.y = r + h / 2
   group.add(body)
@@ -1364,7 +1390,7 @@ function _buildMesh(def: CreatureDef): { mesh: THREE.Group; bodyMat: THREE.MeshS
     roughness: 0.4,
   })
   const eyeR = 0.055 * def.scale
-  const eye = new THREE.Mesh(new THREE.SphereGeometry(eyeR, 6, 6), eyeMat)
+  const eye = new THREE.Mesh(_getSphereGeo(eyeR), eyeMat)
   eye.position.set(0, r + h, r * 0.85)   // front-centre, near the top
   group.add(eye)
 

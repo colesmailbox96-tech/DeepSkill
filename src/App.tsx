@@ -1797,7 +1797,10 @@ function App() {
         if (!(obj instanceof THREE.Mesh)) return
         const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
         for (const mat of mats) {
-          if (mat instanceof THREE.MeshStandardMaterial) {
+          if (
+            mat instanceof THREE.MeshStandardMaterial ||
+            mat instanceof THREE.MeshLambertMaterial
+          ) {
             mat.emissive.copy(color)
           }
         }
@@ -2310,9 +2313,15 @@ function App() {
     // Per-frame audio-region tracker.
     let prevAudioRegion: AudioRegion | null = null
     let _debugFramePrinted = false
+    // Reusable scratch Vector3 for gather-spark world positions — avoids
+    // allocating a new object each time a gathering session completes.
+    const _sparkScratch = new THREE.Vector3()
+    // Frame counter used to throttle non-critical per-frame systems.
+    let _frameCount = 0
     const animate = () => {
       animationFrame = requestAnimationFrame(animate)
       const delta = clock.getDelta()
+      _frameCount++
 
       // Phase 34 — freeze all player-input and combat systems while the
       // respawn overlay is visible.  The camera, NPC ambient sway, and
@@ -2364,7 +2373,7 @@ function App() {
             if (added) {
               grantSkillXp('woodcutting', cfg.xp, onLevelUp)
               advanceGatherObjectives(cfg.logId)
-              const sparkPos = new THREE.Vector3()
+              const sparkPos = _sparkScratch
               sess.node.trunk.getWorldPosition(sparkPos)
               spawnGatherSparks(sparkPos)
               audioManager.playSfx('collect')
@@ -2401,7 +2410,7 @@ function App() {
             if (added) {
               grantSkillXp('mining', cfg.xp, onLevelUp)
               advanceGatherObjectives(cfg.oreId)
-              const sparkPos = new THREE.Vector3()
+              const sparkPos = _sparkScratch
               sess.node.rockMesh.getWorldPosition(sparkPos)
               spawnGatherSparks(sparkPos)
               audioManager.playSfx('collect')
@@ -2438,7 +2447,7 @@ function App() {
             if (added) {
               grantSkillXp('fishing', cfg.xp, onLevelUp)
               advanceGatherObjectives(cfg.fishId)
-              const sparkPos = new THREE.Vector3()
+              const sparkPos = _sparkScratch
               sess.node.floatMesh.getWorldPosition(sparkPos)
               spawnGatherSparks(sparkPos)
               audioManager.playSfx('collect')
@@ -2505,7 +2514,7 @@ function App() {
       if (smeltRef.current) {
         const sess = smeltRef.current
         const tooFar = furnaceStation
-          ? player.mesh.position.distanceTo(furnaceStation.mesh.position) > FURNACE_INTERACT_RADIUS
+          ? player.mesh.position.distanceToSquared(furnaceStation.mesh.position) > FURNACE_INTERACT_RADIUS * FURNACE_INTERACT_RADIUS
           : false
         if (player.moveState === 'walk' || tooFar) {
           // Moving away from or out of range of the furnace cancels the smelt.
@@ -2556,7 +2565,7 @@ function App() {
       if (forgeRef.current) {
         const sess = forgeRef.current
         const tooFar = furnaceStation
-          ? player.mesh.position.distanceTo(furnaceStation.mesh.position) > FURNACE_INTERACT_RADIUS
+          ? player.mesh.position.distanceToSquared(furnaceStation.mesh.position) > FURNACE_INTERACT_RADIUS * FURNACE_INTERACT_RADIUS
           : false
         if (player.moveState === 'walk' || tooFar) {
           forgeRef.current = null
@@ -2609,7 +2618,7 @@ function App() {
       if (alloyRef.current) {
         const sess = alloyRef.current
         const tooFar = furnaceStation
-          ? player.mesh.position.distanceTo(furnaceStation.mesh.position) > FURNACE_INTERACT_RADIUS
+          ? player.mesh.position.distanceToSquared(furnaceStation.mesh.position) > FURNACE_INTERACT_RADIUS * FURNACE_INTERACT_RADIUS
           : false
         if (player.moveState === 'walk' || tooFar) {
           alloyRef.current = null
@@ -2659,7 +2668,7 @@ function App() {
       if (carveRef.current) {
         const sess = carveRef.current
         const tooFar = workbenchStation
-          ? player.mesh.position.distanceTo(workbenchStation.mesh.position) > WORKBENCH_INTERACT_RADIUS
+          ? player.mesh.position.distanceToSquared(workbenchStation.mesh.position) > WORKBENCH_INTERACT_RADIUS * WORKBENCH_INTERACT_RADIUS
           : false
         if (player.moveState === 'walk' || tooFar) {
           carveRef.current = null
@@ -2708,7 +2717,7 @@ function App() {
       if (tinkerRef.current) {
         const sess = tinkerRef.current
         const tooFar = tinkererBenchStation
-          ? player.mesh.position.distanceTo(tinkererBenchStation.mesh.position) > TINKERER_BENCH_INTERACT_RADIUS
+          ? player.mesh.position.distanceToSquared(tinkererBenchStation.mesh.position) > TINKERER_BENCH_INTERACT_RADIUS * TINKERER_BENCH_INTERACT_RADIUS
           : false
         if (player.moveState === 'walk' || tooFar) {
           tinkerRef.current = null
@@ -2772,7 +2781,7 @@ function App() {
       if (tailorRef.current) {
         const sess = tailorRef.current
         const tooFar = sewingTableStation
-          ? player.mesh.position.distanceTo(sewingTableStation.mesh.position) > SEWING_TABLE_INTERACT_RADIUS
+          ? player.mesh.position.distanceToSquared(sewingTableStation.mesh.position) > SEWING_TABLE_INTERACT_RADIUS * SEWING_TABLE_INTERACT_RADIUS
           : false
         if (player.moveState === 'walk' || tooFar) {
           tailorRef.current = null
@@ -2857,7 +2866,7 @@ function App() {
       if (wardRef.current) {
         const sess = wardRef.current
         const tooFar = wardingAltarStation
-          ? player.mesh.position.distanceTo(wardingAltarStation.mesh.position) > WARDING_ALTAR_INTERACT_RADIUS
+          ? player.mesh.position.distanceToSquared(wardingAltarStation.mesh.position) > WARDING_ALTAR_INTERACT_RADIUS * WARDING_ALTAR_INTERACT_RADIUS
           : false
         if (player.moveState === 'walk' || tooFar) {
           wardRef.current = null
@@ -2905,8 +2914,11 @@ function App() {
         }
       }
 
-      // Phase 05 — interaction targeting
-      updateInteraction(interactionState, player, interactables)
+      // Phase 05 — interaction targeting (throttled to every 3rd frame to reduce
+      // per-frame getWorldPosition calls across all interactable objects).
+      if (_frameCount % 3 === 0) {
+        updateInteraction(interactionState, player, interactables)
+      }
 
       // Phase 48 — Environmental Hazard System tick.
       // Check which hazard volume (if any) contains the player, update the
@@ -3514,6 +3526,12 @@ function App() {
 
       renderer.render(scene, camera)
     }
+
+    // Pre-compile all shaders before the first frame to avoid jank on the
+    // initial render pass. This moves the compilation cost to load time
+    // where a small stall is far less noticeable than mid-gameplay hitches.
+    renderer.compile(scene, camera)
+
     animate()
 
     return () => {
