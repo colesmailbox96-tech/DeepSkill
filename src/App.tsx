@@ -1797,7 +1797,10 @@ function App() {
         if (!(obj instanceof THREE.Mesh)) return
         const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
         for (const mat of mats) {
-          if (mat instanceof THREE.MeshStandardMaterial) {
+          if (
+            mat instanceof THREE.MeshStandardMaterial ||
+            mat instanceof THREE.MeshLambertMaterial
+          ) {
             mat.emissive.copy(color)
           }
         }
