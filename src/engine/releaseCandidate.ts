@@ -1,5 +1,6 @@
 /**
  * Phase 100 — Release Candidate Stabilization
+ * Phase 101 — Comprehensive Pass (phase log entry added; RC-1 build unchanged)
  *
  * Central manifest describing the RC-1 demo build of Veilmarch.
  * Intended to be consumed by the main menu and future crash/feedback reporters

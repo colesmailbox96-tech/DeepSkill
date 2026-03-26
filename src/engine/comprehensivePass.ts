@@ -79,7 +79,7 @@ export type OwningSystem =
  * rough ordering hint (lower = earlier).
  */
 export type SprintGroup =
-  | 'sprint_1_stabilisation'
+  | 'sprint_1_stabilization'
   | 'sprint_2_mid_content'
   | 'sprint_3_late_content'
   | 'sprint_4_polish'
@@ -92,7 +92,7 @@ export type SprintGroup =
  * a developer to estimate scope and sequence without additional documents.
  */
 export interface PassFeature {
-  /** Stable kebab-case identifier.  Must be unique within COMPREHENSIVE_PASS. */
+  /** Stable snake_case identifier.  Must be unique within COMPREHENSIVE_PASS. */
   id: string
 
   /** Short human-readable title (≤ 72 characters). */
@@ -139,7 +139,7 @@ export interface PassFeature {
 
 export const COMPREHENSIVE_PASS: readonly PassFeature[] = [
 
-  // ── Sprint 1 — Stabilisation (critical + high blockers) ───────────────────
+  // ── Sprint 1 — Stabilization (critical + high blockers) ───────────────────
 
   {
     id: 'xp_curve_rebalance',
@@ -151,7 +151,7 @@ export const COMPREHENSIVE_PASS: readonly PassFeature[] = [
     impact: 'critical',
     effort: 's',
     system: 'balance',
-    sprint: 'sprint_1_stabilisation',
+    sprint: 'sprint_1_stabilization',
     blockedBy: [],
     backlogRef: 'demo_feedback_balance',
     acceptanceCriterion:
@@ -169,7 +169,7 @@ export const COMPREHENSIVE_PASS: readonly PassFeature[] = [
     impact: 'critical',
     effort: 's',
     system: 'combat',
-    sprint: 'sprint_1_stabilisation',
+    sprint: 'sprint_1_stabilization',
     blockedBy: [],
     backlogRef: 'respawn_feel',
     acceptanceCriterion:
@@ -186,8 +186,8 @@ export const COMPREHENSIVE_PASS: readonly PassFeature[] = [
     impact: 'critical',
     effort: 'm',
     system: 'save_load',
-    sprint: 'sprint_1_stabilisation',
-    blockedBy: [],
+    sprint: 'sprint_1_stabilization',
+    blockedBy: ['save_version_3_migration'],
     backlogRef: 'save_integrity_hotfixes',
     acceptanceCriterion:
       'A gated door that was opened before a manual save is absent (not re-rendered) ' +
@@ -204,7 +204,7 @@ export const COMPREHENSIVE_PASS: readonly PassFeature[] = [
     impact: 'critical',
     effort: 's',
     system: 'save_load',
-    sprint: 'sprint_1_stabilisation',
+    sprint: 'sprint_1_stabilization',
     blockedBy: [],
     backlogRef: 'save_integrity_hotfixes',
     acceptanceCriterion:
@@ -222,7 +222,7 @@ export const COMPREHENSIVE_PASS: readonly PassFeature[] = [
     impact: 'high',
     effort: 's',
     system: 'combat',
-    sprint: 'sprint_1_stabilisation',
+    sprint: 'sprint_1_stabilization',
     blockedBy: ['death_penalty_curve'],
     backlogRef: 'respawn_feel',
     acceptanceCriterion:
@@ -240,7 +240,7 @@ export const COMPREHENSIVE_PASS: readonly PassFeature[] = [
     impact: 'high',
     effort: 'l',
     system: 'performance',
-    sprint: 'sprint_1_stabilisation',
+    sprint: 'sprint_1_stabilization',
     blockedBy: [],
     backlogRef: 'three_draw_call_budget',
     acceptanceCriterion:
@@ -718,8 +718,8 @@ export interface SprintGroupEntry {
 export const SPRINT_GROUPS: readonly SprintGroupEntry[] = (
   [
     {
-      id: 'sprint_1_stabilisation' as const,
-      label: 'Sprint 1 — Stabilisation',
+      id: 'sprint_1_stabilization' as const,
+      label: 'Sprint 1 — Stabilization',
       goal:
         'Fix critical save, death penalty, and performance issues before wider distribution.  ' +
         'No new content ships until these items clear.',
@@ -757,17 +757,17 @@ export const SPRINT_GROUPS: readonly SprintGroupEntry[] = (
 export function getFeaturesByImpact(minImpact: ImpactTier): PassFeature[] {
   const order: ImpactTier[] = ['critical', 'high', 'medium', 'low']
   const threshold = order.indexOf(minImpact)
-  return COMPREHENSIVE_PASS.filter((f) => order.indexOf(f.impact) <= threshold) as PassFeature[]
+  return COMPREHENSIVE_PASS.filter((f) => order.indexOf(f.impact) <= threshold)
 }
 
 /** Returns all PassFeatures assigned to the given sprint group. */
 export function getFeaturesBySprint(sprint: SprintGroup): PassFeature[] {
-  return COMPREHENSIVE_PASS.filter((f) => f.sprint === sprint) as PassFeature[]
+  return COMPREHENSIVE_PASS.filter((f) => f.sprint === sprint)
 }
 
 /** Returns all PassFeatures owned by the given system. */
 export function getFeaturesBySystem(system: OwningSystem): PassFeature[] {
-  return COMPREHENSIVE_PASS.filter((f) => f.system === system) as PassFeature[]
+  return COMPREHENSIVE_PASS.filter((f) => f.system === system)
 }
 
 /**
@@ -782,5 +782,5 @@ export function getActionableFeatures(
 ): PassFeature[] {
   return COMPREHENSIVE_PASS.filter((f) =>
     f.blockedBy.every((dep) => completedIds.has(dep)),
-  ) as PassFeature[]
+  )
 }
