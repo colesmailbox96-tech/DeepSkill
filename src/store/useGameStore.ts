@@ -3,7 +3,11 @@ import { getItem } from '../data/items/itemRegistry'
 import type { ItemDefinition, EquipSlot } from '../data/items/itemSchema'
 import type { Skill } from '../data/skills/skillSchema'
 import { STARTER_SKILLS } from '../data/skills/starterSkills'
-import { applyXp } from '../data/skills/xpCurve'
+import {
+  applyXp,
+  SKILL_MILESTONE_PERCENT,
+  SKILL_MILESTONE_PROGRESS,
+} from '../data/skills/xpCurve'
 import { useNotifications } from './useNotifications'
 import {
   computeEquipStats,
@@ -350,6 +354,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       const target = state.skills.skills.find((s) => s.id === id)
       if (!target) return state
 
+      const prevProgress =
+        target.experienceToNextLevel > 0
+          ? Math.min(target.experience / target.experienceToNextLevel, 1)
+          : 0
       const result = applyXp(target.level, target.experience, amount)
 
       // No change — skip the update entirely to avoid unnecessary re-renders.
@@ -372,6 +380,24 @@ export const useGameStore = create<GameState>((set, get) => ({
           // Phase 98 — Telemetry: record each skill level gained.
           recordSkillLevelUp(id, gainedLevel)
         }
+      }
+
+      const nextProgress =
+        result.experienceToNextLevel > 0
+          ? Math.min(result.experience / result.experienceToNextLevel, 1)
+          : 0
+      if (
+        result.levelsGained === 0 &&
+        prevProgress < SKILL_MILESTONE_PROGRESS &&
+        nextProgress >= SKILL_MILESTONE_PROGRESS
+      ) {
+        const upcomingLevel = target.level + 1
+        useNotifications
+          .getState()
+          .push(
+            `${target.name} is over ${SKILL_MILESTONE_PERCENT}% toward level ${upcomingLevel}.`,
+            'info',
+          )
       }
 
       return {

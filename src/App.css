@@ -774,6 +774,19 @@ p {
   color: #d4cca8;
 }
 
+.skill-row__name-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.skill-row__milestone {
+  font-size: 0.62rem;
+  line-height: 1;
+  color: #88d89d;
+  text-shadow: 0 0 6px rgba(58, 173, 120, 0.45);
+}
+
 .skill-row__level {
   font-size: 0.78rem;
   font-weight: 700;

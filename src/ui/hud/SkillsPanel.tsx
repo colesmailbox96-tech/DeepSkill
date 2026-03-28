@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGameStore, type Skill } from '../../store/useGameStore'
 import { audioManager } from '../../engine/audio'
+import { SKILL_MILESTONE_PERCENT } from '../../data/skills/xpCurve'
 
 interface TooltipState {
   skill: Skill
@@ -98,6 +99,8 @@ export function SkillsPanel() {
                   100,
                 )
               : 100 // max level — fill the bar completely
+          const isNearLevelUp =
+            xpPct >= SKILL_MILESTONE_PERCENT && skill.experienceToNextLevel > 0
 
           // For max-level skills, set ARIA meter bounds to [0, 1] with
           // valuenow=1 so the role="meter" element has a valid, non-zero range.
@@ -132,7 +135,18 @@ export function SkillsPanel() {
             >
               {/* Skill name + level badge */}
               <div className="skill-row__info">
-                <span className="skill-row__name">{skill.name}</span>
+                <span className="skill-row__name-wrap">
+                  <span className="skill-row__name">{skill.name}</span>
+                  {isNearLevelUp && (
+                    <span
+                      className="skill-row__milestone"
+                      aria-label={`${skill.name} is over ${SKILL_MILESTONE_PERCENT}% to next level`}
+                      title={`Over ${SKILL_MILESTONE_PERCENT}% to next level`}
+                    >
+                      ▲
+                    </span>
+                  )}
+                </span>
                 <span className="skill-row__level">{skill.level}</span>
               </div>
 
