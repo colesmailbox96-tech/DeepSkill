@@ -350,6 +350,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       const target = state.skills.skills.find((s) => s.id === id)
       if (!target) return state
 
+      const prevProgress =
+        target.experienceToNextLevel > 0
+          ? target.experience / target.experienceToNextLevel
+          : 0
       const result = applyXp(target.level, target.experience, amount)
 
       // No change — skip the update entirely to avoid unnecessary re-renders.
@@ -372,6 +376,16 @@ export const useGameStore = create<GameState>((set, get) => ({
           // Phase 98 — Telemetry: record each skill level gained.
           recordSkillLevelUp(id, gainedLevel)
         }
+      }
+
+      const nextProgress =
+        result.experienceToNextLevel > 0
+          ? result.experience / result.experienceToNextLevel
+          : 0
+      if (prevProgress < 0.75 && nextProgress >= 0.75) {
+        useNotifications
+          .getState()
+          .push(`${target.name} is over 75% toward level ${result.level + 1}.`, 'info')
       }
 
       return {
