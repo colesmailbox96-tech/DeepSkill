@@ -12,6 +12,8 @@
  * staged quest progression persists across sessions.
  * Phase 90 — save schema versioning + step-by-step migration runner +
  * corruption recovery with backup fallback + player notifications.
+ * Phase 102 — save schema v3: adds openedGates array so unlocked doors
+ * persist across save/load cycles (gated_door_save_state feature).
  * Large/transient state (NPC positions, combat, active sessions) is
  * intentionally excluded — it is rebuilt from defaults on each load.
  */
@@ -20,6 +22,7 @@ import { useGameStore } from './useGameStore'
 import { useShopStore } from './useShopStore'
 import { useFactionStore } from './useFactionStore'
 import { useTaskStore } from './useTaskStore'
+import { useOpenedGatesStore } from './useOpenedGatesStore'
 import { useNotifications } from './useNotifications'
 import type { TaskRecord } from './useTaskStore'
 import { getAllVendorDefs } from '../engine/shop'
@@ -28,7 +31,7 @@ import type { PlayerStats, InventoryState, EquipmentState, Settings } from './us
 import type { SkillsState } from './useGameStore'
 
 /** Current save schema version. Increment whenever the snapshot shape changes. */
-const SAVE_VERSION = 2
+const SAVE_VERSION = 3
 
 /** Primary localStorage key — name kept from Phase 50 so existing saves survive. */
 const SAVE_KEY = 'veilmarch_save_v1'
@@ -60,6 +63,12 @@ interface SaveSnapshot {
     active: TaskRecord[]
     completed: TaskRecord[]
   }
+  /**
+   * Phase 102 — opened gate IDs.  Optional for backward compatibility with
+   * saves created before Phase 102.  Stores the set of gated doors the player
+   * has permanently unlocked so they remain open after a save/load cycle.
+   */
+  openedGates?: string[]
 }
 
 // ── Save migrations ───────────────────────────────────────────────────────────
@@ -75,11 +84,22 @@ function migrateV1(raw: Record<string, unknown>): Record<string, unknown> {
 }
 
 /**
+ * V2 → V3 (Phase 102): add the openedGates field as an empty array.
+ * Existing saves from sessions where the player opened gates will start
+ * with an empty set (doors will be re-sealed once), but from this point
+ * forward gate state persists across save/load cycles.
+ */
+function migrateV2(raw: Record<string, unknown>): Record<string, unknown> {
+  return { ...raw, version: 3, openedGates: [] }
+}
+
+/**
  * Step-by-step migration table.
  * Key = source version, value = function that upgrades it to key+1.
  */
 const MIGRATION_TABLE: Record<number, MigrateFn> = {
   1: migrateV1,
+  2: migrateV2,
 }
 
 /**
@@ -140,6 +160,7 @@ export function useSaveGame(): () => boolean {
       const { vendorStocks } = useShopStore.getState()
       const { rep: factionRep } = useFactionStore.getState()
       const { active: taskActive, completed: taskCompleted } = useTaskStore.getState()
+      const openedGates = [...useOpenedGatesStore.getState().openedGates]
       const snapshot: SaveSnapshot = {
         version: SAVE_VERSION,
         playerStats,
@@ -150,6 +171,7 @@ export function useSaveGame(): () => boolean {
         vendorStocks,
         factionRep,
         taskState: { active: taskActive, completed: taskCompleted },
+        openedGates,
       }
       const json = JSON.stringify(snapshot)
       localStorage.setItem(SAVE_KEY, json)
@@ -421,6 +443,18 @@ export function useLoadGame(): () => void {
           const validCompleted = completed.map(validateRecord).filter((r): r is TaskRecord => r !== null)
           useTaskStore.setState({ active: validActive, completed: validCompleted })
         }
+      }
+
+      // Phase 102 — restore opened gate IDs if present.
+      // Absent in saves from before Phase 102; the store starts with an empty
+      // set (all doors sealed) which is the correct default for older saves.
+      // Each ID is validated as a non-empty string before being added to the
+      // set to prevent crafted saves from injecting arbitrary values.
+      if (Array.isArray(snapshot.openedGates)) {
+        const validIds = snapshot.openedGates.filter(
+          (id): id is string => typeof id === 'string' && id.length > 0,
+        )
+        useOpenedGatesStore.getState().setOpenedGates(new Set(validIds))
       }
     } catch (err) {
       notify('⚠ An error occurred while loading — some progress may be lost.', 'warning')
