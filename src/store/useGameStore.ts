@@ -3,7 +3,11 @@ import { getItem } from '../data/items/itemRegistry'
 import type { ItemDefinition, EquipSlot } from '../data/items/itemSchema'
 import type { Skill } from '../data/skills/skillSchema'
 import { STARTER_SKILLS } from '../data/skills/starterSkills'
-import { applyXp } from '../data/skills/xpCurve'
+import {
+  applyXp,
+  SKILL_MILESTONE_PERCENT,
+  SKILL_MILESTONE_PROGRESS,
+} from '../data/skills/xpCurve'
 import { useNotifications } from './useNotifications'
 import {
   computeEquipStats,
@@ -352,7 +356,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       const prevProgress =
         target.experienceToNextLevel > 0
-          ? target.experience / target.experienceToNextLevel
+          ? Math.min(target.experience / target.experienceToNextLevel, 1)
           : 0
       const result = applyXp(target.level, target.experience, amount)
 
@@ -380,12 +384,20 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       const nextProgress =
         result.experienceToNextLevel > 0
-          ? result.experience / result.experienceToNextLevel
+          ? Math.min(result.experience / result.experienceToNextLevel, 1)
           : 0
-      if (prevProgress < 0.75 && nextProgress >= 0.75) {
+      if (
+        result.levelsGained === 0 &&
+        prevProgress < SKILL_MILESTONE_PROGRESS &&
+        nextProgress >= SKILL_MILESTONE_PROGRESS
+      ) {
+        const upcomingLevel = target.level + 1
         useNotifications
           .getState()
-          .push(`${target.name} is over 75% toward level ${result.level + 1}.`, 'info')
+          .push(
+            `${target.name} is over ${SKILL_MILESTONE_PERCENT}% toward level ${upcomingLevel}.`,
+            'info',
+          )
       }
 
       return {

@@ -16,6 +16,8 @@
  */
 
 export const MAX_SKILL_LEVEL = 99
+export const SKILL_MILESTONE_PROGRESS = 0.75
+export const SKILL_MILESTONE_PERCENT = Math.round(SKILL_MILESTONE_PROGRESS * 100)
 
 /**
  * XP required to advance from `level` to `level + 1`.
