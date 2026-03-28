@@ -753,11 +753,24 @@ export const SPRINT_GROUPS: readonly SprintGroupEntry[] = (
 
 // ─── 6. Helpers ───────────────────────────────────────────────────────────────
 
+/**
+ * Pre-filtered view of all high-impact features included in the comprehensive
+ * pass (critical + high tiers).
+ */
+export const HIGH_IMPACT_FEATURES: readonly PassFeature[] = COMPREHENSIVE_PASS.filter(
+  (f) => f.impact === 'critical' || f.impact === 'high',
+)
+
 /** Returns all PassFeatures at or above the given impact tier. */
 export function getFeaturesByImpact(minImpact: ImpactTier): PassFeature[] {
   const order: ImpactTier[] = ['critical', 'high', 'medium', 'low']
   const threshold = order.indexOf(minImpact)
   return COMPREHENSIVE_PASS.filter((f) => order.indexOf(f.impact) <= threshold)
+}
+
+/** Returns only high-impact features (critical + high). */
+export function getHighImpactFeatures(): PassFeature[] {
+  return [...HIGH_IMPACT_FEATURES]
 }
 
 /** Returns all PassFeatures assigned to the given sprint group. */
