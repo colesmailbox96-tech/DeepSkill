@@ -21,7 +21,7 @@ export const RC_BUILD_LABEL = 'RC-1' as const
  * Canonical phase number at which this release candidate was cut.
  * Increment when a hotfix phase branches from this RC.
  */
-export const RC_PHASE = 101 as const
+export const RC_PHASE = 102 as const
 
 // ── Completed phase summary ───────────────────────────────────────────────────
 
@@ -98,6 +98,7 @@ export const RC_PHASE_LOG: readonly PhaseEntry[] = [
   { phase: 99,  title: 'Expansion Backlog Authoring',   summary: '18 backlog items P0–P3, 6 feature buckets, 10 cut/keep entries, 7 risk notes.' },
   { phase: 100, title: 'Release Candidate Stabilization', summary: 'Lint clean, chunk splitting, RC manifest wired to main menu, README refresh.' },
   { phase: 101, title: 'Comprehensive Pass — High-Impact Feature Identification', summary: '24 PassFeatures across 4 sprint groups; ImpactMatrix, SprintGroup manifest, and helper functions for sprint planning.' },
+  { phase: 102, title: 'Gated Door Save State — Save Schema v3', summary: 'openedGates set persisted in save snapshot; v2→v3 migration; 5 gated doors restored from save on first frame.' },
 ] as const
 
 // ── Known limitations (open issues entering RC-1) ────────────────────────────
@@ -124,10 +125,10 @@ export const RC_KNOWN_ISSUES: readonly KnownIssue[] = [
     id: 'save_gating_transient',
     severity: 'medium',
     description:
-      'Opened gated doors are not persisted in the save snapshot. ' +
-      'Doors re-evaluate their requirements on load, so players who meet ' +
-      'the gate requirements will not be blocked again, but the door mesh ' +
-      'reappears until interacted with. Tracked as save_integrity_hotfixes (P0).',
+      'FIXED (Phase 102): Opened gated doors are now persisted in the save snapshot via ' +
+      'the openedGates field (save schema v3). Doors are restored from the save on the ' +
+      'first animation frame after loading and do not reappear. v2→v3 migration seeds ' +
+      'openedGates as an empty set for existing saves.',
     backlogRef: 'save_integrity_hotfixes',
   },
   {

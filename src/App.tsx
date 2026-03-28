@@ -266,6 +266,7 @@ import {
 import { useWeatherStore } from './store/useWeatherStore'
 import { WeatherHud } from './ui/hud/WeatherHud'
 import { useDemoStore } from './store/useDemoStore'
+import { useOpenedGatesStore } from './store/useOpenedGatesStore'
 import { DemoWelcomeOverlay } from './ui/hud/DemoWelcomeOverlay'
 import { recordNewGame, recordPlayerDefeated, recordAreaEntered } from './engine/telemetry'
 import './App.css'
@@ -448,6 +449,8 @@ function App() {
     useFactionStore.getState().resetToDefaults()
     // Phase 86 — reset task state so the player starts with a clean journal.
     useTaskStore.setState({ active: [], completed: [] })
+    // Phase 102 — reset opened gates so all doors start sealed on a new game.
+    useOpenedGatesStore.getState().reset()
     // Phase 96 — reset demo welcome so the overlay appears for each new game.
     useDemoStore.getState().setWelcomeSeen(false)
     // Phase 98 — Telemetry: record new game start.
@@ -3250,9 +3253,17 @@ function App() {
       if (player.mesh.position.z <= -52) {
         triggerZoneExplore('quarry')
       }
+      // Phase 65/67/75/78/84/102 — Gate unseal checks.
+      // Phase 102: read opened-gate state once per frame for all checks.
+      // Each `sealedFlag` is set to false on the first frame the gate opens
+      // (whether by player interaction this session or restored from save), so
+      // the conditions below execute at most once per gate per session.
+      {
+        const _og = useOpenedGatesStore.getState()
       // Phase 65 — Vault gate unseal: hide gate mesh, remove its collidable, and
       // unregister its interactable so the player can't target an invisible gate.
-      if (vaultGateSealed && pollGateUnsealed()) {
+      // Phase 102 — also unseal on first frame when save reports this gate as opened.
+      if (vaultGateSealed && (pollGateUnsealed() || _og.wasOpened('hollow_vault_gate'))) {
         vaultGateSealed = false
         hollowVault.gateMesh.visible = false
         if (vaultGateSlabIdx >= 0) {
@@ -3264,11 +3275,13 @@ function App() {
         if (gateInteractableIdx !== -1) {
           interactables.splice(gateInteractableIdx, 1)
         }
+        useOpenedGatesStore.getState().addOpened('hollow_vault_gate')
       }
       // Phase 67 — Inner sanctum door: opened when the player satisfies the
       // task requirement.  Index is computed at removal time to avoid stale
       // values caused by earlier collidable splices (e.g. vault gate slab).
-      if (innerSanctumDoorSealed && hollowVault.innerSanctumDoor.pollOpened()) {
+      // Phase 102 — also unseal on first frame when save reports this gate as opened.
+      if (innerSanctumDoorSealed && (hollowVault.innerSanctumDoor.pollOpened() || _og.wasOpened('hollow_vault_inner_sanctum'))) {
         innerSanctumDoorSealed = false
         hollowVault.innerSanctumDoor.mesh.visible = false
         const doorCollidableIdx = collidables.indexOf(hollowVault.innerSanctumDoor.mesh)
@@ -3280,10 +3293,12 @@ function App() {
         if (doorInteractableIdx !== -1) {
           interactables.splice(doorInteractableIdx, 1)
         }
+        useOpenedGatesStore.getState().addOpened('hollow_vault_inner_sanctum')
       }
       // Phase 75 — Quarry supply cache: opened when the player completes
       // 'quarry_deep_seam'.  Hide the door mesh and remove its collidable.
-      if (quarrySupplyCacheSealed && quarry.supplyCache.pollOpened()) {
+      // Phase 102 — also unseal on first frame when save reports this gate as opened.
+      if (quarrySupplyCacheSealed && (quarry.supplyCache.pollOpened() || _og.wasOpened('quarry_supply_cache'))) {
         quarrySupplyCacheSealed = false
         quarry.supplyCache.mesh.visible = false
         const cacheCollidableIdx = collidables.indexOf(quarry.supplyCache.mesh)
@@ -3295,10 +3310,12 @@ function App() {
         if (cacheInteractableIdx !== -1) {
           interactables.splice(cacheInteractableIdx, 1)
         }
+        useOpenedGatesStore.getState().addOpened('quarry_supply_cache')
       }
       // Phase 78 — Belowglass Vaults gate: opened when the player has
       // completed "Echoes of the Sealed Shaft".  Removes the glass slab.
-      if (bvGateSealed && belowglassVaults.gateDoor.pollOpened()) {
+      // Phase 102 — also unseal on first frame when save reports this gate as opened.
+      if (bvGateSealed && (belowglassVaults.gateDoor.pollOpened() || _og.wasOpened('belowglass_gate'))) {
         bvGateSealed = false
         belowglassVaults.gateDoor.mesh.visible = false
         const bvGateCollidableIdx = collidables.indexOf(belowglassVaults.gateDoor.mesh as THREE.Mesh)
@@ -3310,10 +3327,12 @@ function App() {
         if (bvGateInteractableIdx !== -1) {
           interactables.splice(bvGateInteractableIdx, 1)
         }
+        useOpenedGatesStore.getState().addOpened('belowglass_gate')
       }
       // Phase 84 — Inner Sanctum boss chamber door: opened when the player has
       // Salvaging level 5.  Auto-accepts the 'vault_heart' boss task.
-      if (bvSanctumSealed && belowglassVaults.sanctumDoor.pollOpened()) {
+      // Phase 102 — also unseal on first frame when save reports this gate as opened.
+      if (bvSanctumSealed && (belowglassVaults.sanctumDoor.pollOpened() || _og.wasOpened('belowglass_sanctum'))) {
         bvSanctumSealed = false
         belowglassVaults.sanctumDoor.mesh.visible = false
         const bvSanctumColIdx = collidables.indexOf(belowglassVaults.sanctumDoor.mesh as THREE.Mesh)
@@ -3325,12 +3344,14 @@ function App() {
         if (bvSanctumIntIdx !== -1) {
           interactables.splice(bvSanctumIntIdx, 1)
         }
+        useOpenedGatesStore.getState().addOpened('belowglass_sanctum')
         // Auto-accept the boss task if not already active or completed.
         const taskStore = useTaskStore.getState()
         if (!taskStore.isCompleted('vault_heart') && !taskStore.active.some((r) => r.taskId === 'vault_heart')) {
           taskStore.acceptTask('vault_heart')
         }
       }
+      } // end opened-gate checks block
       // Phase 80 — Hidden shortcut passages: opened when the player has the
       // required Surveying level.  Hide the rubble mesh and remove collidable.
       for (let _si = hiddenShortcuts.length - 1; _si >= 0; _si--) {
